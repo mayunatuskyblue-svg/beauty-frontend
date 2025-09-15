@@ -138,34 +138,36 @@ document.getElementById('sum').innerHTML = `
 
 // 支払い導線
 const stripeUrl = STRIPE_LINKS[item] || "";
-const btnStripe = document.getElementById('btnStripe');
-const btnCash   = document.getElementById('btnCash');
+const btnStripe   = document.getElementById('btnStripe');
+const btnCash     = document.getElementById('btnCash');
 const btnCashOnly = document.getElementById('btnCashOnly');
 
-// Checkout セッションを作ってから遷移（webhookで予約IDを拾える）
-// ここから置き換え
 if (price > 0) {
-  // Stripe前払いが可能
   document.getElementById('pay').style.display = 'block';
-
-  // ← Stripeが使える場合は現地払いボタンを隠す（削除でもOK）
-  const cashBtn = document.getElementById('btnCash');
-  if (cashBtn) cashBtn.remove();            // または: cashBtn.style.display = 'none';
-
-  // Stripe Checkout をバックエンド経由で開始
-  btnStripe.removeAttribute('target');      // 同タブ遷移（任意）
+  if (btnCash) btnCash.remove(); // ← Stripe可なら現金ボタンを隠す
+  btnStripe.removeAttribute('target');
   btnStripe.addEventListener('click', async (e) => {
     e.preventDefault();
-
     const qs = new URLSearchParams(location.search);
     const payload = {
       reservationId: qs.get('reservationId') || '',
-      item,
-      price,
+      item, price,
       currency: (qs.get('currency') || 'usd').toLowerCase(),
       successBaseUrl: location.origin,
-      cancelBaseUrl: location.origin,
+      cancelBaseUrl: location.origin
     };
+    const res  = await fetch('https://backend-wwis.onrender.com/api/create-checkout', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.url) location.href = data.url; else alert('決済ページを開けませんでした');
+  });
+} else {
+  document.getElementById('noLink').style.display = 'block';
+  if (btnCashOnly) btnCashOnly.addEventListener('click', (e)=>{ e.preventDefault(); goConfirm(); });
+}
+
 
     try {
       const res  = await fetch('https://backend-wwis.onrender.com/api/create-checkout', {

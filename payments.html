@@ -43,7 +43,6 @@ h1, h2, h3, .brand, .title, .h1, .sec-title {
 </style>
 
 </head>
-  #btnCash { display: none !important; }
 
 <body>
 <div class="container">
@@ -144,26 +143,48 @@ const btnCash   = document.getElementById('btnCash');
 const btnCashOnly = document.getElementById('btnCashOnly');
 
 // Checkout セッションを作ってから遷移（webhookで予約IDを拾える）
+// ここから置き換え
 if (price > 0) {
+  // Stripe前払いが可能
   document.getElementById('pay').style.display = 'block';
 
-  btnStripe.removeAttribute('target'); // 同タブで遷移（任意）
+  // ← Stripeが使える場合は現地払いボタンを隠す（削除でもOK）
+  const cashBtn = document.getElementById('btnCash');
+  if (cashBtn) cashBtn.remove();            // または: cashBtn.style.display = 'none';
+
+  // Stripe Checkout をバックエンド経由で開始
+  btnStripe.removeAttribute('target');      // 同タブ遷移（任意）
   btnStripe.addEventListener('click', async (e) => {
     e.preventDefault();
+
+    const qs = new URLSearchParams(location.search);
     const payload = {
-      reservationId: (new URLSearchParams(location.search)).get('reservationId') || '',
+      reservationId: qs.get('reservationId') || '',
       item,
       price,
-      currency: (new URLSearchParams(location.search)).get('currency')?.toLowerCase() || 'usd',
+      currency: (qs.get('currency') || 'usd').toLowerCase(),
       successBaseUrl: location.origin,
       cancelBaseUrl: location.origin,
     };
-    try{
-      const res = await fetch('https://backend-wwis.onrender.com/api/create-checkout', {
+
+    try {
+      const res  = await fetch('https://backend-wwis.onrender.com/api/create-checkout', {
         method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify(payload)
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
+      const data = await res.json();
+      if (data.url) {
+        location.href = data.url;
+      } else {
+        alert('決済ページを開けませんでした'); console.log(data);
+      }
+    } catch (err) {
+      console.error(err); alert('通信エラーが発生しました');
+    }
+  });
+} else {
+ 
       const data = await res.json();
       if (data.url) {
         location.href = data.url; // Stripe Checkoutへ
@@ -177,11 +198,7 @@ if (price > 0) {
     }
   });
 
-  btnCash.onclick = (e)=>{ e.preventDefault(); goConfirm(); };
-} else {
-  document.getElementById('noLink').style.display = 'block';
-  btnCashOnly.onclick = (e)=>{ e.preventDefault(); goConfirm(); };
-}
+
 
 
 function goConfirm(){

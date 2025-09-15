@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Stripe支払い</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Shippori+Mincho:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{ --red:#74070E; --bean:#310E10; --base:#F7F1E1; }
+*{box-sizing:border-box} body{margin:0;background:var(--base);color:#111;font-family:'Shippori Mincho',serif}
+.container{max-width:760px;margin:0 auto;padding:16px}
+.h1{font-size:26px;font-weight:800;color:var(--bean);margin:6px 0 12px}
+.card{background:#fff;border:1px solid #eadfca;border-radius:12px;padding:14px;margin:10px 0}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn{border-radius:999px;padding:10px 16px;font-size:14px;cursor:pointer;font-weight:700;line-height:1;}
+.btn.gray{border:1px solid #ddd;background:#fff}
+.btn.red{background:var(--red);color:#fff;border:1px solid var(--red)}
+.note{font-size:13px;color:#555}
+.link{color:var(--red);text-decoration:none;border-bottom:1px dotted var(--red)}
+
+/* Font scheme */
+body, input, textarea, .meta, .note, .btn {
+  font-family: 'Noto Sans JP', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+}
+.h1, .brand, .sec-title {
+  font-family: 'Shippori Mincho', serif;
+}
+</style>
+<link rel="stylesheet" href="assets/css/theme.css"/>
+<link rel="manifest" href="./manifest.json">
+<script src="assets/js/lang.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Shippori+Mincho:wght@600;700&display=swap" rel="stylesheet">
+
+<style>
+/* Font unification: body = Zen Kaku Gothic New, headings = Shippori Mincho */
+html, body {
+  font-family: 'Zen Kaku Gothic New', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, 'Noto Sans JP', sans-serif !important;
+}
+h1, h2, h3, .brand, .title, .h1, .sec-title {
+  font-family: 'Shippori Mincho', serif !important;
+  letter-spacing: .02em;
+}
+</style>
+
+</head>
+<body>
+<div class="container">
+  <div class="row">
+    <a class="btn gray" href="./index.html">← Back to site</a>
+    <div class="h1">Stripe 支払い</div>
+  </div>
+
+  <div id="sum" class="card">Loading…</div>
+
+  <div id="pay" class="card" style="display:none">
+    <div style="font-weight:800;margin-bottom:8px">お支払い方法</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <a id="btnStripe" class="btn red" href="#" target="_blank" rel="noopener">Stripeで支払う</a>
+      <a id="btnCash" class="btn gray" href="#">現地支払いで続ける</a>
+    </div>
+    <div class="note" style="margin-top:8px">
+      ※ Stripeボタンは新しいタブで開きます。決済後は自動でサイトに戻るように（成功URL/キャンセルURL）をPayment Link設定で指定してください。
+    </div>
+  </div>
+
+  <div id="noLink" class="card" style="display:none">
+    <div style="font-weight:800;margin-bottom:6px">オンライン決済リンクが未設定</div>
+    <div class="note">このメニュー/クーポンにはStripeのPayment Linkが未設定です。現地支払いでご予約を続けられます。</div>
+    <div style="margin-top:10px">
+      <a id="btnCashOnly" class="btn gray" href="#">現地支払いで続ける</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="note">
+      もしStripeのPayment Linkを作成していない場合は、<a class="link" href="https://dashboard.stripe.com/payment-links" target="_blank" rel="noopener">Stripeダッシュボード</a>で作成し、下の <b>STRIPE_LINKS</b> にURLを登録してください。
+    </div>
+  </div>
+</div>
+
+<script>
+
+// i18n helper
+function getLang(){ try{ const pref=localStorage.getItem('bl_lang')||'auto'; if(pref==='auto'){ const ja=(navigator.language||'en').toLowerCase().startsWith('ja'); return ja?'ja':'en'; } return pref; }catch(e){ return 'ja'; } }
+
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  if(getLang()==='en'){
+    document.querySelector('.h1').textContent = 'Payment';
+    // Buttons
+    const b1 = document.getElementById('btnStripe'); if(b1) b1.textContent='Pay with Stripe';
+    const b2 = document.getElementById('btnCash'); if(b2) b2.textContent='Continue with pay-on-site';
+    const b3 = document.getElementById('btnCashOnly'); if(b3) b3.textContent='Continue with pay-on-site';
+    // Notes
+    document.body.innerHTML = document.body.innerHTML.replace('オンライン決済リンクが未設定','Online payment link not set')
+      .replace('このメニュー/クーポンにはStripeのPayment Linkが未設定です。現地支払いでご予約を続けられます。','No Stripe Payment Link is set for this item. You can continue with pay-on-site.')
+      .replace('もしStripeのPayment Linkを作成していない場合は、','If you have not created a Stripe Payment Link, ')
+      .replace('で作成し、下の','create one in ')
+      .replace('にURLを登録してください。',' and register the URL in STRIPE_LINKS below.');
+    // Summary block keys
+    const sum = document.getElementById('sum');
+    sum.innerHTML = sum.innerHTML.replace('支払い方法を選んでください：','Select a payment method: ')
+                                 .replace('予約希望：','Requested: ');
+    const back = document.querySelector('a.btn.gray'); if(back) back.textContent='← Back to site';
+  }
+});
+
+// ====== ここに Payment Link を登録する（商品名 or クーポン名 → Payment Link URL） ======
+// 例: "Abhyanga 90min": "https://buy.stripe.com/xxxxxx"
+const STRIPE_LINKS = {
+  "Abhyanga 90min":    "https://buy.stripe.com/test_eVq14nfPcch75pMaEWdUY01", // ← 作成したURLを貼る
+  "Shirodhara 60min":  "https://buy.stripe.com/test_6oU5kD8mK1CtcSe5kCdUY02",
+  "New guest 10% OFF": "",
+  "Lash Lift":         "https://buy.stripe.com/test_5kQ6oH5ay4OF8BY28qdUY03",
+  "Volume 100":        "https://buy.stripe.com/test_fZubJ19qOgxn3hE3cudUY04",
+  "First time set":    "",
+  "Henna & Spa set":   "https://buy.stripe.com/test_28EeVd46u4OF2dAbJ0dUY05",
+  "Therapy 60min":     "https://buy.stripe.com/test_00wfZh32q2GxbOa14mdUY06",
+  "Nail Gel":          "https://buy.stripe.com/test_dRm7sLeL8gxndWi4gydUY07"
+};
+
+// ====== クエリ取得（index.html → payments.html?salonId=&item=&price=&time=） ======
+const q = new URLSearchParams(location.search);
+const salonId   = q.get('salonId')   || '-';
+const item      = q.get('item')      || 'Reservation';
+const price     = Number(q.get('price') || 0);
+const timeISO   = q.get('time') || "";  // 予約日時（未指定でもOK）
+const salonName = q.get('salonName') || ""; // あれば表示に使う
+
+// 表示
+document.getElementById('sum').innerHTML = `
+  <div style="font-weight:800;font-size:18px">${item}</div>
+  <div style="opacity:.85">${salonName ? salonName : 'Salon #'+salonId}</div>
+  <div style="margin-top:6px">支払い方法を選んでください：${price ? ('オンライン or 現地払い / $'+price.toFixed(2)) : '現地払いのみ'}</div>
+  ${ timeISO ? `<div class="note" style="margin-top:6px">予約希望：${new Date(timeISO).toLocaleString()}</div>` : '' }
+`;
+
+// 支払い導線
+const stripeUrl = STRIPE_LINKS[item] || "";
+const btnStripe = document.getElementById('btnStripe');
+const btnCash   = document.getElementById('btnCash');
+const btnCashOnly = document.getElementById('btnCashOnly');
+
+if (stripeUrl && price > 0) {
+  // Stripeリンクが登録されている場合
+  document.getElementById('pay').style.display = 'block';
+  btnStripe.href = stripeUrl; // 新しいタブで開く
+  btnCash.onclick = (e)=>{ e.preventDefault(); goConfirm(); };
+} else {
+  // 未登録なら現地払いのみ
+  document.getElementById('noLink').style.display = 'block';
+  btnCashOnly.onclick = (e)=>{ e.preventDefault(); goConfirm(); };
+}
+
+function goConfirm(){
+  const sp = new URLSearchParams({
+    salonId,
+    salonName,
+    item,
+    price: String(price||0),
+    time: timeISO
+  });
+  // 現地払い/決済後の戻り どちらも confirm.html を利用
+  location.href = `./confirm.html?${sp.toString()}`;
+}
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+import { getFirestore, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+
+
+const app = initializeApp({
+apiKey:"AIzaSyAHSzuLbPg1xrlugca7bNYxe44FsTiQDeY",
+authDomain:"beauty-lanka.firebaseapp.com",
+projectId:"beauty-lanka",
+storageBucket:"beauty-lanka.firebasestorage.app",
+messagingSenderId:"508920832092",
+appId:"1:508920832092:web:56889ead2865620f894699",
+measurementId:"G-BB5BCZ62TZ"
+});
+const db = getFirestore(app);
+
+
+const q = new URLSearchParams(location.search);
+const reservationId = q.get('reservationId')||'';
+const salonId = q.get('salonId') || '-';
+const salonName = q.get('salonName') || '';
+const item = q.get('item') || 'Reservation';
+const price = Number(q.get('price')||0);
+const timeISO = q.get('time') || '';
+
+
+async function goConfirm(){
+// 現地支払い選択。支払い方法のみ更新
+if(reservationId){
+await updateDoc(doc(db,'reservations', reservationId), {
+'payment.method':'cash',
+'payment.status':'unpaid'
+});
+}
+const sp = new URLSearchParams({ reservationId, salonId, salonName, item, price:String(price), time:timeISO });
+location.href = './thankyou.html?' + sp.toString();
+}
+
+
+// 既存の btnCash / btnCashOnly に紐付け
+if(window.btnCash) btnCash.onclick = (e)=>{ e.preventDefault(); goConfirm(); };
+if(window.btnCashOnly) btnCashOnly.onclick = (e)=>{ e.preventDefault(); goConfirm(); };
+
+
+// Stripe 成功URL/キャンセルURL 側の実装（例）
+// 成功URL: /thankyou.html?reservationId=...&paid=1&provider=stripe
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  try { if (typeof BL_I18N !== 'undefined' && BL_I18N && BL_I18N.i18nApply) { BL_I18N.i18nApply(); } } catch(e){}
+});
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', {scope: '/'}).catch(console.error);
+  });
+}
+</script>
+
+<footer id="ft" style="margin:18px 0 40px;text-align:center;color:#6b5e55;font-size:12px">
+  <a href="terms.html" class="ft-link" data-ft="terms" style="margin:0 10px">Terms</a>·
+  <a href="privacy.html" class="ft-link" data-ft="privacy" style="margin:0 10px">Privacy</a>·
+  <a href="cancel.html" class="ft-link" data-ft="cancel" style="margin:0 10px">Cancel Policy</a>·
+  <a href="contact.html" class="ft-link" data-ft="contact" style="margin:0 10px">Contact</a>
+</footer>
+<div id="ftModal" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:9999">
+  <div id="ftBackdrop" style="position:absolute;inset:0;background:rgba(0,0,0,.4)"></div>
+  <div role="dialog" aria-modal="true" aria-labelledby="ftTitle"
+       style="position:relative;background:#fff;border:1px solid #eadfca;border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,.18);
+              width:min(92vw,720px);max-height:80vh;overflow:auto;padding:18px">
+    <div style="display:flex;align-items:center;gap:8px;justify-content:space-between;margin-bottom:8px">
+      <div id="ftTitle" style="font-weight:900">Terms</div>
+      <button id="ftClose" style="border:none;background:#fff;border:1px solid #eadfca;border-radius:10px;padding:6px 10px;cursor:pointer">Close</button>
+    </div>
+    <div id="ftBody" style="line-height:1.7;color:#2E1A16;font-size:14px">
+      <p>Loading…</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// Footer modal with fetch of external pages + close button
+(function(){
+  if(window.__ftModalInstalledV2) return; window.__ftModalInstalledV2 = true;
+  const modal = document.getElementById('ftModal');
+  const body  = document.getElementById('ftBody');
+  const title = document.getElementById('ftTitle');
+  const closeBtn = document.getElementById('ftClose');
+  const backdrop = document.getElementById('ftBackdrop');
+
+  const MAP = {
+    terms:  {title:'Terms',  url:'terms.html'},
+    privacy:{title:'Privacy',url:'privacy.html'},
+    cancel: {title:'Cancel Policy',url:'cancel.html'},
+    contact:{title:'Contact',url:'contact.html'}
+  };
+  async function open(kind){
+    const item = MAP[kind] || MAP.terms;
+    title.textContent = item.title;
+    body.innerHTML = '<p>Loading…</p>';
+    try{
+      const res = await fetch(item.url, {credentials:'omit'});
+      const txt = await res.text();
+      // Try to extract main content from uploaded pages
+      const match = txt.match(/<div class="container"[\s\S]*?>([\s\S]*?)<\/div>\s*<\/body>/i);
+      body.innerHTML = match ? match[1] : txt;
+    }catch(e){
+      body.textContent = 'Failed to load. Please try again.';
+    }
+    modal.style.display = 'flex';
+  }
+  function close(){ modal.style.display='none'; }
+
+  document.addEventListener('click', (e)=>{
+    const a = e.target.closest && e.target.closest('a.ft-link');
+    if(a){
+      e.preventDefault();
+      const kind = a.getAttribute('data-ft');
+      open(kind);
+    }
+  });
+  closeBtn && closeBtn.addEventListener('click', close);
+  backdrop && backdrop.addEventListener('click', close);
+
+  // Intercept direct clicks to terms.html etc anywhere in footer
+  document.querySelectorAll('footer a[href$=".html"]').forEach(a=>{
+    a.addEventListener('click', (e)=>{
+      const k = a.getAttribute('data-ft');
+      if(k){ e.preventDefault(); open(k); }
+    });
+  });
+})();
+</script>
+
+<script id="bl-api-payments-autostart">
+(function(){
+  function onReady(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
+  function fetchJSON(url,opt){ return fetch(url, Object.assign({headers:{'Content-Type':'application/json'}},opt)).then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }); }
+  onReady(function(){
+    try{
+      const q = new URLSearchParams(location.search);
+      const rid = q.get('reservationId')||'';
+      const item  = q.get('item')||'';
+      const price = Number(q.get('price')||0);
+      const currency = (q.get('currency')||'usd').toLowerCase();
+      if(!rid) return; // nothing to do
+      const frontBase = location.origin;
+      const payload = { reservationId: rid, item, price, currency, successBaseUrl: frontBase, cancelBaseUrl: frontBase };
+      fetchJSON('https://backend-wwis.onrender.com/api/create-checkout', { method:'POST', body: JSON.stringify(payload) })
+        .then(j => { if(j.url){ location.href = j.url; } })
+        .catch(e => { console.warn('create-checkout failed', e); });
+    }catch(e){ console.warn(e); }
+  });
+})();
+</script>
+
+</body>
+</html>

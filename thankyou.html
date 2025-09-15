@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Thank You | BeautyLanka</title><link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet"><style>:root{
+  --base:#F7F1E1; --ink:#2E1A16; --stroke:#eadfca; --teal:#246A73; --muted:#6f5a54; --blue:#0A66FF; --chip:#fff8ef;
+}
+*{box-sizing:border-box} body{margin:0;background:var(--base);color:var(--ink);font-family:"Zen Kaku Gothic New","Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
+.container{max-width:760px;margin:0 auto;padding:0 16px;text-align:center}
+header{position:sticky;top:0;z-index:40;background:rgba(247,241,225,.92);border-bottom:1px solid var(--stroke)}
+.hwrap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0}
+.logo-box{width:122px;height:72px;border-radius:14px;overflow:hidden;box-shadow:0 10px 24px rgba(36,106,115,.18);background:#fff}
+.logo-box img{width:100%;height:120%;object-fit:cover;object-position:50% 20%}
+.btn{height:40px;border-radius:12px;border:1px solid var(--stroke);background:#fff;padding:0 12px;font-weight:700;cursor:pointer}
+.btn.primary{background:var(--teal);border-color:var(--teal);color:#fff;box-shadow:0 6px 14px rgba(36,106,115,.18)}
+.section{background:#fff;border:1px solid var(--stroke);border-radius:16px;box-shadow:0 10px 24px rgba(49,14,16,.08);padding:24px;margin:24px 0}
+.small{color:#6b5e55}
+</style>
+<style id="fixed-footer-style">
+#ft{
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  background:#faf6ef;
+  padding:10px 0;
+  text-align:center;
+  color:#6b5e55;
+  font-size:13px;
+  border-top:1px solid #eadfca;
+  z-index:999;
+}
+#ft a{ color:#6b5e55; text-decoration:none; margin:0 10px; }
+#ft a:hover{ text-decoration:underline; }
+body{ padding-bottom:60px; } /* avoid overlap */
+</style>
+</head><body>
+<header><div class="hwrap" style="max-width:760px;margin:0 auto;"><a class="brand-left" href="./index.html"><div class="logo-box"><img src="assets/images/logo_mark.png" alt=""></div></a><div></div></div></header>
+<div class="container">
+  <div style="display:flex;justify-content:flex-end;gap:8px"><select id="langSelect" class="btn" style="height:38px"><option value="auto">Auto</option><option value="ja">日本語</option><option value="en">English</option></select></div>
+  <div class="section">
+    <h1>ご予約ありがとうございます</h1>
+    <p id="msg">この店舗の口コミ投稿ができるようになりました。</p>
+    <p class="small" id="conf"></p>
+    <p><button class="btn primary" onclick="go()">店舗ページへ戻る</button></p>
+  </div>
+</div>
+<script>
+
+// i18n helper
+function getLang(){ try{ const pref=localStorage.getItem('bl_lang')||'auto'; if(pref==='auto'){ const ja=(navigator.language||'en').toLowerCase().startsWith('ja'); return ja?'ja':'en'; } return pref; }catch(e){ return 'ja'; } }
+
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  if(getLang()==='en'){
+    document.querySelector('h1').textContent = 'Thank you for your reservation';
+    document.getElementById('msg').textContent = 'You can now post a review for this shop.';
+    document.querySelector('.btn.primary').textContent = 'Back to shop page';
+  }
+});
+
+function getAuth(){ try{ return JSON.parse(localStorage.getItem('bl_auth')||'null'); }catch(e){ return null; } }
+
+const p=new URLSearchParams(location.search); const id=p.get('salonId')||'S1';
+function readJSON(k, def){ try{ return JSON.parse(localStorage.getItem(k)||JSON.stringify(def)); }catch(e){ return def; } }
+function writeJSON(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+
+// Mark as completed -> unlock reviews
+(function(){
+  const done = new Set(readJSON('bl_completed_bookings', []));
+  done.add(id);
+  writeJSON('bl_completed_bookings', Array.from(done));
+
+  // Mark latest booking for this salon & current user as completed
+  const hist = readJSON('bl_booking_history', []);
+  const auth = getAuth();
+  const idx = hist.findIndex(x=>x && x.id===id && x.status!=='completed' && (!auth || (x.contact && x.contact.email && x.contact.email===auth.email)) );
+  if(idx>=0){ hist[idx].status='completed'; writeJSON('bl_booking_history', hist); }
+
+  document.getElementById('conf').textContent = '解放対象サロンID: ' + id + '（マイページ>予約履歴にも反映済み）';
+})();
+
+function go(){ location.href='details.html?salonId='+encodeURIComponent(id); }
+const sel=document.getElementById('langSelect'); if(sel){ sel.value=localStorage.getItem('bl_lang')||'auto'; sel.onchange=()=>{ localStorage.setItem('bl_lang', sel.value); location.reload(); }; }
+</script>
+
+
+<footer id="ft" style="margin:18px 0 40px;text-align:center;color:#6b5e55;font-size:12px">
+  <a href="terms.html" class="ft-link" data-ft="terms" style="margin:0 10px">Terms</a>·
+  <a href="privacy.html" class="ft-link" data-ft="privacy" style="margin:0 10px">Privacy</a>·
+  <a href="cancel.html" class="ft-link" data-ft="cancel" style="margin:0 10px">Cancel Policy</a>·
+  <a href="contact.html" class="ft-link" data-ft="contact" style="margin:0 10px">Contact</a>
+</footer>
+<div id="ftModal" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:9999">
+  <div id="ftBackdrop" style="position:absolute;inset:0;background:rgba(0,0,0,.4)"></div>
+  <div role="dialog" aria-modal="true" aria-labelledby="ftTitle"
+       style="position:relative;background:#fff;border:1px solid #eadfca;border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,.18);
+              width:min(92vw,720px);max-height:80vh;overflow:auto;padding:18px">
+    <div style="display:flex;align-items:center;gap:8px;justify-content:space-between;margin-bottom:8px">
+      <div id="ftTitle" style="font-weight:900">Terms</div>
+      <button id="ftClose" style="border:none;background:#fff;border:1px solid #eadfca;border-radius:10px;padding:6px 10px;cursor:pointer">Close</button>
+    </div>
+    <div id="ftBody" style="line-height:1.7;color:#2E1A16;font-size:14px">
+      <p>Loading…</p>
+    </div>
+  </div>
+</div>
+
+
+
+<script>
+// Footer modal (inline content, no fetch). Ensures single instance and prevents navigation.
+(function(){
+  if(window.__ftModalInstalledInline) return; window.__ftModalInstalledInline = true;
+  const modal = document.getElementById('ftModal');
+  const body  = document.getElementById('ftBody');
+  const title = document.getElementById('ftTitle');
+  const closeBtn = document.getElementById('ftClose');
+  const backdrop = document.getElementById('ftBackdrop');
+
+  const CONTENT = {
+    terms: {title:'Terms', html:'<p>Use of this site is subject to local laws and our booking guidelines. Users agree to provide accurate information and to comply with shop policies.</p>'},
+    privacy: {title:'Privacy', html:'<p>We store minimal data (e.g., favorites, reservations, language) in your browser. We do not sell personal data.</p>'},
+    cancel: {title:'Cancel Policy', html:'<p>Free cancellation until 24 hours before your appointment. Within 24 hours, please contact the shop directly.</p>'},
+    contact: {title:'Contact', html:'<p>Email: support@beautylanka.example<br>Phone: +94 11 000 0000</p>'}
+  };
+
+  function open(kind){
+    const c = CONTENT[kind] || CONTENT.terms;
+    title.textContent = c.title;
+    body.innerHTML = c.html;
+    modal.style.display = 'flex';
+  }
+  function close(){ modal.style.display='none'; }
+
+  document.addEventListener('click', (e)=>{
+    const a = e.target.closest && e.target.closest('a.ft-link');
+    if(a){ e.preventDefault(); open(a.getAttribute('data-ft')); }
+  });
+  closeBtn && closeBtn.addEventListener('click', close);
+  backdrop && backdrop.addEventListener('click', close);
+})();
+</script>
+
+<script id="hide-dup-footer">
+(function(){
+  if(window.__hideDupFooter) return; window.__hideDupFooter = true;
+  function hideDup(){
+    const matcher = /Terms\s*[・·\.]?\s*Privacy\s*[・·\.]?\s*Cancel Policy\s*[・·\.]?\s*Contact/i;
+    document.querySelectorAll('body :not(#ft):not(#ft *)').forEach(el=>{
+      try{
+        if(el instanceof HTMLElement){
+          const txt = (el.textContent||'').trim();
+          if(txt && matcher.test(txt)){
+            el.style.display = 'none';
+          }
+        }
+      }catch(e){}
+    });
+  }
+  if(document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', hideDup); } else { hideDup(); }
+  new MutationObserver(hideDup).observe(document.body, {childList:true, subtree:true});
+})();
+</script>
+
+<script id="ft-dedupe-hard">
+(function(){
+  if(window.__ftDedupeHard) return; window.__ftDedupeHard = true;
+  function hideDup(){
+    // find containers that have all four links but are not #ft
+    const terms = Array.from(document.querySelectorAll('a[href*="terms"], a.ft-link[data-ft="terms"]'));
+    terms.forEach(a=>{
+      const root = a.closest('#ft') ? null : a.closest('footer, div, section, p');
+      if(!root) return;
+      const hasPrivacy = root.querySelector('a[href*="privacy"], a.ft-link[data-ft="privacy"]');
+      const hasCancel  = root.querySelector('a[href*="cancel"], a.ft-link[data-ft="cancel"]');
+      const hasContact = root.querySelector('a[href*="contact"], a.ft-link[data-ft="contact"]');
+      if(hasPrivacy && hasCancel && hasContact){
+        root.style.display = 'none';
+      }
+    });
+  }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', hideDup); } else { hideDup(); }
+  new MutationObserver(hideDup).observe(document.body, {childList:true, subtree:true});
+})();
+</script>
+
+<script id="availability-adapter">
+// Server-ready availability adapter with localStorage fallback.
+// Server API (if BEATY_API_BASE is set):
+//   GET  {API}/availability?start=YYYY-MM-DD&days=7&shopId=... -> {slots:[{iso:'...', status:'booked'|'available'|'few'}]}
+//   POST {API}/book  {shopId, iso} -> {ok:true}
+(function(){
+  if(window.__BLAvailability) return;
+  const API = window.BEAUTY_API_BASE || document.body.getAttribute('data-api-base') || null;
+  const SHOP = window.BEAUTY_SHOP_ID || document.body.getAttribute('data-shop-id') || 'default-shop';
+  const KEY = 'bookedSlots:'+SHOP;
+  async function fetchWeek(startISO){
+    if(API){
+      try{
+        const url = API.replace(/\/$/,'') + `/availability?start=${encodeURIComponent(startISO)}&days=7&shopId=${encodeURIComponent(SHOP)}`;
+        const res = await fetch(url, {credentials:'include'});
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        const data = await res.json();
+        const map = new Map();
+        (data.slots||[]).forEach(s=>{ map.set(s.iso, s.status||'booked'); });
+        return map;
+      }catch(e){ console.warn('Availability API failed, fallback to local', e); }
+    }
+    // Fallback: localStorage set of ISO strings
+    const arr = JSON.parse(localStorage.getItem(KEY) || '[]');
+    const map = new Map(arr.map(iso=>[iso,'booked']));
+    return map;
+  }
+  async function book(iso){
+    if(API){
+      try{
+        const url = API.replace(/\/$/,'') + `/book`;
+        const res = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({shopId: SHOP, iso})});
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        return true;
+      }catch(e){ console.warn('Book API failed, fallback to local', e); }
+    }
+    const arr = JSON.parse(localStorage.getItem(KEY) || '[]');
+    if(!arr.includes(iso)){ arr.push(iso); localStorage.setItem(KEY, JSON.stringify(arr)); }
+    return true;
+  }
+  window.__BLAvailability = { fetchWeek, book, shopId: SHOP };
+})();
+</script>
+
+<script id="availability-thankyou-hook">
+// On thank you page, finalize booking to server and clear pending slot.
+(function(){
+  if(window.__BLThanksHook) return; window.__BLThanksHook = true;
+  async function finalize(){
+    const iso = sessionStorage.getItem('pending_slot_iso');
+    if(!iso || !window.__BLAvailability) return;
+    try{
+      const ok = await window.__BLAvailability.book(iso);
+      if(ok){ sessionStorage.removeItem('pending_slot_iso'); }
+    }catch(e){ console.warn('finalize booking failed', e); }
+  }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', finalize); } else { finalize(); }
+})();
+</script>
+</body></html>

@@ -1,0 +1,971 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Reserve time (font unified + timetable fix)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Shippori+Mincho:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="stylesheet" href="assets/css/theme.css"/>
+  <style>
+    :root{ --base:#F7F1E1; --bean:#310E10; --stroke:#eadfca; --teal:#246A73; }
+    html,body{font-family:"Inter","Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#111}
+    h1,h2{font-family:'Shippori Mincho', serif;letter-spacing:.02em}
+    body{background:var(--base);margin:0}
+    .container{max-width:1080px;margin:24px auto;padding:0 20px}
+    .back-link{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;border:1px solid var(--stroke);background:#fff;color:#513;text-decoration:none;margin-bottom:8px;box-shadow:0 6px 16px rgba(49,14,16,.06)}
+    .card{background:#fff;border:1px solid var(--stroke);border-radius:16px;padding:18px 20px;box-shadow:0 10px 24px rgba(49,14,16,.08);margin:10px 0 18px}
+    .title{font-size:26px;font-weight:800;color:var(--bean);margin:0 0 6px}
+    .meta{color:#5c4d44;opacity:.9}
+    .price{margin-top:8px;font-weight:800;color:var(--bean)}
+    .toolbar{display:flex;gap:10px;align-items:center;margin:10px 0 16px;flex-wrap:wrap}
+    .date{height:44px;border-radius:12px;border:1px solid var(--stroke);padding:0 10px;background:#fff}
+    .btn{height:44px;border-radius:999px;padding:0 16px;font-weight:700;cursor:pointer;border:1px solid transparent}
+    .btn.primary{background:var(--teal);color:#fff;border-color:var(--teal);box-shadow:0 6px 16px rgba(36,106,115,.18)}
+    .small{font-size:12px;opacity:.75;margin-left:6px}
+    .grid{display:grid;gap:14px;grid-template-columns:repeat(3,minmax(180px,1fr))}
+    @media (max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
+    @media (max-width:560px){.grid{grid-template-columns:1fr}}
+    .slot{background:#fff;border:1px solid var(--stroke);border-radius:12px;padding:14px 18px;text-align:center;box-shadow:0 6px 16px rgba(49,14,16,.06);cursor:pointer;transition:.2s;font-weight:800}
+    .slot:hover{transform:translateY(-1px);box-shadow:0 10px 26px rgba(49,14,16,.1)}
+    .slot.full{opacity:.35;text-decoration:line-through;pointer-events:none}
+    .slot.active{outline:3px solid color-mix(in oklab, var(--teal) 45%, white);border-color:color-mix(in oklab, var(--teal) 35%, white);background:#fff}
+    .warn{background:#fff3cd;border:1px solid #ffe69c;color:#664d03;border-radius:12px;padding:10px 12px;margin:8px 0}
+    .empty{color:#5b4d44;opacity:.9;margin:8px 0 0 0}
+  
+.brand-right{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-badge{width:64px;height:64px;border-radius:16px;background:linear-gradient(145deg,#246A73,#39a8b6);display:grid;place-items:center;box-shadow:0 10px 24px rgba(36,106,115,.28)}
+.logo-badge svg{width:34px;height:34px;fill:#fff}
+.brand-sub{display:none}
+
+.brand-right{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-img{width:88px;height:auto;border-radius:14px;box-shadow:0 10px 24px rgba(36,106,115,.18)}
+.brand-sub{display:none}
+.hwrap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0}
+
+.nav-left{display:flex;gap:8px;align-items:center}
+.brand-left{display:flex;align-items:center;gap:10px;text-decoration:none}
+.nav-right{display:flex;gap:8px;align-items:center}
+
+/* Microinteractions */
+.tag, .chip { transition: transform .06s ease, background-color .2s ease, box-shadow .2s ease; }
+.tag.pressed, .chip.pressed { transform: translateY(1px) scale(0.98); box-shadow: inset 0 2px 6px rgba(0,0,0,.08); }
+
+.fade-on-scroll { opacity:0; transform: translateY(8px); transition: opacity .6s ease, transform .6s ease; }
+.fade-on-scroll.in { opacity:1; transform:none; }
+
+/* Breadcrumbs */
+.breadcrumbs { display:flex; gap:.5rem; align-items:center; font-size:.9rem; color: var(--muted, #6f5a54); margin: .5rem 0 1rem; }
+.breadcrumbs a { color: inherit; text-decoration: none; }
+.breadcrumbs a[aria-current="page"] { color: var(--ink, #2E1A16); font-weight: 600; }
+.breadcrumbs .sep { opacity:.6; }
+
+/* Bigger CTA */
+.btn-primary, .reserve-btn { font-size:1.05rem; padding:.9rem 1.25rem; border-radius:14px; }
+
+/* Header controls */
+.header-controls { display:flex; gap:.5rem; align-items:center; }
+.header-controls select { border:1px solid var(--stroke,#eadfca); background:white; padding:.4rem .6rem; border-radius:10px; font-size:.95rem; }
+
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* Elegant Didone-style numerals on timetable */
+.slot{
+  font-family: 'Bodoni Moda', 'Playfair Display', serif !important;
+  font-variant-numeric: lining-nums tabular-nums; /* lining for classic look; tabular if supported */
+  letter-spacing: .01em;
+  font-weight: 600;
+}
+/* Also apply to any time readouts in meta/summary, if present */
+.meta time, .time-num{
+  font-family: 'Bodoni Moda', 'Playfair Display', serif !important;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+@media (max-width: 560px){
+  .slot{ font-weight: 700; letter-spacing: 0; } /* keep legibility on small screens */
+}
+
+.brand-right{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-badge{width:64px;height:64px;border-radius:16px;background:linear-gradient(145deg,#246A73,#39a8b6);display:grid;place-items:center;box-shadow:0 10px 24px rgba(36,106,115,.28)}
+.logo-badge svg{width:34px;height:34px;fill:#fff}
+.brand-sub{display:none}
+
+.brand-right{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-img{width:88px;height:auto;border-radius:14px;box-shadow:0 10px 24px rgba(36,106,115,.18)}
+.brand-sub{display:none}
+.hwrap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0}
+
+.nav-left{display:flex;gap:8px;align-items:center}
+.brand-left{display:flex;align-items:center;gap:10px;text-decoration:none}
+.nav-right{display:flex;gap:8px;align-items:center}
+</style>
+
+
+<style id="hide-old-slots">
+/* Hide single-day time slots UI (kept in DOM but invisible) */
+.container .toolbar,
+#slots,
+#noSlots { display:none !important; }
+</style>
+
+<style id="fixed-footer-style">
+#ft{
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  background:#faf6ef;
+  padding:10px 0;
+  text-align:center;
+  color:#6b5e55;
+  font-size:13px;
+  border-top:1px solid #eadfca;
+  z-index:999;
+}
+#ft a{ color:#6b5e55; text-decoration:none; margin:0 10px; }
+#ft a:hover{ text-decoration:underline; }
+body{ padding-bottom:60px; } /* avoid overlap */
+</style>
+
+<style id="hpGridTweak">
+/* Tweak weekly grid: reduce visual width, add breathing space */
+#hpGridWrap{ max-width: 1000px; margin: 20px auto; }
+#hpGrid table{ width: 100%; }
+#hpGrid th{ font-size: 12px; padding: 6px 8px; }
+#hpGrid td{ padding: 4px; }
+#hpGrid button{ width: 32px; height: 24px; border-radius: 8px; }
+#hpWeekTitle{ font-size: 16px; }
+@media (max-width: 1200px){
+  #hpGridWrap{ max-width: 920px; }
+}
+@media (max-width: 980px){
+  #hpGridWrap{ max-width: 100%; }
+}
+</style>
+
+<style id="hpGridCenter">
+#hpGridWrap{ max-width: 1000px; margin: 20px auto; text-align:center; }
+#hpGrid{ display:inline-block; text-align:left; }
+</style>
+
+<style id="hpGridAlign">
+/* Align schedule box with menu box and center */
+#hpGridWrap{
+  max-width: 90%;
+  margin: 20px auto;
+  background:#fff;
+  border:1px solid var(--stroke);
+  border-radius:14px;
+  padding:16px;
+  box-sizing:border-box;
+}
+#hpGridWrap h2{ text-align:center; }
+</style>
+
+<style id="hpGridCardFit">
+/* Align weekly schedule card with other white cards and center it */
+#hpGridWrap{
+  max-width: 860px;          /* card width to match typical form card */
+  margin: 24px auto;         /* center */
+  background:#fff;
+  border:1px solid var(--stroke);
+  border-radius:14px;
+  box-shadow:0 10px 24px rgba(49,14,16,.08);
+  padding:14px 16px;
+}
+#hpWeekTitle{ text-align:center; }
+#hpGrid{ overflow:auto; }
+</style>
+
+<style id="hpGridCenterFix">
+#hpGrid table {
+  margin: 0 auto;       /* Center horizontally */
+  display: table;
+}
+</style>
+
+<style id="hpGridCenterFINAL">
+#hpGrid table{ width:auto !important; margin:0 auto; display:table; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <a id="back" class="back-link" href="./index.html">← サイトへ戻る</a>
+
+    <div class="card">
+      <h1 id="r_item" class="title">Reservation</h1>
+      <div id="r_salon" class="meta">Salon #-</div>
+      <div id="r_price" class="price">支払い: 現地支払い</div>
+      <div class="meta"><span id="r_dur">所要時間: 60分</span></div>
+      <div id="r_warn" class="warn" style="display:none"></div>
+    </div>
+
+    <div class="card" id="menuCard">
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <label style="font-weight:800">メニュー</label>
+    <select id="menuSelect" class="date" style="min-width:240px"></select>
+    <span id="menuMeta" class="meta"></span>
+    <div class="staff-row" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
+      <label for="staffSelect" style="font-weight:800">施術者</label>
+      <select id="staffSelect" name="staff" class="date" style="min-width:240px">
+        <option value="">指名なし</option>
+      </select>
+      <span class="small" style="opacity:.7">/ Staff (No preference available)</span>
+    </div>
+  </div>
+</div>
+
+    <div class="toolbar">
+      <input id="date" class="date" type="date" />
+      <button id="gen" class="btn primary reserve-btn">候補を表示</button>
+      <span class="small">※ 営業時間 10:00 - 20:00（30分刻み）</span>
+    </div>
+
+    <div id="slots" class="grid"></div>
+    <div id="noSlots" class="empty" style="display:none">候補が見つかりません。別の日付をお試しください。</div>
+  </div>
+
+  <script>
+
+// i18n helper
+function getLang(){ try{ const pref=localStorage.getItem('bl_lang')||'auto'; if(pref==='auto'){ const ja=(navigator.language||'en').toLowerCase().startsWith('ja'); return ja?'ja':'en'; } return pref; }catch(e){ return 'ja'; } }
+
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  if(getLang()==='en'){
+    const dict = {
+      '候補を表示':'Show time slots',
+      '所要時間:':'Duration:',
+      'メニュー':'Menu'
+    };
+    document.querySelectorAll('button, .title, .meta, label, .small').forEach(el=>{
+      let t=el.textContent.trim();
+      if(dict[t]) el.textContent = dict[t];
+      if(el.id==='back'){ el.textContent='← Back to site'; }
+    });
+  }
+});
+
+  (function(){
+    const p = new URLSearchParams(location.search);
+    const salonId   = p.get('salonId')   || '';
+    const salonName = p.get('salonName') || (salonId? ('Salon #' + salonId): '');
+    const item      = p.get('item')      || 'Reservation';
+    const priceUSD  = Number(p.get('price') || 0);
+    const dateParam = p.get('date') || ''; // optional ?date=YYYY-MM-DD
+
+    const LANG = localStorage.getItem('lang') || 'ja';
+    const USD_TO_JPY = Number(localStorage.getItem('usd_to_jpy')) || 170;
+    const usd=n=> '$'+Number(n).toFixed(2);
+    const jpy=n=> '¥'+Math.round(Number(n)*USD_TO_JPY).toLocaleString('ja-JP');
+    const money = n => LANG==='ja'? jpy(n): usd(n);
+
+    document.getElementById('r_item').textContent=item;
+    document.getElementById('r_salon').textContent= salonName || 'Salon #-';
+    document.getElementById('r_price').textContent = priceUSD ? ('支払い: ' + money(priceUSD)) : '支払い: 現地支払い';
+
+    const warn = document.getElementById('r_warn');
+    if(!salonId || !item){
+      warn.style.display = 'block';
+      warn.textContent = '予約メニューの情報が不足しています。サロンの「詳細」→「予約へ」から入り直してください。';
+    }
+
+    const slotsEl = document.getElementById('slots');
+    const genBtn = document.getElementById('gen');
+    const dateEl = document.getElementById('date');
+    const noSlots = document.getElementById('noSlots');
+
+    function buildSlots(dateStr){
+      slotsEl.innerHTML='';
+      noSlots.style.display='none';
+      if(!dateStr){ return; }
+
+      const [y,m,d] = dateStr.split('-').map(Number);
+      if(!y || !m || !d){ noSlots.style.display = 'block'; noSlots.textContent='日付の形式が正しくありません。'; return; }
+
+      const base = new Date(y, m-1, d, 10, 0, 0, 0);
+      const end  = new Date(y, m-1, d, 20, 0, 0, 0);
+
+      let t = base.getTime();
+      const endMs = end.getTime();
+      const step = 30*60*1000;
+      let count = 0;
+
+      while(t<=endMs){
+        const dt = new Date(t);
+        const h = String(dt.getHours()).padStart(2,'0');
+        const mm = String(dt.getMinutes()).padStart(2,'0');
+        const btn = document.createElement('button');
+        btn.className = "time-slot";
+        btn.setAttribute("data-time", dt.toISOString());
+        btn.className='slot time-slot';
+        btn.setAttribute('data-time', dt.toISOString());
+        btn.textContent = `${h}:${mm}`;
+        btn.onclick = ()=>{
+          document.querySelectorAll('.slot.active').forEach(x=>x.classList.remove('active'));
+          btn.classList.add('active');
+          const sp = new URLSearchParams({ salonId, salonName, item, price:String(priceUSD), time: dt.toISOString() });
+          location.href = './confirm.html?' + sp.toString();
+        };
+        slotsEl.appendChild(btn);
+        count++; t += step;
+      }
+
+      if(count===0){ noSlots.style.display='block'; }
+    }
+
+    genBtn.addEventListener('click', ()=>{
+      const val = dateEl.value;
+      if(!val){ dateEl.focus(); dateEl.reportValidity?.(); return; }
+      buildSlots(val);
+      slotsEl.scrollIntoView({behavior:'smooth',block:'start'});
+    });
+
+    // Prefill a date and render immediately (so timetable always visible on load)
+    try{
+      const today = new Date();
+      const f = (n)=> String(n).padStart(2,'0');
+      const defaultDate = dateParam || `${today.getFullYear()}-${f(today.getMonth()+1)}-${f(today.getDate())}`;
+      dateEl.value = defaultDate;
+      buildSlots(defaultDate);
+    }catch(e){}
+  })();
+  </script>
+
+
+<footer id="ft" style="margin:18px 0 40px;text-align:center;color:#6b5e55;font-size:12px">
+  <a href="terms.html" class="ft-link" data-ft="terms" style="margin:0 10px">Terms</a>·
+  <a href="privacy.html" class="ft-link" data-ft="privacy" style="margin:0 10px">Privacy</a>·
+  <a href="cancel.html" class="ft-link" data-ft="cancel" style="margin:0 10px">Cancel Policy</a>·
+  <a href="contact.html" class="ft-link" data-ft="contact" style="margin:0 10px">Contact</a>
+</footer>
+<div id="ftModal" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:9999">
+  <div id="ftBackdrop" style="position:absolute;inset:0;background:rgba(0,0,0,.4)"></div>
+  <div role="dialog" aria-modal="true" aria-labelledby="ftTitle"
+       style="position:relative;background:#fff;border:1px solid #eadfca;border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,.18);
+              width:min(92vw,720px);max-height:80vh;overflow:auto;padding:18px">
+    <div style="display:flex;align-items:center;gap:8px;justify-content:space-between;margin-bottom:8px">
+      <div id="ftTitle" style="font-weight:900">Terms</div>
+      <button id="ftClose" style="border:none;background:#fff;border:1px solid #eadfca;border-radius:10px;padding:6px 10px;cursor:pointer">Close</button>
+    </div>
+    <div id="ftBody" style="line-height:1.7;color:#2E1A16;font-size:14px">
+      <p>Loading…</p>
+    </div>
+  </div>
+</div>
+
+
+
+<section class="section" id="hpGridWrap" style="background:#fff;border:1px solid var(--stroke);border-radius:14px;margin:16px 0;padding:14px">
+  <h2 style="margin:0 0 8px;font-size:18px">Select date & time</h2>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+    <button id="hpPrev" class="btn reserve-btn" type="button" style="padding:6px 10px;border:1px solid var(--stroke);border-radius:10px;background:#fff;cursor:pointer">‹ Prev</button>
+    <div id="hpWeekTitle" style="font-weight:700"></div>
+    <button id="hpNext" class="btn reserve-btn" type="button" style="padding:6px 10px;border:1px solid var(--stroke);border-radius:10px;background:#fff;cursor:pointer">Next ›</button>
+  </div>
+  <div id="hpGrid" style="overflow:auto;border:1px solid var(--stroke);border-radius:12px"></div>
+  <div id="hpLegend" style="margin-top:8px;color:#6b5e55;font-size:12px">◯ Available　× Unavailable</div>
+</section>
+<script>
+// HPB-like weekly schedule grid (append-only, non-destructive)
+(function(){
+  if(window.__hpGridInstalled) return; window.__hpGridInstalled = true;
+  const baseColor = getComputedStyle(document.documentElement).getPropertyValue('--teal') || '#246A73';
+  const grid = document.getElementById('hpGrid');
+  const title = document.getElementById('hpWeekTitle');
+  const btnPrev = document.getElementById('hpPrev');
+  const btnNext = document.getElementById('hpNext');
+  // Settings
+  const startHour = 9, endHour = 18, stepMin = 30;
+  let weekOffset = 0; // 0 = current week
+
+  function getWeekStart(d){
+    const dt = new Date(d); const day=(dt.getDay()+6)%7; // Monday=0
+    dt.setDate(dt.getDate()-day); dt.setHours(0,0,0,0); return dt;
+  }
+  function addDays(d, n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+  function fmtDate(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  function fmtHm(h,m){ return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); }
+
+  function buildWeek(offset){
+    const today = new Date();
+    const ws = getWeekStart(addDays(today, offset*7));
+    const we = addDays(ws, 6);
+    title.textContent = ws.toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'}) + ' – ' + we.toLocaleDateString(undefined,{month:'long',day:'numeric'});
+
+    // Build table
+    const times=[];
+    for(let h=startHour; h<endHour; h++){
+      for(let m=0; m<60; m+=stepMin) times.push([h,m]);
+    }
+    const days = Array.from({length:7},(_,i)=>addDays(ws,i));
+
+    // style
+    const table = document.createElement('table');
+    table.style.width='100%'; table.style.borderCollapse='separate'; table.style.borderSpacing='0';
+    const thead=document.createElement('thead'), tbody=document.createElement('tbody');
+
+    // header row
+    const hr=document.createElement('tr');
+    const corner=document.createElement('th'); corner.style.position='sticky'; corner.style.left='0'; corner.style.background='#fff'; corner.style.borderBottom='1px solid var(--stroke)'; corner.style.zIndex='2'; hr.appendChild(corner);
+    days.forEach(d=>{
+      const th=document.createElement('th');
+      th.style.position='sticky'; th.style.top='0'; th.style.background='#fff'; th.style.borderBottom='1px solid var(--stroke)';
+      th.style.padding='8px'; th.style.fontWeight='700';
+      th.textContent = d.toLocaleDateString(undefined,{month:'short',day:'numeric',weekday:'short'});
+      hr.appendChild(th);
+    });
+    thead.appendChild(hr);
+
+    // rows
+    times.forEach(([h,m])=>{
+      const tr=document.createElement('tr');
+      const th=document.createElement('th');
+      th.textContent = fmtHm(h,m);
+      th.style.position='sticky'; th.style.left='0'; th.style.background='#fff'; th.style.borderRight='1px solid var(--stroke)';
+      th.style.padding='6px 8px'; th.style.fontWeight='600';
+      tr.appendChild(th);
+      days.forEach(d=>{
+        const td=document.createElement('td');
+        td.style.textAlign='center'; td.style.padding='6px 4px'; td.style.borderBottom='1px solid var(--stroke)'; td.style.borderRight='1px solid var(--stroke)';
+        // Default availability: show ◯ by default; availability adapter will set × for booked slots.
+        let mark='◯', color=baseColor.trim()||'#246A73';
+        const btn=document.createElement('button');
+        btn.textContent=mark;
+        btn.style.border='1px solid var(--stroke)'; btn.style.borderRadius='8px'; btn.style.background='#fff';
+        btn.style.width='36px'; btn.style.height='28px'; btn.style.cursor='pointer';
+        btn.style.color=color;
+        btn.disabled = false;
+        btn.addEventListener('click', ()=>{
+          const dt = new Date(d); dt.setHours(h,m,0,0);
+          const iso = dt.toISOString();
+          // If page has an input for datetime, set it; else store in localStorage and alert
+          const input = document.querySelector('input[type="datetime-local"], input[data-reserve-dt]');
+          if(input){
+            const tzOffset = dt.getTimezoneOffset()*60000;
+            input.value = new Date(dt - tzOffset).toISOString().slice(0,16);
+          }
+          localStorage.setItem('reserve_selected', iso);
+          alert('Selected: ' + dt.toLocaleString());
+        });
+        td.appendChild(btn);
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(thead); table.appendChild(tbody);
+    grid.innerHTML = ''; grid.appendChild(table);
+  }
+
+  buildWeek(weekOffset);
+  btnPrev && btnPrev.addEventListener('click', ()=>{ weekOffset--; buildWeek(weekOffset); });
+  btnNext && btnNext.addEventListener('click', ()=>{ weekOffset++; buildWeek(weekOffset); });
+})();
+</script>
+
+<script>
+// Footer modal (inline content, no fetch). Ensures single instance and prevents navigation.
+(function(){
+  if(window.__ftModalInstalledInline) return; window.__ftModalInstalledInline = true;
+  const modal = document.getElementById('ftModal');
+  const body  = document.getElementById('ftBody');
+  const title = document.getElementById('ftTitle');
+  const closeBtn = document.getElementById('ftClose');
+  const backdrop = document.getElementById('ftBackdrop');
+
+  const CONTENT = {
+    terms: {title:'Terms', html:'<p>Use of this site is subject to local laws and our booking guidelines. Users agree to provide accurate information and to comply with shop policies.</p>'},
+    privacy: {title:'Privacy', html:'<p>We store minimal data (e.g., favorites, reservations, language) in your browser. We do not sell personal data.</p>'},
+    cancel: {title:'Cancel Policy', html:'<p>Free cancellation until 24 hours before your appointment. Within 24 hours, please contact the shop directly.</p>'},
+    contact: {title:'Contact', html:'<p>Email: support@beautylanka.example<br>Phone: +94 11 000 0000</p>'}
+  };
+
+  function open(kind){
+    const c = CONTENT[kind] || CONTENT.terms;
+    title.textContent = c.title;
+    body.innerHTML = c.html;
+    modal.style.display = 'flex';
+  }
+  function close(){ modal.style.display='none'; }
+
+  document.addEventListener('click', (e)=>{
+    const a = e.target.closest && e.target.closest('a.ft-link');
+    if(a){ e.preventDefault(); open(a.getAttribute('data-ft')); }
+  });
+  closeBtn && closeBtn.addEventListener('click', close);
+  backdrop && backdrop.addEventListener('click', close);
+})();
+</script>
+
+<script id="hide-dup-footer">
+(function(){
+  if(window.__hideDupFooter) return; window.__hideDupFooter = true;
+  function hideDup(){
+    const matcher = /Terms\s*[・·\.]?\s*Privacy\s*[・·\.]?\s*Cancel Policy\s*[・·\.]?\s*Contact/i;
+    document.querySelectorAll('body :not(#ft):not(#ft *)').forEach(el=>{
+      try{
+        if(el instanceof HTMLElement){
+          const txt = (el.textContent||'').trim();
+          if(txt && matcher.test(txt)){
+            el.style.display = 'none';
+          }
+        }
+      }catch(e){}
+    });
+  }
+  if(document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', hideDup); } else { hideDup(); }
+  new MutationObserver(hideDup).observe(document.body, {childList:true, subtree:true});
+})();
+</script>
+
+<script id="ft-dedupe-hard">
+(function(){
+  if(window.__ftDedupeHard) return; window.__ftDedupeHard = true;
+  function hideDup(){
+    // find containers that have all four links but are not #ft
+    const terms = Array.from(document.querySelectorAll('a[href*="terms"], a.ft-link[data-ft="terms"]'));
+    terms.forEach(a=>{
+      const root = a.closest('#ft') ? null : a.closest('footer, div, section, p');
+      if(!root) return;
+      const hasPrivacy = root.querySelector('a[href*="privacy"], a.ft-link[data-ft="privacy"]');
+      const hasCancel  = root.querySelector('a[href*="cancel"], a.ft-link[data-ft="cancel"]');
+      const hasContact = root.querySelector('a[href*="contact"], a.ft-link[data-ft="contact"]');
+      if(hasPrivacy && hasCancel && hasContact){
+        root.style.display = 'none';
+      }
+    });
+  }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', hideDup); } else { hideDup(); }
+  new MutationObserver(hideDup).observe(document.body, {childList:true, subtree:true});
+})();
+</script>
+
+<script id="hpGridAutoAlign">
+(function(){
+  if(window.__hpGridAutoAlign) return; window.__hpGridAutoAlign = true;
+  function getWhiteCard(el){
+    // climb up to the nearest white-background block (the "card" above)
+    while(el && el !== document.body){
+      const cs = getComputedStyle(el);
+      const bg = cs.backgroundColor.replace(/\s+/g,'');
+      const isWhite = bg === 'rgb(255,255,255)' || bg === '#fff' || bg === 'white';
+      const hasShadow = cs.boxShadow && cs.boxShadow !== 'none';
+      if(isWhite && (hasShadow || cs.borderRadius !== '0px')) return el;
+      el = el.parentElement;
+    }
+    return null;
+  }
+  function align(){
+    const wrap = document.getElementById('hpGridWrap');
+    if(!wrap) return;
+    // Anchor: try the Menu select box or its card
+    let anchor = document.getElementById('menuSelect');
+    if(anchor) anchor = getWhiteCard(anchor) || anchor.closest('.section, .card') || anchor.parentElement;
+    if(!anchor){
+      // fallback: the first white card above the schedule
+      let prev = wrap.previousElementSibling;
+      while(prev && !getWhiteCard(prev)) prev = prev.previousElementSibling;
+      anchor = prev || wrap.parentElement;
+    }
+    const aCard = getWhiteCard(anchor) || anchor;
+    const targetW = aCard ? aCard.clientWidth : wrap.clientWidth;
+    if(targetW && Math.abs(wrap.clientWidth - targetW) > 2){
+      wrap.style.maxWidth = targetW + 'px';
+      wrap.style.width = targetW + 'px';
+    }
+    // center it
+    wrap.style.marginLeft = 'auto';
+    wrap.style.marginRight = 'auto';
+    // ensure inner table is centered
+    const tbl = document.querySelector('#hpGrid table');
+    if(tbl){
+      tbl.style.width = 'auto';
+      tbl.style.margin = '0 auto';
+      tbl.style.display = 'table';
+    }
+  }
+  if(document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', align); } else { align(); }
+  window.addEventListener('resize', align);
+  new MutationObserver(align).observe(document.body, {childList:true, subtree:true});
+})();
+</script>
+
+<script id="hpGridAutoAlignFix2">
+(function(){
+  if(window.__hpGridAutoAlignFix2) return; window.__hpGridAutoAlignFix2 = true;
+  function findCard(el){
+    while(el && el !== document.body){
+      const cs = getComputedStyle(el);
+      const isWhite = /rgb\(255,\s*255,\s*255\)|#fff|white/i.test(cs.backgroundColor||'');
+      const hasFrame = (cs.borderRadius && cs.borderRadius !== '0px') || (cs.boxShadow && cs.boxShadow !== 'none') || (cs.border && cs.border !== '0px none');
+      if(isWhite && hasFrame) return el;
+      el = el.parentElement;
+    }
+    return null;
+  }
+  function align(){
+    const wrap = document.getElementById('hpGridWrap');
+    if(!wrap) return;
+    // Menu select's parent card
+    let anchorSel = document.getElementById('menuSelect') || document.querySelector('[id*="menu"] select');
+    let card = anchorSel ? findCard(anchorSel) : null;
+    // Fallback: previous white card before the schedule
+    if(!card){
+      let prev = wrap.previousElementSibling;
+      while(prev && !findCard(prev)) prev = prev.previousElementSibling;
+      card = prev || wrap.parentElement;
+    }
+    const w = (card && card.getBoundingClientRect ? card.getBoundingClientRect().width : wrap.getBoundingClientRect().width) || 860;
+    const clamp = Math.max(820, Math.min(1024, Math.round(w))); // keep reasonable width
+    // Apply
+    wrap.style.width = 'auto';
+    wrap.style.maxWidth = clamp + 'px';
+    wrap.style.marginLeft = 'auto';
+    wrap.style.marginRight = 'auto';
+    // Ensure inner table well centered
+    const tbl = document.querySelector('#hpGrid table');
+    if(tbl){
+      tbl.style.width = 'auto';
+      tbl.style.margin = '0 auto';
+      tbl.style.display = 'table';
+    }
+  }
+  if(document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', align); } else { align(); }
+  window.addEventListener('resize', align);
+  new MutationObserver(align).observe(document.body, {childList:true, subtree:true});
+})();
+</script>
+
+<script id="availability-adapter">
+// Server-ready availability adapter with localStorage fallback.
+// Server API (if BEATY_API_BASE is set):
+//   GET  {API}/availability?start=YYYY-MM-DD&days=7&shopId=... -> {slots:[{iso:'...', status:'booked'|'available'|'few'}]}
+//   POST {API}/book  {shopId, iso} -> {ok:true}
+(function(){
+  if(window.__BLAvailability) return;
+  const API = window.BEAUTY_API_BASE || document.body.getAttribute('data-api-base') || null;
+  const SHOP = window.BEAUTY_SHOP_ID || document.body.getAttribute('data-shop-id') || 'default-shop';
+  const KEY = 'bookedSlots:'+SHOP;
+  async function fetchWeek(startISO){
+    if(API){
+      try{
+        const url = API.replace(/\/$/,'') + `/availability?start=${encodeURIComponent(startISO)}&days=7&shopId=${encodeURIComponent(SHOP)}`;
+        const res = await fetch(url, {credentials:'include'});
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        const data = await res.json();
+        const map = new Map();
+        (data.slots||[]).forEach(s=>{ map.set(s.iso, s.status||'booked'); });
+        return map;
+      }catch(e){ console.warn('Availability API failed, fallback to local', e); }
+    }
+    // Fallback: localStorage set of ISO strings
+    const arr = JSON.parse(localStorage.getItem(KEY) || '[]');
+    const map = new Map(arr.map(iso=>[iso,'booked']));
+    return map;
+  }
+  async function book(iso){
+    if(API){
+      try{
+        const url = API.replace(/\/$/,'') + `/book`;
+        const res = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({shopId: SHOP, iso})});
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        return true;
+      }catch(e){ console.warn('Book API failed, fallback to local', e); }
+    }
+    const arr = JSON.parse(localStorage.getItem(KEY) || '[]');
+    if(!arr.includes(iso)){ arr.push(iso); localStorage.setItem(KEY, JSON.stringify(arr)); }
+    return true;
+  }
+  window.__BLAvailability = { fetchWeek, book, shopId: SHOP };
+})();
+</script>
+
+<script id="availability-reservation-hook">
+// Hook the weekly grid to show real availability and save selected slot for server booking.
+(function(){
+  if(window.__BLResHook) return; window.__BLResHook = true;
+  function parseHeaderDates(table){
+    const headers = Array.from(table.querySelectorAll('thead tr th')).slice(1);
+    const out = headers.map(th => {
+      // try to parse "9月15日(月)" or "Sep 15 (Mon)" generically using Date
+      const txt = th.textContent.trim();
+      // Try using dataset from title if present
+      let d = new Date(txt);
+      if(isNaN(d)) {
+        // Extract month/day numbers fallback
+        const m = txt.match(/(\d{1,2})\D+(\d{1,2})/);
+        if(m){
+          const now = new Date();
+          d = new Date(now.getFullYear(), Number(m[1])-1, Number(m[2]));
+        }else{
+          d = new Date(); // fallback
+        }
+      }
+      d.setHours(0,0,0,0);
+      return d;
+    });
+    return out;
+  }
+  function parseTimes(table){
+    return Array.from(table.querySelectorAll('tbody tr')).map(tr=>{
+      const t = (tr.querySelector('th')||{}).textContent||'';
+      const m = t.match(/(\d{1,2}):(\d{2})/);
+      return m ? {h:Number(m[1]), m:Number(m[2]), tr} : null;
+    }).filter(Boolean);
+  }
+  async function applyAvailability(){
+    const tbl = document.querySelector('#hpGrid table');
+    if(!tbl || !window.__BLAvailability) return;
+    const days = parseHeaderDates(tbl); if(!days.length) return;
+    const weekStart = new Date(days[0]); weekStart.setHours(0,0,0,0);
+    const startISO = weekStart.toISOString().slice(0,10);
+    const amap = await window.__BLAvailability.fetchWeek(startISO);
+    const rows = parseTimes(tbl);
+    rows.forEach((row, rIdx)=>{
+      const cells = row.tr.querySelectorAll('td');
+      days.forEach((d, cIdx)=>{
+        const dt = new Date(d); dt.setHours(row.h, row.m, 0, 0);
+        const iso = dt.toISOString();
+        const td = cells[cIdx];
+        const btn = td && td.querySelector('button');
+        if(!btn) return;
+        btn.dataset.iso = iso;
+        const status = amap.get(iso);
+        if(status === 'booked'){ btn.textContent='×'; btn.disabled=true; btn.style.color='#bbb'; }
+        else { btn.textContent='◯'; btn.disabled=false; btn.style.color=''; }
+        // click -> save pending
+        btn.addEventListener('click', ()=>{
+          sessionStorage.setItem('pending_slot_iso', iso);
+        }, {once:false});
+      });
+    });
+  }
+  // Run initially and whenever the grid is rebuilt
+  const run = ()=> setTimeout(applyAvailability, 50);
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', run); } else { run(); }
+  new MutationObserver(run).observe(document.getElementById('hpGrid')||document.body, {childList:true, subtree:true});
+})();
+</script>
+
+<script>
+/*__RES_I18N_SUPPLEMENT__*/
+document.addEventListener('DOMContentLoaded', ()=>{
+  try{
+    const pref = localStorage.getItem('bl_lang') || 'auto';
+    const lang = (pref==='en' ? 'en' : (pref==='ja' ? 'ja' : ((navigator.language||'en').toLowerCase().startsWith('ja')?'ja':'en')));
+    if(lang!=='en') return;
+    const map = {
+      '← サイトへ戻る':'← Back to site','支払い: 現地支払い':'Payment: Pay at shop',
+      '候補を表示':'Show time slots','所要時間:':'Duration:','メニュー':'Menu',
+      '※ 営業時間 10:00 - 20:00（30分刻み）':'* Business hours 10:00 - 20:00 (every 30 min)',
+      '候補が見つかりません。別の日付をお試しください。':'No slots found. Please try another date.'
+    };
+    document.querySelectorAll('button, .title, .meta, label, .small, .empty, #r_price').forEach(el=>{
+      const t=(el.childNodes.length===1?(el.textContent||'').trim():'');
+      if(map[t]) el.textContent = map[t];
+    });
+  }catch(e){}
+});
+</script>
+
+
+<script>
+/*__RES_MENU_POPULATE__*/
+(function(){
+  try{
+    const MENUS={
+      "S1":[{id:"m1", name:"フルセット 120本", name_en:"Full set (120 lashes)", minutes:90, price:4250},
+            {id:"m2", name:"ボリュームラッシュ", name_en:"Volume lashes", minutes:120, price:5200}],
+      "S2":[{id:"m1", name:"全身アーユルヴェーダ", name_en:"Full-body Ayurveda", minutes:90, price:6630},
+            {id:"m2", name:"オイルトリートメント", name_en:"Oil treatment", minutes:60, price:4200}],
+      "S3":[{id:"m1", name:"ハーブ蒸し", name_en:"Herb steam", minutes:45, price:3500},
+            {id:"m2", name:"ボディスクラブ", name_en:"Body scrub", minutes:60, price:4800}]
+    };
+    const p=new URLSearchParams(location.search);
+    const salonId=p.get('salonId')||'S1';
+    const sel=document.getElementById('menuSelect');
+    const meta=document.getElementById('menuMeta');
+    if(!sel) return;
+    const pref = localStorage.getItem('bl_lang') || 'auto';
+    const lang = (pref==='en' ? 'en' : (pref==='ja' ? 'ja' : ((navigator.language||'en').toLowerCase().startsWith('ja')?'ja':'en')));
+    const items = MENUS[salonId]||[];
+    if(!sel.options.length){
+      const ph = document.createElement('option');
+      ph.value=''; ph.disabled=true; ph.selected=true;
+      ph.textContent = lang==='en' ? 'Select a menu' : 'メニューを選択';
+      sel.appendChild(ph);
+      items.forEach((it,i)=>{
+        const opt=document.createElement('option');
+        const name = (lang==='en' && it.name_en) ? it.name_en : it.name;
+        const dur = it.minutes ? ` (${it.minutes}${lang==='en'?' min':'分'})` : '';
+        opt.value=it.id; opt.textContent = name + dur;
+        opt.setAttribute('data-min', it.minutes||'');
+        opt.setAttribute('data-price', it.price||'');
+        sel.appendChild(opt);
+      });
+    }
+    sel.addEventListener('change', ()=>{
+      const o = sel.options[sel.selectedIndex];
+      const min = o.getAttribute('data-min')||'';
+      const prc = o.getAttribute('data-price')||'';
+      meta.textContent = [min?(lang==='en'? `${min} min`:`${min}分`):'', prc?('¥'+Number(prc).toLocaleString('ja-JP')):''].filter(Boolean).join(' · ');
+    });
+  }catch(e){}
+})();
+</script>
+
+
+<script>
+/*__RES_WEEK_EN__*/
+(function(){
+  try{
+    const pref = localStorage.getItem('bl_lang') || 'auto';
+    const lang = (pref==='en' ? 'en' : (pref==='ja' ? 'ja' : ((navigator.language||'en').toLowerCase().startsWith('ja')?'ja':'en')));
+    if(lang!=='en') return;
+
+    function parseJaRange(txt){
+      // e.g., "2025年9月15日 – 9月21日"
+      const m = txt.match(/(\d{4})年(\d+)月(\d+)日\s*–\s*(\d+)月(\d+)日/);
+      if(!m) return null;
+      const [_, y, m1, d1, m2, d2] = m.map(Number);
+      const y2 = y; // assume same year
+      const start = new Date(y, m1-1, d1);
+      const end = new Date(y2, m2-1, d2);
+      return {start, end};
+    }
+
+    function rewrite(){
+      const title = document.getElementById('hpWeekTitle');
+      const grid = document.getElementById('hpGrid');
+      if(!title || !grid) return;
+      const r = parseJaRange(title.textContent.trim());
+      if(!r) return;
+      // Title: "September 15, 2025 – September 21"
+      const t1 = r.start.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+      const t2 = r.end.toLocaleDateString('en-US',{month:'long',day:'numeric'});
+      title.textContent = t1 + ' – ' + t2;
+      // Column headers
+      const ths = grid.querySelectorAll('thead tr th');
+      if(ths && ths.length>=8){
+        for(let i=1;i<=7;i++){
+          const d = new Date(r.start); d.setDate(d.getDate()+ (i-1));
+          ths[i].textContent = d.toLocaleDateString('en-US',{month:'short',day:'numeric',weekday:'short'});
+        }
+      }
+      // Legend (◯ Available × Unavailable)
+      const lg = document.getElementById('hpLegend');
+      if(lg) lg.textContent = '◯ Available    × Unavailable';
+      // Buttons
+      const prev = document.getElementById('hpPrev');
+      const next = document.getElementById('hpNext');
+      if(prev) prev.textContent = '‹ Prev';
+      if(next) next.textContent = 'Next ›';
+    }
+
+    // Run now and after next/prev clicks
+    function scheduleRewrite(){ setTimeout(rewrite, 0); }
+    document.getElementById('hpPrev')?.addEventListener('click', scheduleRewrite);
+    document.getElementById('hpNext')?.addEventListener('click', scheduleRewrite);
+    // Also run once on load (after initial grid build)
+    window.addEventListener('load', scheduleRewrite);
+    // Try also after DOMContentLoaded
+    document.addEventListener('DOMContentLoaded', scheduleRewrite);
+  }catch(e){}
+})();
+</script>
+
+<script src="./app.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', async ()=>{
+  const sel = document.getElementById('staffSelect');
+  if(!sel || !window.BL_API) return;
+  const staff = await window.BL_API.listStaff();
+  const lang = window.BL_lang || 'en';
+  // keep "no preference" at top
+  staff.forEach(s=>{
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = s.name;
+    sel.appendChild(opt);
+  });
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', async ()=>{
+  const sel = document.getElementById('staffSelect');
+  if(sel && window.BL_API){
+    const staff = await window.BL_API.listStaff();
+    staff.forEach(s=>{
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = s.name;
+      sel.appendChild(opt);
+    });
+  }
+  // Hook time slot buttons
+  document.querySelectorAll('.time-slot, button[data-time]').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      e.preventDefault();
+      const time = btn.getAttribute('data-time');
+      const staffId = sel ? sel.value : '';
+      localStorage.setItem('bl_reservation_time', time);
+      localStorage.setItem('bl_reservation_staff', staffId);
+      window.location.href = 'confirm.html';
+    });
+  });
+});
+</script>
+
+
+<script id="redirect-on-slot-select">
+// Intercept "Selected: YYYY/M/D HH:MM:SS" alerts from the timetable and redirect to confirm.html
+(function(){
+  const _origAlert = window.alert;
+  window.alert = function(msg){
+    try{
+      if (typeof msg === 'string' && /^Selected:\s*/.test(msg)) {
+        // Extract datetime string after "Selected:"
+        const raw = msg.replace(/^Selected:\s*/,'').trim();
+        // Gather info from the current page
+        const item  = (document.getElementById('r_item')  || {}).textContent || '';
+        const salon = (document.getElementById('r_salon') || {}).textContent || '';
+        const price = (document.getElementById('r_price') || {}).textContent || '';
+        const menuSel = document.getElementById('menuSelect');
+        const menuId  = menuSel && menuSel.value ? menuSel.value : '';
+        const menuName= menuSel && menuSel.options && menuSel.selectedIndex>=0 ? menuSel.options[menuSel.selectedIndex].textContent.trim() : item;
+        const staffSel= document.getElementById('staffSelect');
+        const staffId = staffSel && staffSel.value ? staffSel.value : '';
+        const staffName = staffSel && staffSel.options && staffSel.selectedIndex>=0 ? staffSel.options[staffSel.selectedIndex].textContent.trim() : '';
+
+        // Build URL params
+        const p = new URLSearchParams({
+          item: menuName || item,
+          salon: salon.replace(/^Salon\s*/,'').trim(),
+          time: raw,
+          price: price.replace(/^支払い[:：]?\s*/,'').trim(),
+          staffId: staffId,
+          staffName: staffName
+        });
+        // Try to preserve salonId from query
+        const cur = new URL(location.href);
+        const salonId = cur.searchParams.get('salonId');
+        if(salonId){ p.set('salonId', salonId); }
+
+        // Go to confirm
+        location.href = 'confirm.html?' + p.toString();
+        return;
+      }
+    }catch(e){ console.error(e); }
+    // fallback to original
+    return _origAlert.apply(window, arguments);
+  };
+})();
+</script>
+</body>
+
+</html>

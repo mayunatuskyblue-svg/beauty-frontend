@@ -1,0 +1,734 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>BeautyLanka | 詳細</title>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --base:#F7F1E1; --ink:#2E1A16; --stroke:#eadfca; --teal:#246A73; --muted:#6f5a54; --blue:#0A66FF;
+  --chip:#fff8ef;
+}
+*{box-sizing:border-box} body{margin:0;background:var(--base);color:var(--ink);
+  font-family:"Inter","Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
+.container{max-width:1100px;margin:0 auto;padding:0 16px}
+header{position:sticky;top:0;z-index:40;background:rgba(247,241,225,.92);border-bottom:1px solid var(--stroke)}
+.hwrap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0}
+.brand-left{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-img{width:88px;height:auto;border-radius:14px;box-shadow:0 10px 24px rgba(36,106,115,.18)}
+.btn{height:44px;border-radius:12px;border:1px solid var(--stroke);background:#fff;padding:0 14px;font-weight:700;cursor:pointer}
+.btn.primary{background:var(--teal);border-color:var(--teal);color:#fff;box-shadow:0 6px 14px rgba(36,106,115,.18)}
+.main{display:grid;grid-template-columns:1.2fr .8fr;gap:16px;margin:14px 0}
+@media(max-width:960px){ .main{grid-template-columns:1fr} }
+.media{position:relative;background:#000;border-radius:14px;overflow:hidden}
+.carousel{display:flex;overflow-x:hidden;scroll-snap-type:x mandatory}
+.carousel img{height:420px;width:100%;object-fit:cover;flex:0 0 100%;scroll-snap-align:center}
+.nav{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
+.nav button{pointer-events:auto;border:none;background:rgba(0,0,0,.35);width:44px;height:44px;border-radius:999px;color:#fff;font-size:18px;cursor:pointer}
+.thumbs{display:flex;gap:6px;overflow-x:auto;padding:8px}
+.thumbs img{width:96px;height:64px;object-fit:cover;border-radius:6px;opacity:.75;cursor:pointer;border:1px solid #eee}
+.thumbs img.active{opacity:1;outline:2px solid var(--teal)}
+.title{font-size:26px;font-weight:900;margin:8px 0 4px}
+.meta{color:#6b5e55}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.tag{padding:6px 10px;border-radius:999px;border:1px solid var(--stroke);font-size:12px;background:#fff}
+.price{font-weight:900;font-size:20px;margin:4px 0 10px}
+.mapwrap iframe{width:100%;height:260px;border:0;border-radius:12px}
+.section{background:#fff;border:1px solid var(--stroke);border-radius:16px;box-shadow:0 10px 24px rgba(49,14,16,.08);padding:14px;margin:12px 0}
+.section h2{margin:0 0 8px;font-size:18px}
+.revlist{display:grid;gap:10px}
+.rev{border:1px solid var(--stroke);border-radius:12px;padding:10px}
+.rev input,.rev textarea, .rev select{width:100%;border:1px solid var(--stroke);border-radius:10px;padding:8px 10px;font:inherit}
+.row2{display:flex;gap:8px;flex-wrap:wrap}
+.notice{font-size:12px;color:var(--muted)}
+
+.menu{border:1px solid var(--stroke);border-radius:12px;padding:10px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.menu .name{font-weight:900}
+.menu .meta{font-size:12px;color:#6b5e55}
+.menu .price{font-weight:900}
+
+/* Microinteractions */
+.tag, .chip { transition: transform .06s ease, background-color .2s ease, box-shadow .2s ease; }
+.tag.pressed, .chip.pressed { transform: translateY(1px) scale(0.98); box-shadow: inset 0 2px 6px rgba(0,0,0,.08); }
+
+.fade-on-scroll { opacity:0; transform: translateY(8px); transition: opacity .6s ease, transform .6s ease; }
+.fade-on-scroll.in { opacity:1; transform:none; }
+
+/* Breadcrumbs */
+.breadcrumbs { display:flex; gap:.5rem; align-items:center; font-size:.9rem; color: var(--muted, #6f5a54); margin: .5rem 0 1rem; }
+.breadcrumbs a { color: inherit; text-decoration: none; }
+.breadcrumbs a[aria-current="page"] { color: var(--ink, #2E1A16); font-weight: 600; }
+.breadcrumbs .sep { opacity:.6; }
+
+/* Bigger CTA */
+.btn-primary, .reserve-btn { font-size:1.05rem; padding:.9rem 1.25rem; border-radius:14px; }
+
+/* Header controls */
+.header-controls { display:flex; gap:.5rem; align-items:center; }
+.header-controls select { border:1px solid var(--stroke,#eadfca); background:white; padding:.4rem .6rem; border-radius:10px; font-size:.95rem; }
+
+
+.reviews{display:grid;gap:12px;margin:8px 0 12px}
+.review{background:#fff;border:1px solid var(--stroke);border-radius:14px;padding:12px 14px}
+.review .meta{font-size:.9rem;opacity:.8;margin-bottom:4px}
+
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<header>
+  <div class="container hwrap">
+    <a class="brand-left" href="./index.html" aria-label="BeautyLanka"><img class="logo-img" src="assets/images/logo_mark.png" alt="BeautyLanka logo"></a>
+    <div></div>
+  </div>
+
+      <div class="header-controls">
+        <label class="small" style="opacity:.7">Lang</label>
+        <select id="langSelect">
+          <option value="auto">Auto</option>
+          <option value="ja">日本語</option>
+          <option value="en">English</option>
+        </select>
+        <label class="small" style="opacity:.7">Currency</label>
+        <select id="currencySelect">
+          <option value="USD">USD</option>
+          <option value="JPY">JPY</option>
+          <option value="LKR">LKR</option>
+          <option value="EUR">EUR</option>
+        </select>
+      </div>
+    </header>
+<div class="container"><nav class="breadcrumbs" aria-label="Breadcrumb"></nav></div>
+<div class="container">
+  <div class="main">
+    <div>
+      <div class="media">
+        <div class="carousel" id="carousel"></div>
+        <div class="nav">
+          <button id="prev">‹</button>
+          <button id="next">›</button>
+        </div>
+      </div>
+      <div class="thumbs" id="thumbs"></div>
+      <div class="section">
+        <h2>店舗情報</h2>
+        <div class="tags" id="tags"></div>
+        <div class="price" id="price"></div>
+        <p id="points" style="margin:.4em 0 0"></p>
+      </div>
+      
+      <div class="section">
+        <h2>メニュー</h2>
+<div id="menuSelectWrap" class="box" style="margin:14px 0 6px;padding:12px 16px"><label class="title" id="menuSelectLabel">メニュー</label><select id="menuSelect" style="margin-left:12px;min-width:260px"></select><div id="menuHint" class="small" style="margin-top:8px;opacity:.85"></div><div id="menuSelectActions" style="margin-top:8px;display:flex;gap:8px"><button id="goReserveByMenu" class="btn reserve-btn" disabled>予約へ進む</button></div></div>
+        <div id="menuList"></div>
+      </div>
+      <div class="section">
+        <h2>クーポン</h2>
+        <div id="couponList"></div>
+      </div>
+
+      <div class="section">
+        <h2>地図・道順</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+          <button class="btn reserve-btn" id="route">Googleで道順</button>
+        </div>
+        <div class="mapwrap"><iframe id="map" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
+      </div>
+    </div>
+    <aside>
+      <div class="section">
+        <h2 id="name">店舗名</h2>
+        <div class="meta" id="meta"></div>
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn reserve-btn" onclick="history.back()">一覧に戻る</button>
+          <button class="btn primary reserve-btn" id="reserve">予約へ進む</button>
+        </div>
+      </div>
+      <div class="section">
+        <h2>口コミ</h2>
+        <div class="notice" id="gateMsg">※投稿は予約済みの方のみ（Thank You 到達で自動開放）</div>
+        <div class="revlist" id="revlist"></div>
+        <div id="revform">
+          <div class="row2" style="margin-top:6px">
+            <input id="revName" placeholder="お名前">
+            <select id="revCountry">
+              <option value="">国籍を選択</option>
+              <option>日本</option><option>Sri Lanka</option><option>USA</option><option>UK</option>
+              <option>India</option><option>China</option><option>Korea</option><option>France</option><option>Germany</option>
+            </select>
+          </div>
+          <textarea id="revText" rows="3" placeholder="体験を教えてください" style="margin-top:6px"></textarea>
+          <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px">
+            <button class="btn reserve-btn" id="revSubmit">投稿</button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+
+// --- simple i18n helpers for tags/types ---
+function enTag(t){
+  const map = {'マツエク':'Lashes','スパ':'Spa','ハーブ':'Herbs','日本語対応':'Japanese support'};
+  return map[t] || t;
+}
+function enType(t){
+  const map = {'マツエク':'Lashes','スパ':'Spa','ハーブ':'Herbs','エステ':'Esthetics'};
+  return map[t] || t;
+}
+
+
+// 固定データ（assets配下の実ファイルを指す）
+const DATA=[
+  {id:"S1", name:"Silky Lashes Colombo", type:"マツエク", place:"コロンボ", lat:6.933, lng:79.85, price:4250, rating:4.6, tags:["マツエク","日本語対応"], points:"自然で長持ち。丁寧なカウンセリング。", photos:["assets/images/lashes_a.jpg","assets/images/lashes_b.jpg","assets/images/lashes_c.jpg"]},
+  {id:"S2", name:"Ayur Luxe Spa", type:"スパ", place:"ゴール", lat:6.025, lng:80.217, price:6630, rating:4.7, tags:["アーユルヴェーダ","リラク"], points:"本格アーユルヴェーダと静かな個室。", photos:["assets/images/spa_massage.jpg","assets/images/herbs_flatlay.jpg","assets/images/lashes_a.jpg"]},
+  {id:"S3", name:"Cinnamon Grow", type:"ハーブ", place:"キャンディ", lat:7.293, lng:80.641, price:5610, rating:4.5, tags:["ハーブ","リラク"], points:"自社ブレンドのハーブでリラックス。", photos:["assets/images/herbs_flatlay.jpg","assets/images/spa_massage.jpg","assets/images/lashes_b.jpg"]}
+];
+function yen(n){ return "¥"+(Number(n)||0).toLocaleString("ja-JP"); }
+
+const p=new URLSearchParams(location.search); const id=p.get('salonId')||'S1';
+const s=DATA.find(x=>x.id===id)||DATA[0];
+document.title = s.name + " | BeautyLanka";
+
+const L0=(localStorage.getItem('bl_lang')||'auto'); const lang=(L0==='en'?'en':(L0==='ja'?'ja':((navigator.language||'en').toLowerCase().startsWith('ja')?'ja':'en')));
+document.getElementById('name').textContent = s.name;
+document.getElementById('meta').textContent = (lang==='en' ? (s.place + ' · ' + enType(s.type) + ' / ★' + s.rating.toFixed(1)) : (s.place + '・' + s.type + '／★' + s.rating.toFixed(1)));
+document.getElementById('price').textContent = (lang==='en' ? ('From ' + yen(s.price)) : ('料金目安：' + yen(s.price) + '〜'));
+document.getElementById('points').textContent = (lang==='en' && s.pointsEn ? s.pointsEn : s.points);
+document.getElementById('tags').innerHTML = ((lang==='en' && s.tagsEn)? s.tagsEn : s.tags).map(t=>`<span class=\"tag\">${lang==='en'?enTag(t):t}</span>`).join('');
+document.getElementById('route').onclick=()=>window.open(`https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}&travelmode=driving&hl=${lang}`,'_blank');
+document.getElementById('map').src = `https://www.google.com/maps?q=${s.lat},${s.lng}&z=15&hl=${lang}&output=embed`;
+document.getElementById('reserve').onclick = () => {
+  const menuWrap = document.getElementById('menuSelectWrap');
+  if(menuWrap){
+    menuWrap.scrollIntoView({behavior:'smooth', block:'center'});
+    const sel = document.getElementById('menuSelect'); if(sel) sel.focus();
+  }
+};
+// ----- Menu select population & booking -----
+(function(){
+  const L = (localStorage.getItem('bl_lang')||'auto');
+  const lang = (L==='en'?'en':(L==='ja'?'ja':((navigator.language||'en').toLowerCase().startsWith('ja')?'ja':'en')));
+  const label = document.getElementById('menuSelectLabel');
+  const hint = document.getElementById('menuHint');
+  const go = document.getElementById('goReserveByMenu');
+  const sel = document.getElementById('menuSelect');
+  if(!sel) return;
+
+  if(lang==='en'){
+    label.textContent='Menu';
+    go.textContent='Book';
+    sel.insertAdjacentHTML('beforeend','<option value="" disabled selected>Select a menu</option>');
+  }else{
+    label.textContent='メニュー';
+    go.textContent='予約へ進む';
+    sel.insertAdjacentHTML('beforeend','<option value="" disabled selected>メニューを選択</option>');
+  }
+
+  try{
+    const items = (typeof MENUS!=='undefined' && MENUS[s.id]) ? MENUS[s.id] : [];
+    items.forEach((it, idx)=>{
+      const txt = (lang==='en' && it.name_en) ? it.name_en : it.name;
+      const dur = it.minutes ? ` (${it.minutes}min)` : '';
+      const price = it.price ? ` - ${it.price}` : '';
+      sel.insertAdjacentHTML('beforeend', `<option value="${idx}">${txt}${dur}${price}</option>`);
+    });
+    if(items.length===0){
+      sel.disabled = true;
+      hint.textContent = lang==='en' ? 'No menus available.' : 'メニュー情報がありません。';
+      go.disabled = true;
+    }
+    sel.addEventListener('change', ()=>{
+      const i = sel.value;
+      if(i===''){ go.disabled = true; hint.textContent=''; return; }
+      const it = items[i];
+      const txt = (lang==='en' && it.name_en) ? it.name_en : it.name;
+      const timeTxt = it.minutes ? (lang==='en'?`${it.minutes} min`:`${it.minutes}分`) : '';
+      const priceTxt = it.price || '';
+      hint.textContent = [txt, timeTxt, priceTxt].filter(Boolean).join(' · ');
+      go.disabled = false;
+    });
+    go.addEventListener('click', ()=>{
+      const i = sel.value;
+      if(i===''){ return; }
+      const it = items[i];
+      const q = new URLSearchParams({salonId:s.id, salonName:s.name, type:'menu'});
+      if(it && it.id) q.set('itemId', it.id);
+      if(lang==='en') q.set('lang','en');
+      location.href = 'reservation.html?' + q.toString();
+    });
+  }catch(e){ console.warn(e); }
+})();
+
+/* i18n headings fix */
+(function(){
+  const L=(localStorage.getItem('bl_lang')||'auto');
+  const lang=(L==='en'?'en':(L==='ja'?'ja':((navigator.language||'en').toLowerCase().startsWith('ja')?'ja':'en')));
+  if(lang==='en'){
+    const map={'店舗情報':'Shop info','メニュー':'Menu','クーポン':'Coupons','地図・道順':'Map & Directions','口コミ':'Reviews','一覧に戻る':'Back to list','予約へ進む':'Book','Googleで道順':'Directions on Google'};
+    document.querySelectorAll('h2, button, .title').forEach(el=>{ const t=el.textContent.trim(); if(map[t]) el.textContent=map[t]; });
+  }
+})();
+// carousel
+const car = document.getElementById('carousel');
+const thumbs = document.getElementById('thumbs');
+car.innerHTML = s.photos.map((src,i)=>`<img src="${src}" alt="photo ${i+1}">`).join('');
+thumbs.innerHTML = s.photos.map((src,i)=>`<img data-idx="${i}" src="${src}" alt="thumb ${i+1}">`).join('');
+let idx=0; const imgs=car.querySelectorAll('img'); const timgs=thumbs.querySelectorAll('img');
+function go(i){ idx=(i+imgs.length)%imgs.length; car.scrollTo({left:car.clientWidth*idx,behavior:'smooth'}); timgs.forEach(x=>x.classList.remove('active')); timgs[idx].classList.add('active'); }
+document.getElementById('prev').onclick=()=>go(idx-1); document.getElementById('next').onclick=()=>go(idx+1);
+timgs.forEach(t=>t.onclick=()=>go(parseInt(t.dataset.idx))); if(timgs[0]) timgs[0].classList.add('active');
+
+
+// sample menus & coupons for the salon
+const MENUS={
+  "S1":[{id:"m1", name:"フルセット 120本", minutes:90, price:4250},{id:"m2", name:"ボリュームラッシュ", minutes:120, price:5200}],
+  "S2":[{id:"m1", name:"全身アーユルヴェーダ", minutes:90, price:6630},{id:"m2", name:"オイルトリートメント", minutes:60, price:4200}],
+  "S3":[{id:"m1", name:"ハーブ蒸し", minutes:45, price:3500},{id:"m2", name:"ボディスクラブ", minutes:60, price:4800}]
+};
+const COUPONS={
+  "S1":[{id:"c1", name:"初回10%OFF", minutes:90, price:3825}],
+  "S2":[{id:"c1", name:"セット割", minutes:120, price:9800}],
+  "S3":[{id:"c1", name:"平日割", minutes:60, price:3200}]
+};
+function renderList(elId, items, type){
+  const el=document.getElementById(elId);
+  if(!items || !items.length){ el.innerHTML='<div class="meta">この店舗では準備中です</div>'; return; }
+  el.innerHTML=items.map(it=>`<div class="menu"><div><div class="name">${it.name}</div><div class="meta">${lang==='en'? it.minutes+' min' : it.minutes+'分'}</div></div><div><span class="price">¥${it.price.toLocaleString('ja-JP')}</span> <button class="btn primary reserve-btn" data-go data-type="${type}" data-id="${it.id}">${lang==='en'?'Book':'予約する'}</button></div></div>`).join('');
+  el.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{
+    const t=b.dataset.type, mid=b.dataset.id;
+    const q=new URLSearchParams({salonId:s.id, salonName:s.name, type:t, itemId:mid});
+    location.href='reservation.html?'+q.toString();
+  });
+}
+renderList('menuList', MENUS[s.id], 'menu');
+renderList('couponList', COUPONS[s.id], 'coupon');
+
+// reviews gate
+function booked(id){ try{return (JSON.parse(localStorage.getItem('bl_completed_bookings')||'[]')).includes(id)}catch(e){return false} }
+const form=document.getElementById('revform'); const gate=document.getElementById('gateMsg');
+if(!booked(s.id)){ form.style.opacity=".6"; form.style.pointerEvents="none"; gate.style.color="#a06"; }
+document.getElementById('revSubmit').onclick=()=>{ if(!booked(s.id)) return alert('予約済みの方のみ投稿可です。'); const name=document.getElementById('revName').value||'ゲスト'; const nat=document.getElementById('revCountry').value||'-'; const text=document.getElementById('revText').value.trim(); if(!text) return alert('口コミを入力してください'); const div=document.createElement('div'); div.className='rev'; div.innerHTML=`<div class="row2"><strong>${name}</strong><span class="notice">（${nat}）</span></div><p style="margin:.4em 0 0">${text}</p>`; document.getElementById('revlist').prepend(div); document.getElementById('revText').value=''; };
+
+function mapEnName(txt,type){
+  const menuMap={'フルセット 120本':'Full set (120 lashes)','ボリュームラッシュ':'Volume lashes','全身アーユルヴェーダ':'Full-body Ayurveda','オイルトリートメント':'Oil treatment'};
+  const couponMap={'初回10%OFF':'First-time 10% OFF','セット割':'Bundle discount'};
+  if(type==='menu'&&menuMap[txt]) return menuMap[txt];
+  if(type==='coupon'&&couponMap[txt]) return couponMap[txt];
+  return txt;
+}
+(function(){
+  const old=renderList;
+  renderList=function(elId,items,type){
+    const L=(localStorage.getItem('bl_lang')||'auto'); 
+    const lang=(L==='en'?'en':(L==='ja'?'ja':'en'));
+    const mapped=(lang==='en')?(items||[]).map(it=>({...it,name:mapEnName(it.name,type)})):items;
+    old(elId,mapped,type);
+  }
+})();
+
+</script>
+<footer style="text-align:center;font-size:12px;color:#6b5e55;margin:12px 0">Build v2025-09-14w</footer>
+
+
+<script>
+// EN force translate (global walker v5). Covers all shops & coupons, ensures spacing.
+(function(){
+  if(window.__detailsENv5) return; window.__detailsENv5 = true;
+
+  const MAP = new Map([
+    ['フルセット 120本','Full set (120 lashes)'],
+    ['フルセット（120本）','Full set (120 lashes)'],
+    ['フルセット(120本)','Full set (120 lashes)'],
+    ['ボリュームラッシュ','Volume lashes'],
+    ['ボリューム ラッシュ','Volume lashes'],
+    ['ハーブ蒸し','Herbal steam'],
+    ['ボディスクラブ','Body scrub'],
+    ['平日割','Weekday discount'],
+    ['セット割','Bundle discount'],
+    ['初回','First-time'],
+    ['新規','First-time'],
+    ['まとめ割','Bundle discount'],
+    ['全身','Full-body'],
+    ['アーユルヴェーダ','Ayurveda'],
+    ['シロダーラ','Shirodhara'],
+    ['アビヤンガ','Abhyanga'],
+    ['オイルトリートメント','Oil treatment'],
+    ['ラッシュリフト','Lash lift'],
+    ['マッサージ','Massage'],
+    ['ヘッドスパ','Head spa'],
+    ['フェイシャル','Facial'],
+    ['眉','Brow'],
+    ['まつげ','Lashes'],
+    ['ネイル','Nails'],
+    ['ハーブ','Herbs'],
+    ['リラク','Relaxation'],
+    ['店舗情報','Shop info'],
+    ['メニュー','Menu'],
+    ['クーポン','Coupons'],
+    ['地図・道順','Map & directions'],
+    ['口コミ','Reviews'],
+    ['Googleで道順','Route on Google'],
+    ['予約へ進む','Book now'],
+    ['一覧に戻る','Back to list'],
+    // Sentences / fragments
+    ['自然で長持ち。丁寧なカウンセリング。','Naturally long-lasting. Careful consultation.'],
+    ['自然で長持ち','Naturally long-lasting'],
+    ['丁寧なカウンセリング','Careful consultation'],
+    ['本格アーユルヴェーダと静かな個室。','Authentic Ayurveda with a quiet private room.'],
+    ['自社ブレンドのハーブでリラックス。','Relax with our original herb blend.']
+  ]);
+
+  function toEN(s){
+    if(!s) return s;
+    let out = s.replaceAll('（','(').replaceAll('）',')');
+    MAP.forEach((en, ja)=>{ out = out.split(ja).join(en); });
+    // Fix spacing issues (e.g., Full-bodyAyurveda)
+    out = out.replace(/Full-body\s*Ayurveda/g,'Full-body Ayurveda');
+    return out;
+  }
+
+  function translateAll(root){
+    const walker = document.createTreeWalker(root||document.body, NodeFilter.SHOW_TEXT, {
+      acceptNode(n){
+        if(!n.nodeValue) return NodeFilter.FILTER_REJECT;
+        const v = n.nodeValue;
+        if(!/[一-龯ぁ-んァ-ン]/.test(v)) return NodeFilter.FILTER_REJECT;
+        if(n.parentElement && /^(script|style)$/i.test(n.parentElement.tagName)) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    const nodes = [];
+    while(walker.nextNode()) nodes.push(walker.currentNode);
+    for(const node of nodes){ node.nodeValue = toEN(node.nodeValue); }
+    document.querySelectorAll('select option').forEach(o=>{ o.text = toEN(o.text); });
+  }
+
+  let raf = null;
+  function schedule(){ if(raf) cancelAnimationFrame(raf); raf = requestAnimationFrame(()=>{ raf=null; translateAll(document.body); }); }
+  if(document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', schedule); } else { schedule(); }
+  const obs = new MutationObserver(schedule);
+  obs.observe(document.body, {childList:true, subtree:true, characterData:true});
+})();
+</script>
+
+<script>
+// EN force translate (global walker, enhanced). Ensures all shops/menus/coupons are fully English.
+(function(){
+  if(window.__detailsENv5) return; window.__detailsENv5 = true;
+
+  const MAP = new Map([
+    // Menus / Coupons
+    ['フルセット 120本','Full set (120 lashes)'],
+    ['フルセット（120本）','Full set (120 lashes)'],
+    ['フルセット(120本)','Full set (120 lashes)'],
+    ['ボリュームラッシュ','Volume lashes'],
+    ['ハーブ蒸し','Herbal steam'],
+    ['ボディスクラブ','Body scrub'],
+    ['セット割','Bundle discount'],
+    ['平日割','Weekday discount'],
+    ['初回','First-time'],
+    ['新規','First-time'],
+    ['まとめ割','Bundle discount'],
+    ['全身','Full-body'],
+    // Categories & treatments
+    ['アーユルヴェーダ','Ayurveda'],
+    ['シロダーラ','Shirodhara'],
+    ['アビヤンガ','Abhyanga'],
+    ['オイルトリートメント','Oil treatment'],
+    ['ラッシュリフト','Lash lift'],
+    ['マッサージ','Massage'],
+    ['ヘッドスパ','Head spa'],
+    ['フェイシャル','Facial'],
+    ['眉','Brow'],
+    ['まつげ','Lashes'],
+    ['ネイル','Nails'],
+    ['ハーブ','Herbs'],
+    ['リラク','Relaxation'],
+    // Sections / UI
+    ['店舗情報','Shop info'],
+    ['メニュー','Menu'],
+    ['クーポン','Coupons'],
+    ['地図・道順','Map & directions'],
+    ['口コミ','Reviews'],
+    ['Googleで道順','Route on Google'],
+    ['予約へ進む','Book now'],
+    ['一覧に戻る','Back to list'],
+    // Descriptions (examples)
+    ['自然で長持ち。丁寧なカウンセリング。','Naturally long-lasting. Careful consultation.'],
+    ['本格Ayurvedaと静かな個室。','Authentic Ayurveda and quiet private rooms.'],
+    ['本格的なAyurvedaと静かな個室。','Authentic Ayurveda and quiet private rooms.'],
+  ]);
+
+  function toEN(s){
+    if(!s) return s;
+    let out = s.replaceAll('（','(').replaceAll('）',')');
+    MAP.forEach((en, ja)=>{ out = out.split(ja).join(en); });
+    // post-fix: missing spaces between known words after replacement
+    out = out.replace(/Full-body(?=Ayurveda|Massage|Treatment)/g, 'Full-body ');
+    out = out.replace(/Ayurveda(?=Massage|Treatment)/g, 'Ayurveda ');
+    // collapse any double spaces
+    out = out.replace(/\s{2,}/g, ' ').trim();
+    return out;
+  }
+
+  function translateAll(root){
+    const walker = document.createTreeWalker(root||document.body, NodeFilter.SHOW_TEXT, {
+      acceptNode(n){
+        if(!n.nodeValue) return NodeFilter.FILTER_REJECT;
+        const v = n.nodeValue;
+        if(!/[一-龯ぁ-んァ-ン]/.test(v)) return NodeFilter.FILTER_REJECT;
+        if(n.parentElement && /^(script|style)$/i.test(n.parentElement.tagName)) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    const nodes = [];
+    while(walker.nextNode()) nodes.push(walker.currentNode);
+    for(const node of nodes){ node.nodeValue = toEN(node.nodeValue); }
+    document.querySelectorAll('select option').forEach(o=>{ o.text = toEN(o.text); });
+  }
+
+  let raf = null;
+  function schedule(){ if(raf) cancelAnimationFrame(raf); raf = requestAnimationFrame(()=>{ raf=null; translateAll(document.body); }); }
+  if(document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', schedule); } else { schedule(); }
+  const obs = new MutationObserver(schedule);
+  obs.observe(document.body, {childList:true, subtree:true, characterData:true});
+})();
+</script>
+
+<footer id="ft" style="margin:18px 0 40px;text-align:center;color:#6b5e55;font-size:12px">
+  <a href="terms.html" class="ft-link" data-ft="terms" style="margin:0 10px">Terms</a>·
+  <a href="privacy.html" class="ft-link" data-ft="privacy" style="margin:0 10px">Privacy</a>·
+  <a href="cancel.html" class="ft-link" data-ft="cancel" style="margin:0 10px">Cancel Policy</a>·
+  <a href="contact.html" class="ft-link" data-ft="contact" style="margin:0 10px">Contact</a>
+</footer>
+<div id="ftModal" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:9999">
+  <div id="ftBackdrop" style="position:absolute;inset:0;background:rgba(0,0,0,.4)"></div>
+  <div role="dialog" aria-modal="true" aria-labelledby="ftTitle"
+       style="position:relative;background:#fff;border:1px solid #eadfca;border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,.18);
+              width:min(92vw,720px);max-height:80vh;overflow:auto;padding:18px">
+    <div style="display:flex;align-items:center;gap:8px;justify-content:space-between;margin-bottom:8px">
+      <div id="ftTitle" style="font-weight:900">Terms</div>
+      <button id="ftClose" style="border:none;background:#fff;border:1px solid #eadfca;border-radius:10px;padding:6px 10px;cursor:pointer">Close</button>
+    </div>
+    <div id="ftBody" style="line-height:1.7;color:#2E1A16;font-size:14px">
+      <p>Loading…</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// Footer modal with fetch of external pages + close button
+(function(){
+  if(window.__ftModalInstalledV2) return; window.__ftModalInstalledV2 = true;
+  const modal = document.getElementById('ftModal');
+  const body  = document.getElementById('ftBody');
+  const title = document.getElementById('ftTitle');
+  const closeBtn = document.getElementById('ftClose');
+  const backdrop = document.getElementById('ftBackdrop');
+
+  const MAP = {
+    terms:  {title:'Terms',  url:'terms.html'},
+    privacy:{title:'Privacy',url:'privacy.html'},
+    cancel: {title:'Cancel Policy',url:'cancel.html'},
+    contact:{title:'Contact',url:'contact.html'}
+  };
+  async function open(kind){
+    const item = MAP[kind] || MAP.terms;
+    title.textContent = item.title;
+    body.innerHTML = '<p>Loading…</p>';
+    try{
+      const res = await fetch(item.url, {credentials:'omit'});
+      const txt = await res.text();
+      // Try to extract main content from uploaded pages
+      const match = txt.match(/<div class="container"[\s\S]*?>([\s\S]*?)<\/div>\s*<\/body>/i);
+      body.innerHTML = match ? match[1] : txt;
+    }catch(e){
+      body.textContent = 'Failed to load. Please try again.';
+    }
+    modal.style.display = 'flex';
+  }
+  function close(){ modal.style.display='none'; }
+
+  document.addEventListener('click', (e)=>{
+    const a = e.target.closest && e.target.closest('a.ft-link');
+    if(a){
+      e.preventDefault();
+      const kind = a.getAttribute('data-ft');
+      open(kind);
+    }
+  });
+  closeBtn && closeBtn.addEventListener('click', close);
+  backdrop && backdrop.addEventListener('click', close);
+
+  // Intercept direct clicks to terms.html etc anywhere in footer
+  document.querySelectorAll('footer a[href$=".html"]').forEach(a=>{
+    a.addEventListener('click', (e)=>{
+      const k = a.getAttribute('data-ft');
+      if(k){ e.preventDefault(); open(k); }
+    });
+  });
+})();
+</script>
+
+<script>
+/*__DETAILS_I18N_SUPPLEMENT__*/
+(function(){
+  try{
+    const pref = localStorage.getItem('bl_lang') || 'auto';
+    const lang = (pref==='en' ? 'en' : (pref==='ja' ? 'ja' : ((navigator.language||'en').toLowerCase().startsWith('ja')?'ja':'en')));
+    if(lang!=='en') return;
+    const map = {
+      '店舗情報':'Shop info','メニュー':'Menu','クーポン':'Coupons','地図・道順':'Map & Directions','口コミ':'Reviews',
+      '一覧に戻る':'Back to list','予約へ進む':'Book','Googleで道順':'Directions on Google',
+      'お名前':'Name','国籍を選択':'Select nationality','体験を教えてください':'Share your experience','投稿':'Submit',
+      'この店舗では準備中です':'Not available at this shop'
+    };
+    document.querySelectorAll('h2, button, .title, label, .meta, .notice, option').forEach(el=>{
+      const t = (el.childNodes.length===1 ? (el.textContent||'').trim() : '');
+      if(map[t]) el.textContent = map[t];
+    });
+    const revName=document.getElementById('revName'); if(revName) revName.placeholder='Your name';
+    const revText=document.getElementById('revText'); if(revText) revText.placeholder='Share your experience';
+  }catch(e){}
+})();
+</script>
+
+<script src="./app.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', async ()=>{
+  if(!window.BL_API) return;
+  const list = document.getElementById('reviewList');
+  const btn = document.getElementById('viewAllReviews');
+  if(!list || !btn) return;
+  const all = await window.BL_API.listReviews();
+  function render(n){
+    const items = all.slice(0,n).map(r=> `<div class="review"><div class="meta">${r.user} ・ ★${r.rating}</div><div>${r.text}</div></div>`).join('');
+    list.innerHTML = items;
+  }
+  render(3);
+  btn.addEventListener('click', ()=>{ render(all.length); btn.style.display='none'; });
+});
+</script>
+
+<script id="en-and-currency-patch">
+// ---- Full English for Shop info + currency switching for prices ----
+(function(){
+  function onReady(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
+
+  onReady(function(){
+    // 1) Force English for specific known Japanese phrases in Shop info
+    try{
+      const pref = localStorage.getItem('bl_lang') || 'auto';
+      const lang = (pref==='en' ? 'en' : (pref==='ja' ? 'ja' : (((navigator.language||'en')+'').toLowerCase().startsWith('ja')?'ja':'en')));
+      if(lang==='en'){
+        const map = new Map([
+          ['本格Ayurvedaと静かな個室。','Authentic Ayurveda in a tranquil private room.'],
+          ['自然で長持ち。丁寧なカウンセリング。','Naturally long-lasting with attentive consultation.'],
+          ['自家ブレンドハーブでリラックス。','Relax with our original blended herbs.'],
+          ['料金目安：','From '], // fallback label if ever present
+        ]);
+        const priceEl = document.getElementById('price');
+        const pointsEl = document.getElementById('points');
+        if(pointsEl){
+          const t = (pointsEl.textContent||'').trim();
+          if(map.has(t)) pointsEl.textContent = map.get(t);
+          // Generic heuristic: if Japanese characters remain, provide a neutral English line
+          if(/[一-龥ぁ-んァ-ン]/.test(pointsEl.textContent)){
+            pointsEl.textContent = 'Highlights: Quality service in a calm, private setting.';
+          }
+        }
+        // Translate section headers if any slipped through (safety)
+        document.querySelectorAll('h2').forEach(h2=>{
+          if(h2.textContent.trim()==='店舗情報') h2.textContent='Shop info';
+          if(h2.textContent.trim()==='メニュー')   h2.textContent='Menu';
+          if(h2.textContent.trim()==='クーポン')   h2.textContent='Coupons';
+          if(h2.textContent.trim()==='地図・道順') h2.textContent='Map & Directions';
+          if(h2.textContent.trim()==='口コミ')     h2.textContent='Reviews';
+        });
+      }
+    }catch(e){ /* noop */ }
+
+    // 2) Currency switching (base = JPY shown in DOM). Persist in localStorage('bl_curr').
+    const sel = document.getElementById('currencySelect');
+    if(!sel) return;
+
+    // Default currency from storage or select's current value
+    const stored = localStorage.getItem('bl_curr');
+    if(stored){ sel.value = stored; }
+
+    // Exchange rates relative to JPY (1 JPY = rate[curr] * curr_unit)
+    // These are fallback approximations; you can override via localStorage.setItem('bl_rates', JSON.stringify({...}))
+    const DEFAULT_RATES = { JPY:1, USD:1/160, EUR:1/170, LKR:2.0 }; // 1 JPY -> 0.00625 USD, etc.
+    function getRates(){
+      try{ return Object.assign({}, DEFAULT_RATES, JSON.parse(localStorage.getItem('bl_rates')||'{}')); }
+      catch(e){ return DEFAULT_RATES; }
+    }
+    function fmtCurrency(jpyAmount, curr){
+      const amt = (Number(jpyAmount)||0) * getRates()[curr];
+      if(curr==='JPY') return '¥' + Math.round(amt).toLocaleString('ja-JP');
+      if(curr==='USD') return '$' + (Math.round(amt*100)/100).toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2});
+      if(curr==='EUR') return '€' + (Math.round(amt*100)/100).toLocaleString('en-GB',{minimumFractionDigits:2, maximumFractionDigits:2});
+      if(curr==='LKR') return 'Rs ' + Math.round(amt).toLocaleString('en-LK');
+      return Math.round(amt).toLocaleString();
+    }
+
+    // Helper: parse base JPY numbers from text like "From ¥6,630" or "料金目安：¥6,630〜"
+    function extractJPY(text){
+      const n = String(text||'').replace(/[^0-9]/g,''); 
+      return Number(n||'0');
+    }
+
+    // Cache base JPY on elements once
+    function cacheBasePrices(){
+      // Shop "From" price
+      const priceEl = document.getElementById('price');
+      if(priceEl && !priceEl.dataset.jpy){
+        priceEl.dataset.jpy = String(extractJPY(priceEl.textContent));
+      }
+      // Menu & coupon price spans
+      document.querySelectorAll('#menuList .price, #couponList .price').forEach(span=>{
+        if(!span.dataset.jpy){
+          span.dataset.jpy = String(extractJPY(span.textContent));
+        }
+      });
+    }
+
+    function updateAll(){
+      cacheBasePrices();
+      const curr = sel.value || 'JPY';
+      localStorage.setItem('bl_curr', curr);
+      const langPref = localStorage.getItem('bl_lang')||'auto';
+      const lang = (langPref==='en' ? 'en' : (langPref==='ja' ? 'ja' : (((navigator.language||'en')+'').toLowerCase().startsWith('ja')?'ja':'en')));
+
+      // Shop info "From" line
+      const priceEl = document.getElementById('price');
+      if(priceEl && priceEl.dataset.jpy){
+        const jpy = Number(priceEl.dataset.jpy);
+        if(lang==='en'){
+          priceEl.textContent = 'From ' + fmtCurrency(jpy, curr);
+        }else{
+          priceEl.textContent = '料金目安：' + fmtCurrency(jpy, curr) + (curr==='JPY' ? '〜' : '');
+        }
+      }
+
+      // Each menu/coupon price
+      document.querySelectorAll('#menuList .price, #couponList .price').forEach(span=>{
+        const jpy = Number(span.dataset.jpy||'0');
+        span.textContent = fmtCurrency(jpy, curr);
+      });
+    }
+
+    sel.addEventListener('change', updateAll);
+    // Run once after initial render (renderList runs earlier in the page scripts)
+    setTimeout(updateAll, 60);
+  });
+})();
+</script>
+</body>
+
+</html>

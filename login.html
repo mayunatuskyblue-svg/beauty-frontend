@@ -1,0 +1,114 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ログイン | BeautyLanka</title>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--base:#F7F1E1;--ink:#2E1A16;--stroke:#eadfca;--teal:#246A73}
+*{box-sizing:border-box} body{margin:0;background:var(--base);color:var(--ink);font-family:"Zen Kaku Gothic New","Noto Sans JP",system-ui}
+.container{max-width:460px;margin:0 auto;padding:24px 16px}
+h1{font-family:"Shippori Mincho",serif;text-align:center;margin:16px 0 18px}
+.form{background:#fff;border:1px solid var(--stroke);border-radius:16px;box-shadow:0 10px 24px rgba(49,14,16,.08);padding:18px}
+label{display:block;font-weight:700;margin:10px 0 6px}
+input{width:100%;border:1px solid var(--stroke);border-radius:12px;padding:12px 14px;font:inherit}
+.btn{width:100%;height:44px;margin-top:14px;border-radius:12px;border:1px solid var(--teal);background:var(--teal);color:#fff;font-weight:800;cursor:pointer}
+.link{display:block;text-align:center;margin-top:12px}
+</style></head><body>
+<div class="container">
+  <div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><a class="link" href="javascript:history.back()">← 戻る</a><select id="langSelect" class="btn" style="height:34px;width:auto"><option value="auto">Auto</option><option value="ja">日本語</option><option value="en">English</option></select></div>
+  <h1>ログイン</h1>
+  <div class="form">
+    <label>メールアドレス</label>
+    <input id="email" type="email" placeholder="you@example.com">
+    <label>パスワード</label>
+    <input id="pass" type="password" placeholder="********">
+    <button class="btn" onclick="login()">ログイン</button>
+    <a class="link" href="signup.html">新規登録はこちら</a>
+  </div>
+</div>
+<script>
+const p=new URLSearchParams(location.search); const redirect=p.get('redirect');
+function login(){
+  const e=document.getElementById('email').value.trim();
+  const p=document.getElementById('pass').value;
+  const db=JSON.parse(localStorage.getItem('bl_users')||'{}');
+  if(!db[e]){ if(confirm('アカウントが見つかりません。新規登録しますか？')){ location.href='signup.html?redirect='+encodeURIComponent(redirect||'mypage.html')+'&prefill='+encodeURIComponent(e); } return; } if(db[e].pass!==p){ alert('メールアドレスまたはパスワードが違います'); return; }
+  localStorage.setItem('bl_auth', JSON.stringify({email:e, ts:Date.now()}));
+  location.href = redirect ? redirect : 'mypage.html';
+}
+const sel=document.getElementById('langSelect'); if(sel){ sel.value=localStorage.getItem('bl_lang')||'auto'; sel.onchange=()=>{ localStorage.setItem('bl_lang', sel.value); location.reload(); }; }
+</script>
+
+<footer id="ft" style="margin:18px 0 40px;text-align:center;color:#6b5e55;font-size:12px">
+  <a href="terms.html" class="ft-link" data-ft="terms" style="margin:0 10px">Terms</a>·
+  <a href="privacy.html" class="ft-link" data-ft="privacy" style="margin:0 10px">Privacy</a>·
+  <a href="cancel.html" class="ft-link" data-ft="cancel" style="margin:0 10px">Cancel Policy</a>·
+  <a href="contact.html" class="ft-link" data-ft="contact" style="margin:0 10px">Contact</a>
+</footer>
+<div id="ftModal" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:9999">
+  <div id="ftBackdrop" style="position:absolute;inset:0;background:rgba(0,0,0,.4)"></div>
+  <div role="dialog" aria-modal="true" aria-labelledby="ftTitle"
+       style="position:relative;background:#fff;border:1px solid #eadfca;border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,.18);
+              width:min(92vw,720px);max-height:80vh;overflow:auto;padding:18px">
+    <div style="display:flex;align-items:center;gap:8px;justify-content:space-between;margin-bottom:8px">
+      <div id="ftTitle" style="font-weight:900">Terms</div>
+      <button id="ftClose" style="border:none;background:#fff;border:1px solid #eadfca;border-radius:10px;padding:6px 10px;cursor:pointer">Close</button>
+    </div>
+    <div id="ftBody" style="line-height:1.7;color:#2E1A16;font-size:14px">
+      <p>Loading…</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// Footer modal with fetch of external pages + close button
+(function(){
+  if(window.__ftModalInstalledV2) return; window.__ftModalInstalledV2 = true;
+  const modal = document.getElementById('ftModal');
+  const body  = document.getElementById('ftBody');
+  const title = document.getElementById('ftTitle');
+  const closeBtn = document.getElementById('ftClose');
+  const backdrop = document.getElementById('ftBackdrop');
+
+  const MAP = {
+    terms:  {title:'Terms',  url:'terms.html'},
+    privacy:{title:'Privacy',url:'privacy.html'},
+    cancel: {title:'Cancel Policy',url:'cancel.html'},
+    contact:{title:'Contact',url:'contact.html'}
+  };
+  async function open(kind){
+    const item = MAP[kind] || MAP.terms;
+    title.textContent = item.title;
+    body.innerHTML = '<p>Loading…</p>';
+    try{
+      const res = await fetch(item.url, {credentials:'omit'});
+      const txt = await res.text();
+      // Try to extract main content from uploaded pages
+      const match = txt.match(/<div class="container"[\s\S]*?>([\s\S]*?)<\/div>\s*<\/body>/i);
+      body.innerHTML = match ? match[1] : txt;
+    }catch(e){
+      body.textContent = 'Failed to load. Please try again.';
+    }
+    modal.style.display = 'flex';
+  }
+  function close(){ modal.style.display='none'; }
+
+  document.addEventListener('click', (e)=>{
+    const a = e.target.closest && e.target.closest('a.ft-link');
+    if(a){
+      e.preventDefault();
+      const kind = a.getAttribute('data-ft');
+      open(kind);
+    }
+  });
+  closeBtn && closeBtn.addEventListener('click', close);
+  backdrop && backdrop.addEventListener('click', close);
+
+  // Intercept direct clicks to terms.html etc anywhere in footer
+  document.querySelectorAll('footer a[href$=".html"]').forEach(a=>{
+    a.addEventListener('click', (e)=>{
+      const k = a.getAttribute('data-ft');
+      if(k){ e.preventDefault(); open(k); }
+    });
+  });
+})();
+</script>
+</body></html>

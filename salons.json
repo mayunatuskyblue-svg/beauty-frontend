@@ -1,0 +1,121 @@
+[
+  {
+    "id": "1",
+    "name": "Lotus Ayurveda Retreat",
+    "city": "Colombo",
+    "rating": 4.6,
+    "tags": [
+      "Ayurveda",
+      "Spa"
+    ],
+    "img": "assets/images/ayurveda1.jpeg",
+    "value_ja": "本格アーユルヴェーダを専門セラピストが担当。静かな個室で、初めてでも安心して受けられます。",
+    "value_en": "Authentic Ayurveda by trained therapists. Private rooms and a calm setting—ideal even for first-timers.",
+    "menus": [
+      {
+        "name": "Abhyanga 90min",
+        "price": 45
+      },
+      {
+        "name": "Shirodhara 60min",
+        "price": 39
+      }
+    ],
+    "coupons": [
+      {
+        "name": "New guest 10% OFF",
+        "price": 40.5
+      }
+    ]
+  },
+  {
+    "id": "2",
+    "name": "Silky Lashes Studio",
+    "city": "Kandy",
+    "rating": 4.4,
+    "tags": [
+      "Lashes",
+      "Nail"
+    ],
+    "img": "assets/images/lashes-1.jpeg",
+    "value_ja": "日本人好みのデザイン提案と丁寧なカウンセリング。長持ち重視の施術。",
+    "value_en": "Consultations and designs that match Japanese preferences. Long-lasting application.",
+    "menus": [
+      {
+        "name": "Lash Lift",
+        "price": 28
+      },
+      {
+        "name": "Volume 100",
+        "price": 35
+      }
+    ],
+    "coupons": [
+      {
+        "name": "First time set",
+        "price": 25
+      }
+    ]
+  },
+  {
+    "id": "3",
+    "name": "Henna Breeze & Spa",
+    "city": "Galle",
+    "rating": 4.7,
+    "tags": [
+      "Henna",
+      "Spa",
+      "Nail"
+    ],
+    "img": "assets/images/ayurveda-cacao.jpeg",
+    "value_ja": "旅の思い出になるヘナ＆スパのセットが人気。観光の合間に気軽に立ち寄れます。",
+    "value_en": "Popular henna & spa sets for travelers. Easy to drop in between sightseeing.",
+    "menus": [
+      {
+        "name": "Henna & Spa set",
+        "price": 32
+      }
+    ],
+    "coupons": []
+  },
+  {
+    "id": "4",
+    "name": "Cinnamon Grove Wellness",
+    "city": "Negombo",
+    "rating": 4.5,
+    "tags": [
+      "Ayurveda",
+      "Massage"
+    ],
+    "img": "assets/images/ayurveda-herbs.jpeg",
+    "value_ja": "肩こり・腰の重さに特化したマッサージ。施術後のセルフケアも丁寧に案内。",
+    "value_en": "Specialized in shoulder and lower-back relief. Clear self-care guidance after treatment.",
+    "menus": [
+      {
+        "name": "Therapy 60min",
+        "price": 33
+      }
+    ],
+    "coupons": []
+  },
+  {
+    "id": "5",
+    "name": "Kandy Glow Nail Bar",
+    "city": "Kandy",
+    "rating": 4.3,
+    "tags": [
+      "Nail",
+      "Lashes"
+    ],
+    "img": "assets/images/lashes-2.jpeg",
+    "value_ja": "流行のカラー／デザインに強いネイル。旅行中でも取れにくい仕上がり。",
+    "value_en": "Trendy colors and designs. Durable finish that holds up during travel.",
+    "menus": [
+      {
+        "name": "Nail Gel",
+        "price": 22
+      }
+    ],
+    "coupons": []
+  }
+]

@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>マイページ | BeautyLanka</title>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --base:#F7F1E1; --ink:#2E1A16; --stroke:#eadfca; --teal:#246A73; --muted:#6f5a54; --blue:#0A66FF; --chip:#fff8ef;
+}
+*{box-sizing:border-box} body{margin:0;background:var(--base);color:var(--ink);
+  font-family:"Zen Kaku Gothic New","Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
+.container{max-width:1100px;margin:0 auto;padding:0 16px}
+header{position:sticky;top:0;z-index:40;background:rgba(247,241,225,.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--stroke)}
+.hwrap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0}
+.logo-box{width:88px;height:58px;border-radius:14px;overflow:hidden;box-shadow:0 10px 24px rgba(36,106,115,.18);background:#fff}
+.logo-box img{width:100%;height:120%;object-fit:cover;object-position:50% 20%}
+.btn{height:40px;border-radius:12px;border:1px solid var(--stroke);background:#fff;padding:0 12px;font-weight:700;cursor:pointer}
+.btn.primary{background:var(--teal);border-color:var(--teal);color:#fff;box-shadow:0 6px 14px rgba(36,106,115,.18)}
+h1{font-family:"Shippori Mincho",serif;font-size:28px;margin:12px 0}
+.section{background:#fff;border:1px solid var(--stroke);border-radius:16px;box-shadow:0 12px 28px rgba(31,42,55,.08);padding:16px;margin:14px 0}
+h2{font-size:18px;margin:0 0 10px;font-weight:900}
+.grid{display:grid;gap:14px} @media(min-width:800px){.grid{grid-template-columns:repeat(2,1fr)}}
+.card{overflow:hidden;border-radius:18px;border:1px solid var(--stroke);box-shadow:0 10px 24px rgba(22,15,41,.06);background:#fff}
+.ph{height:200px;background:#f6f6f6;display:grid;place-items:center}
+.ph img{width:100%;height:100%;object-fit:cover}
+.name{font-weight:900;font-size:18px;margin:8px 0 2px;color:#14222c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.city{opacity:.8} .pill{display:inline-block;padding:6px 10px;border-radius:10px;border:1px solid #ddd;font-size:12px;margin-right:6px;margin-top:6px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+table{width:100%;border-collapse:collapse} th,td{border-bottom:1px solid #f0e7d8;padding:8px 10px;text-align:left} .empty{color:#64748b}
+.fav-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.fav-card{background:#fff;border:1px solid #eadfca;border-radius:14px;overflow:hidden;box-shadow:0 6px 16px rgba(0,0,0,.06)}
+.fav-card .thumb{height:140px;background:#f2f2f2;display:block}
+.fav-card .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.fav-card .meta{padding:10px 12px}
+.fav-card .name{font-weight:800;margin:0 0 6px;font-size:15px}
+.fav-card .row{display:flex;gap:8px;flex-wrap:wrap}
+/* fav cards compact */
+</style>
+</head>
+<body>
+<header>
+  <div class="container hwrap">
+    <a class="brand-left" href="./index.html"><div class="logo-box"><img src="assets/images/logo_mark.png" alt=""></div></a>
+    <nav class="nav-right"><button class="btn" onclick="location.href='index.html'">検索に戻る</button></nav>
+  </div>
+</header>
+<div class="container">
+  <h1>マイページ</h1>
+
+  <section class="section">
+    <h2>お気に入り</h2>
+    <div id="favGrid" class="grid"></div>
+  </section>
+
+  <section class="section">
+    <h2>検索履歴</h2>
+    <table id="searchTable"><thead><tr><th>場所</th><th>種類</th><th>日付</th><th>日時</th></tr></thead><tbody></tbody></table>
+  </section>
+
+  <section class="section">
+    <h2>予約履歴</h2>
+    <table id="bookTable"><thead><tr><th>店舗</th><th>料金目安</th><th>日時</th></tr></thead><tbody></tbody></table>
+  </section>
+
+</div>
+
+<script>
+
+// ---------- 固定データ（assets内のファイル名をそのまま使用） ----------
+const DATA=[
+  {id:"S1", name:"Silky Lashes Colombo", type:"マツエク", place:"コロンボ", lat:6.933, lng:79.85, price:4250, rating:4.6,
+    tags:["マツエク","日本語対応"], points:"自然で長持ち。丁寧なカウンセリング。",
+    photos:["assets/images/lashes_a.jpg","assets/images/lashes_b.jpg","assets/images/lashes_c.jpg"]},
+  {id:"S2", name:"Ayur Luxe Spa", type:"スパ", place:"ゴール", lat:6.025, lng:80.217, price:6630, rating:4.7,
+    tags:["アーユルヴェーダ","リラク"], points:"本格アーユルヴェーダと静かな個室。",
+    photos:["assets/images/spa_massage.jpg","assets/images/herbs_flatlay.jpg","assets/images/lashes_a.jpg"]},
+  {id:"S3", name:"Cinnamon Grow", type:"ハーブ", place:"キャンディ", lat:7.293, lng:80.641, price:5610, rating:4.5,
+    tags:["ハーブ","リラク"], points:"自社ブレンドのハーブでリラックス。",
+    photos:["assets/images/herbs_flatlay.jpg","assets/images/spa_massage.jpg","assets/images/lashes_b.jpg"]}
+];
+function yen(n){ return "¥"+(Number(n)||0).toLocaleString("ja-JP"); }
+
+function yen(n){return "¥"+(Number(n)||0).toLocaleString("ja-JP");}
+function fmt(ts){const d=new Date(ts);return d.toLocaleString();}
+function readJSON(k){try{return JSON.parse(localStorage.getItem(k)||'[]')}catch(e){return[]}}
+function uniq(a){return Array.from(new Set(a))}
+function getFavIds(){ const a1=readJSON('bl_favs'); const a2=readJSON('favorites'); return uniq(a1.concat(a2)); }
+function favMeta(){ try{return JSON.parse(localStorage.getItem('bl_fav_meta')||'{}')}catch(e){return{}} }
+const META = DATA.reduce((m,x)=>{ m[x.id]=x; return m; }, {});
+const favGrid = document.getElementById('favGrid');
+function renderFavs(){
+  const meta = JSON.parse(localStorage.getItem('bl_fav_meta')||'{}');
+  const ids = JSON.parse(localStorage.getItem('bl_favs')||'[]');
+  const grid = document.getElementById('favGrid');
+  if(!grid) return;
+  if(!ids.length){ grid.innerHTML = '<div class="small" style="color:#7a6d66">（まだありません）</div>'; return; }
+  grid.className = 'fav-grid';
+  grid.innerHTML = ids.map(id=>{
+    const m = meta[id]||{};
+    const img = m.photo ? `<img src="${m.photo}" alt="${m.name||id}">` : '';
+    return `<div class="fav-card" data-id="${id}">
+      <a class="thumb" href="details.html?salonId=${encodeURIComponent(id)}">${img}</a>
+      <div class="meta">
+        <div class="name">${m.name||id}</div>
+        <div class="row">
+          <button class="btn" onclick="location.href='details.html?salonId=${encodeURIComponent(id)}'">詳細を見る</button>
+          <button class="btn" data-unfav="${id}">お気に入り解除</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  grid.querySelectorAll('[data-unfav]').forEach(b=>{
+    b.onclick=()=>{
+      const id=b.getAttribute('data-unfav');
+      let ids = JSON.parse(localStorage.getItem('bl_favs')||'[]').filter(x=>x!==id);
+      localStorage.setItem('bl_favs', JSON.stringify(ids));
+      let favs2 = JSON.parse(localStorage.getItem('favorites')||'[]').filter(x=>x!==id);
+      localStorage.setItem('favorites', JSON.stringify(favs2));
+      renderFavs();
+    };
+  });
+}
+function unfav(id){ const a1=readJSON('bl_favs').filter(x=>x!==id); const a2=readJSON('favorites').filter(x=>x!==id); localStorage.setItem('bl_favs',JSON.stringify(a1)); localStorage.setItem('favorites',JSON.stringify(a2)); const meta=favMeta(); delete meta[id]; localStorage.setItem('bl_fav_meta',JSON.stringify(meta)); renderFavs(); }
+renderFavs();
+
+// （参考）検索履歴・予約履歴の表示
+const sBody=document.querySelector('#searchTable tbody'); readJSON('bl_search_history').forEach(r=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${r.place||''}</td><td>${r.type||''}</td><td>${r.date||''}</td><td>${fmt(r.ts||Date.now())}</td>`; sBody.appendChild(tr); });
+const bBody=document.querySelector('#bookTable tbody'); const bookHist=readJSON('bl_booking_history'); if(bookHist.length){ bookHist.forEach(r=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${r.name||r.id||'-'}</td><td>${yen(r.price||0)}</td><td>${(r.date||'')+' '+(r.time||'')}</td>`; bBody.appendChild(tr); }); }
+</script>
+<footer style="text-align:center;font-size:12px;color:#6b5e55;margin:12px 0">Build v2025-09-14Z</footer>
+
+<footer id="ft" style="margin:18px 0 40px;text-align:center;color:#6b5e55;font-size:12px">
+  <a href="terms.html" class="ft-link" data-ft="terms" style="margin:0 10px">Terms</a>·
+  <a href="privacy.html" class="ft-link" data-ft="privacy" style="margin:0 10px">Privacy</a>·
+  <a href="cancel.html" class="ft-link" data-ft="cancel" style="margin:0 10px">Cancel Policy</a>·
+  <a href="contact.html" class="ft-link" data-ft="contact" style="margin:0 10px">Contact</a>
+</footer>
+<div id="ftModal" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:9999">
+  <div id="ftBackdrop" style="position:absolute;inset:0;background:rgba(0,0,0,.4)"></div>
+  <div role="dialog" aria-modal="true" aria-labelledby="ftTitle"
+       style="position:relative;background:#fff;border:1px solid #eadfca;border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,.18);
+              width:min(92vw,720px);max-height:80vh;overflow:auto;padding:18px">
+    <div style="display:flex;align-items:center;gap:8px;justify-content:space-between;margin-bottom:8px">
+      <div id="ftTitle" style="font-weight:900">Terms</div>
+      <button id="ftClose" style="border:none;background:#fff;border:1px solid #eadfca;border-radius:10px;padding:6px 10px;cursor:pointer">Close</button>
+    </div>
+    <div id="ftBody" style="line-height:1.7;color:#2E1A16;font-size:14px">
+      <p>Loading…</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// Footer modal with fetch of external pages + close button
+(function(){
+  if(window.__ftModalInstalledV2) return; window.__ftModalInstalledV2 = true;
+  const modal = document.getElementById('ftModal');
+  const body  = document.getElementById('ftBody');
+  const title = document.getElementById('ftTitle');
+  const closeBtn = document.getElementById('ftClose');
+  const backdrop = document.getElementById('ftBackdrop');
+
+  const MAP = {
+    terms:  {title:'Terms',  url:'terms.html'},
+    privacy:{title:'Privacy',url:'privacy.html'},
+    cancel: {title:'Cancel Policy',url:'cancel.html'},
+    contact:{title:'Contact',url:'contact.html'}
+  };
+  async function open(kind){
+    const item = MAP[kind] || MAP.terms;
+    title.textContent = item.title;
+    body.innerHTML = '<p>Loading…</p>';
+    try{
+      const res = await fetch(item.url, {credentials:'omit'});
+      const txt = await res.text();
+      // Try to extract main content from uploaded pages
+      const match = txt.match(/<div class="container"[\s\S]*?>([\s\S]*?)<\/div>\s*<\/body>/i);
+      body.innerHTML = match ? match[1] : txt;
+    }catch(e){
+      body.textContent = 'Failed to load. Please try again.';
+    }
+    modal.style.display = 'flex';
+  }
+  function close(){ modal.style.display='none'; }
+
+  document.addEventListener('click', (e)=>{
+    const a = e.target.closest && e.target.closest('a.ft-link');
+    if(a){
+      e.preventDefault();
+      const kind = a.getAttribute('data-ft');
+      open(kind);
+    }
+  });
+  closeBtn && closeBtn.addEventListener('click', close);
+  backdrop && backdrop.addEventListener('click', close);
+
+  // Intercept direct clicks to terms.html etc anywhere in footer
+  document.querySelectorAll('footer a[href$=".html"]').forEach(a=>{
+    a.addEventListener('click', (e)=>{
+      const k = a.getAttribute('data-ft');
+      if(k){ e.preventDefault(); open(k); }
+    });
+  });
+})();
+</script>
+</body>
+</html>
+
+<script>
+(function(){
+  const L=(localStorage.getItem('bl_lang')||'auto');
+  const lang=(L==='en'?'en':(L==='ja'?'ja':((navigator.language||'en').toLowerCase().startsWith('ja')?'ja':'en')));
+  if(lang!=='en') return;
+  const map={'マイページ':'My Page','お気に入り':'Favorites','詳細を見る':'Details','お気に入り解除':'Remove favorite','検索履歴':'Search history','場所':'Place','種類':'Type','日付':'Date','日時':'Timestamp'};
+  document.querySelectorAll('h1,h2,th,button,a.btn').forEach(el=>{ const t=el.textContent.trim(); if(map[t]) el.textContent=map[t]; });
+})();
+</script>

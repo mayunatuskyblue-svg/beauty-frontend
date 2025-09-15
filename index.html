@@ -1,0 +1,949 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>BeautyLanka | 検索</title>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --base:#F7F1E1; --ink:#2E1A16; --stroke:#eadfca; --teal:#246A73; --muted:#6f5a54; --blue:#0A66FF;
+  --chip:#fff8ef; --danger:#74070E;
+}
+*{box-sizing:border-box} html,body{height:100%} body{margin:0;background:var(--base);color:var(--ink);
+  font-family:"Inter","Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
+.container{max-width:1200px;margin:0 auto;padding:0 16px}
+a{color:inherit;text-decoration:none}
+/* header */
+header{position:sticky;top:0;z-index:40;background:rgba(247,241,225,.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--stroke)}
+.hwrap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0}
+.brand-left{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-img{width:140px;height:auto;border-radius:14px;box-shadow:0 10px 24px rgba(36,106,115,.18)}
+.nav-right{display:flex;gap:8px;align-items:center}
+.btn{height:38px;border-radius:12px;border:1px solid var(--stroke);background:#fff;padding:0 12px;font-weight:700;cursor:pointer}
+.btn.primary{background:var(--teal);border-color:var(--teal);color:#fff;box-shadow:0 6px 14px rgba(36,106,115,.18)}
+.sel{height:38px;border-radius:12px;border:1px solid var(--stroke);padding:0 10px;background:#fff;font-weight:700}
+/* hero header (gradient + headline) */
+.hero-visual{position:relative;margin:0 0 8px}
+.hero-head{background:linear-gradient(180deg,#b8e7e0, #e1f3f0 60%, transparent); padding:48px 0 24px; position:relative; overflow:hidden}
+.hero-head h1{font-family:"Shippori Mincho",serif;font-size:44px;letter-spacing:.02em;text-align:center;margin:0 0 6px;color:#17353a;text-shadow:0 1px 0 rgba(255,255,255,.6)}
+.hero-head p{opacity:.9;text-align:center;margin:18px 0 0}
+.sri-between{display:flex;justify-content:center;align-items:center;margin:18px 0 12px}
+.sri-between img{width:84px;opacity:.95;filter:drop-shadow(0 4px 8px rgba(0,0,0,.25))}
+.hero-flex{display:flex;align-items:center;justify-content:center;gap:36px;flex-wrap:nowrap}
+.hero-center-icon{display:inline-flex;align-items:center;justify-content:center}
+.hero-center-icon img{width:84px;filter:drop-shadow(0 6px 8px rgba(0,0,0,.3))}
+@media(max-width:820px){ .hero-flex{gap:18px} .hero-center-icon img{width:56px} }
+@media(max-width:820px){ .hero-head h1{font-size:32px} .hero-head .sri{width:120px;right:4%;top:10%} }
+/* search bar */
+.searchbar{margin:-18px auto 8px;background:#fff;border:1px solid var(--stroke);border-radius:14px;box-shadow:0 10px 24px rgba(49,14,16,.08);padding:12px;max-width:960px}
+.searchbar form{display:grid;grid-template-columns:2fr 1.3fr 1.3fr auto;gap:8px;align-items:center}
+.searchbar input,.searchbar select{height:40px;border-radius:10px;border:1px solid var(--stroke);padding:0 10px;font:inherit;background:#fff}
+@media(max-width:980px){.searchbar form{grid-template-columns:1fr 1fr 1fr} .searchbar button{grid-column:span 3;}}
+@media(max-width:640px){.searchbar form{grid-template-columns:1fr 1fr} .searchbar button{grid-column:span 2;}}
+/* grid cards */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin:12px 0 26px}
+@media(max-width:1020px){ .grid{grid-template-columns:repeat(2,1fr)} }
+@media(max-width:680px){ .grid{grid-template-columns:1fr} }
+.card{background:#fff;border:1px solid var(--stroke);border-radius:18px;overflow:visible;box-shadow:0 10px 24px rgba(49,14,16,.08);display:flex;flex-direction:column}
+.media{position:relative;border-top-left-radius:18px;border-top-right-radius:18px;overflow:hidden;background:#000}
+.media .carousel{display:flex;overflow-x:hidden;scroll-snap-type:x mandatory}
+.media .carousel img{height:220px;width:100%;object-fit:cover;flex:0 0 100%;scroll-snap-align:center}
+.media .nav{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
+.media .nav button{pointer-events:auto;border:none;background:rgba(0,0,0,.35);width:40px;height:40px;border-radius:999px;color:#fff;font-size:18px;cursor:pointer}
+.body{padding:12px 18px 14px} /* right padding up to avoid heart cut */
+.title{font-weight:900;font-size:18px;margin:0 0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rowmeta{display:flex;align-items:center;gap:8px;color:#6b5e55;font-size:13px;flex-wrap:wrap}
+.star{color:#C08B1B;font-weight:900}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.tag{padding:6px 10px;border-radius:999px;border:1px solid var(--stroke);font-size:12px;background:#fff;cursor:pointer}
+.points{color:#3f342f;font-size:13px;line-height:1.6;margin:6px 0;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.foot{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.actions{display:flex;gap:10px;align-items:center}
+.heart{width:40px;height:40px;border:1px solid var(--stroke);border-radius:999px;background:#fff;display:grid;place-items:center;cursor:pointer;margin-right:4px}
+.heart .ico{font-size:18px;line-height:1}
+.heart.active{outline:3px solid color-mix(in oklab, var(--teal) 45%, white)}
+/* map preview */
+.mapwrap{display:none}
+.mapwrap.show{display:block}
+.map{position:relative;height:180px;border-top:1px solid var(--stroke);background:#eef2f3}
+.map iframe{width:100%;height:100%;border:0;border-bottom-left-radius:18px;border-bottom-right-radius:18px}
+.map .overlay{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}
+.map .map-btn{background:var(--blue);color:#fff;border:none;border-radius:12px;padding:12px 18px;font-weight:900;cursor:pointer;box-shadow:0 10px 18px rgba(10,102,255,.22)}
+.map-toggle{margin:0 14px 10px 14px}
+.small{font-size:12px;color:var(--muted)}
+footer{color:#6b5e55;text-align:center;font-size:12px;margin:12px 0}
+/* fullscreen intro splash */
+.splash{position:fixed;inset:0;background:#000;display:none;align-items:center;justify-content:center;z-index:9999;color:#fff}
+.splash.show{display:flex}
+.splash video{position:absolute;inset:0;width:100vw;height:100vh;object-fit:cover;filter:brightness(.55)}
+.splash .skip{position:absolute;right:16px;bottom:16px;background:rgba(255,255,255,.92);border:0;border-radius:999px;padding:10px 14px;font-weight:900;cursor:pointer;color:#17353a}
+.splash .headline{position:relative;text-align:center}
+.splash .headline h1{font-family:"Shippori Mincho",serif;font-size:64px;letter-spacing:.02em;margin:0 0 12px}
+.splash .headline .cap{opacity:.9}
+.splash .headline .sri-inline{display:none}
+.splash .sri-between-splash{display:flex;justify-content:center;margin:10px 0 12px}
+.splash .sri-between-splash img{width:120px;opacity:.9;filter:drop-shadow(0 4px 8px rgba(0,0,0,.4))}
+@media(max-width:820px){.splash .sri-between-splash img{width:72px}}
+@media(max-width:820px){ .splash .headline h1{font-size:40px} .splash .headline .sri-inline{width:56px} }
+/* second Sri outline (page decoration) */
+.sri2{position:fixed;left:3%;bottom:3%;width:140px;opacity:.12;pointer-events:none;filter:drop-shadow(0 6px 10px rgba(0,0,0,.2))}
+.card{transition:transform 0.3s ease, box-shadow 0.3s ease;}
+.card:hover{transform:translateY(-6px) scale(1.02);box-shadow:0 10px 20px rgba(0,0,0,0.15);} 
+
+/* Microinteractions */
+.tag, .chip { transition: transform .06s ease, background-color .2s ease, box-shadow .2s ease; }
+.tag.pressed, .chip.pressed { transform: translateY(1px) scale(0.98); box-shadow: inset 0 2px 6px rgba(0,0,0,.08); }
+
+.fade-on-scroll { opacity:0; transform: translateY(8px); transition: opacity .6s ease, transform .6s ease; }
+.fade-on-scroll.in { opacity:1; transform:none; }
+
+/* Breadcrumbs */
+.breadcrumbs { display:flex; gap:.5rem; align-items:center; font-size:.9rem; color: var(--muted, #6f5a54); margin: .5rem 0 1rem; }
+.breadcrumbs a { color: inherit; text-decoration: none; }
+.breadcrumbs a[aria-current="page"] { color: var(--ink, #2E1A16); font-weight: 600; }
+.breadcrumbs .sep { opacity:.6; }
+
+/* Bigger CTA */
+.btn-primary, .reserve-btn { font-size:1.05rem; padding:.9rem 1.25rem; border-radius:14px; }
+
+/* Header controls */
+.header-controls { display:flex; gap:.5rem; align-items:center; }
+.header-controls select { border:1px solid var(--stroke,#eadfca); background:white; padding:.4rem .6rem; border-radius:10px; font-size:.95rem; }
+
+</style>
+
+<style id="fixed-footer-spacing-boost">
+/* Prevent footer overlap by reserving space at bottom */
+#ft { position: fixed; bottom: 0; left: 0; right: 0; z-index: 999; height: 56px; display:flex; align-items:center; justify-content:center; }
+body { padding-bottom: 120px !important; }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style id="button-centering-patch">
+/* --- Button text centering patch (non-destructive) --- */
+.btn, button,
+a.btn, input[type="button"].btn, input[type="submit"].btn {
+  display: inline-flex !important;
+  align-items: center !important;      /* vertical center */
+  justify-content: center !important;  /* horizontal center */
+  line-height: 1 !important;           /* avoid vertical spill */
+  text-align: center !important;
+  white-space: nowrap;                 /* keep label on one line */
+  overflow: hidden;                    /* hide overflow if any */
+  text-overflow: ellipsis;             /* show ellipsis if too long */
+}
+
+.btn .ico, button .ico {               /* keep icon+label nicely aligned if any */
+  display: inline-flex;
+  align-items: center;
+  gap: .4em;
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="container hwrap">
+    <a class="brand-left" href="./index.html" aria-label="BeautyLanka">
+      <img class="logo-img" src="assets/images/logo_mark.png" alt="BeautyLanka logo">
+    </a>
+    <nav class="nav-right">
+      <select id="langSelect" class="sel" title="Language"><option value="auto">Auto</option><option value="ja">日本語</option><option value="en">English</option></select>
+      <button class="btn reserve-btn" id="navLogin">ログイン</button>
+      <button class="btn primary reserve-btn" id="navSignup">新規登録</button>
+      <button class="btn reserve-btn" id="navMypage">マイページ</button>
+    </nav>
+  </div>
+
+      <div class="header-controls">
+        <label class="small" style="opacity:.7">Currency</label>
+        <select id="currencySelect">
+          <option value="USD">USD</option>
+          <option value="JPY">JPY</option>
+          <option value="LKR">LKR</option>
+          <option value="EUR">EUR</option>
+        </select>
+      </div>
+    </header>
+<div class="container"><nav class="breadcrumbs" aria-label="Breadcrumb"></nav></div>
+<section class="hero-visual">
+  <!-- gradient header hero instead of inline video -->
+  <div class="hero-head">
+    <div class="container">
+      <h1 data-i18n="hero_title">スリランカで“外さない”サロンとスパ</h1>
+      
+      <p data-i18n="hero_sub">ヘア・ネイル・まつ毛・アーユルヴェーダ・マッサージ/スパ。口コミと予約。</p>
+    </div>
+  </div>
+</section>
+<div class="container">
+  <section class="searchbar" aria-label="検索">
+    <form id="searchForm">
+      <input id="kw" type="search" data-ph="ph_kw" placeholder="キーワード（例：まつ毛、スパ）">
+      <select id="place"><option value="">場所</option></select>
+      <select id="type"><option value="">種類</option></select>
+      <button class="btn primary reserve-btn" type="submit" data-i18n="search_btn">検索</button>
+    </form>
+  </section>
+  <div class="grid" id="list"></div>
+</div>
+<!-- fullscreen intro splash (first visit per session) -->
+<div id="splash" class="splash" role="dialog" aria-label="Intro video">
+  <video id="splashVid" playsinline autoplay muted>
+    <source id="splashSrc" src="assets/video/hero.mp4" type="video/mp4" />
+  </video>
+  <div class="headline">
+    <h1>Beauty Lanka</h1>
+    <div class="sri-between-splash"><img src="assets/images/sri-outline.svg" alt="Sri Lanka line art"></div>
+    <div class="cap">Salons &amp; Spas in Sri Lanka</div>
+  </div>
+  <button class="skip" id="skipSplash">Skip</button>
+</div>
+<img class="sri2" src="assets/images/sri-outline.svg" alt="">
+<script>
+// ---------- auth helpers ----------
+function getAuth(){ try{ return JSON.parse(localStorage.getItem('bl_auth')||'null'); }catch(e){ return null; } }
+function requireAuth(redirectUrl){
+  const auth = getAuth();
+  if(auth) return true;
+  if(confirm('お気に入りや予約を行うにはログインが必要です。ログインしますか？')){
+    const url = 'login.html?redirect=' + encodeURIComponent(redirectUrl||location.href);
+    location.href = url;
+  }
+  return false;
+}
+// ---------- i18n ----------
+
+// --- Natural-English conversion for Japanese highlights ---
+function enPoints(s){
+  if(!s) return '';
+  let x = String(s);
+  // Common patterns
+  x = x.replace(/自然で長持ち。?丁寧なカウンセリング。?/g, 'Naturally long‑lasting with attentive consultation.');
+  x = x.replace(/本格アーユルヴェーダと静かな個室。?/g, 'Authentic Ayurveda in a tranquil private room.');
+  x = x.replace(/自社?ブレンドのハーブでリラックス。?/g, 'Relax with our original blended herbs.');
+  x = x.replace(/日本語対応/g, 'Japanese support available');
+  x = x.replace(/落ち着いた(雰囲気|空間)。?/g, 'Calm, relaxing atmosphere.');
+  x = x.replace(/丁寧(な)?施術。?/g, 'Meticulous, high‑care treatment.');
+  // Punctuation & spacing
+  x = x.replace(/。/g, '. ').replace(/\s+/g,' ').trim();
+  // Capitalize first letter
+  if(x) x = x.charAt(0).toUpperCase() + x.slice(1);
+  return x;
+}
+
+function enTag(t){const map={'マツエク':'Lashes','スパ':'Spa','ハーブ':'Herbs','日本語対応':'Japanese support'};return map[t]||t;}
+function getLang(){
+  const pref = localStorage.getItem('bl_lang') || 'auto';
+  if(pref==='auto'){
+    const ja = (navigator.language||'en').toLowerCase().startsWith('ja');
+    return ja ? 'ja' : 'en';
+  }
+  return pref;
+}
+const T = {
+  ja: {
+    hero_title: 'スリランカで“外さない”サロンとスパ',
+    hero_sub: 'ヘア・ネイル・まつ毛・アーユルヴェーダ・マッサージ/スパ。口コミと予約。',
+    ph_kw: 'キーワード（例：まつ毛、スパ）',
+    search_btn: '検索',
+    login: 'ログイン', signup:'新規登録', mypage:'マイページ',
+    place: '場所', type: '種類',
+    price_hint: '料金目安', details:'詳細', book:'予約へ進む', view_map:'地図で見る', only_this_store:'（この店舗だけ）', recommend_points:'おすすめポイント：'
+  },
+  en: {
+    hero_title: 'Find salons & spas you can trust in Sri Lanka',
+    hero_sub: 'Hair, nails, lashes, Ayurveda, massage/spa. Reviews and booking.',
+    ph_kw: 'Keywords (e.g., lashes, spa)',
+    search_btn: 'Search',
+    login:'Log in', signup:'Sign up', mypage:'My Page',
+    place: 'Area', type: 'Category',
+    price_hint: 'From', details:'Details', book:'Book', view_map:'View map', only_this_store:'(this shop only)', recommend_points:'Highlights: '
+  }
+};
+function t(k){ const L=getLang(); return (T[L]&&T[L][k])||k; }
+function applyI18N(){
+  const L = getLang();
+  const T = {
+    ja: {
+      hero_title: 'スリランカで“外さない”サロンとスパ',
+      hero_sub: 'ヘア・ネイル・まつ毛・アーユルヴェーダ・マッサージ/スパ。口コミと予約。',
+      ph_kw: 'キーワード（例：まつ毛、スパ）',
+      search_btn: '検索',
+      login: 'ログイン', signup:'新規登録', mypage:'マイページ'
+    },
+    en: {
+      hero_title: 'Find salons & spas you can trust in Sri Lanka',
+      hero_sub: 'Hair, nails, lashes, Ayurveda, massage/spa. Reviews and booking.',
+      ph_kw: 'Keywords (e.g., lashes, spa)',
+      search_btn: 'Search',
+      login:'Log in', signup:'Sign up', mypage:'My Page'
+    }
+  };
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const k=el.dataset.i18n; if(T[L][k]) el.textContent=T[L][k];
+  });
+  document.querySelectorAll('[data-ph]').forEach(el=>{
+    const k=el.dataset.ph; if(T[L][k]) el.setAttribute('placeholder', T[L][k]);
+  });
+  // nav buttons
+  document.getElementById('navLogin').textContent = T[L].login;
+  document.getElementById('navSignup').textContent= T[L].signup;
+  document.getElementById('navMypage').textContent= T[L].mypage;
+  // placeholder options
+  const placeOpt=document.querySelector('#place option[value=""]'); if(placeOpt) placeOpt.textContent=T[L].place;
+  const typeOpt=document.querySelector('#type option[value=""]'); if(typeOpt) typeOpt.textContent=T[L].type;
+}
+(function(){
+  const sel = document.getElementById('langSelect');
+  const pref = localStorage.getItem('bl_lang') || 'auto';
+  sel.value = pref;
+  sel.onchange = ()=>{ localStorage.setItem('bl_lang', sel.value); location.reload(); };
+  applyI18N();
+})();
+// header nav + user pill
+(function navInit(){
+  const auth = getAuth();
+  const loginBtn = document.getElementById('navLogin');
+  const signupBtn= document.getElementById('navSignup');
+  const myBtn    = document.getElementById('navMypage');
+  if(auth && auth.email){
+    // replace login/signup with user pill + logout
+    loginBtn.style.display='none'; signupBtn.style.display='none';
+    const pill = document.createElement('span');
+    pill.className='btn'; pill.style.background='#fff'; pill.style.cursor='default';
+    pill.textContent = auth.email;
+    const logout = document.createElement('button'); logout.className='btn'; logout.textContent='Logout';
+    logout.onclick=()=>{ localStorage.removeItem('bl_auth'); location.reload(); };
+    myBtn.parentNode.insertBefore(pill, myBtn);
+    // translate logout when JA
+    if(getLang()==='ja'){ logout.textContent='ログアウト'; }
+    myBtn.onclick=()=>location.href='mypage.html';
+  }else{
+    loginBtn.onclick=()=>location.href='login.html?redirect='+encodeURIComponent(location.href);
+    signupBtn.onclick=()=>location.href='signup.html?redirect='+encodeURIComponent(location.href);
+    myBtn.onclick=()=>location.href='mypage.html';
+  }
+})();
+// ---------- DATA (assets references remain) ----------
+const DATA=[
+  {id:"S1", name:"Silky Lashes Colombo", type:"マツエク", place:"コロンボ", lat:6.933, lng:79.85, price:4250, rating:4.6, tags:["マツエク","日本語対応"], points:"自然で長持ち。丁寧なカウンセリング。", photos:["assets/images/lashes_a.jpg","assets/images/lashes_b.jpg","assets/images/lashes_c.jpg"]},
+  {id:"S2", name:"Ayur Luxe Spa", type:"スパ", place:"ゴール", lat:6.025, lng:80.217, price:6630, rating:4.7, tags:["アーユルヴェーダ","リラク"], points:"本格アーユルヴェーダと静かな個室。", photos:["assets/images/spa_massage.jpg","assets/images/herbs_flatlay.jpg","assets/images/lashes_a.jpg"]},
+  {id:"S3", name:"Cinnamon Grow", type:"ハーブ", place:"キャンディ", lat:7.293, lng:80.641, price:5610, rating:4.5, tags:["ハーブ","リラク"], points:"自社ブレンドのハーブでリラックス。", photos:["assets/images/herbs_flatlay.jpg","assets/images/spa_massage.jpg","assets/images/lashes_b.jpg"]}
+];
+function yen(n){ return "¥"+(Number(n)||0).toLocaleString("ja-JP"); }
+const $=s=>document.querySelector(s); const list=$('#list');
+function cardTemplate(s, favOn){
+  const L = getLang();
+  let tags = (L==='en' && s.tagsEn ? s.tagsEn : s.tags);
+  if(L==='en' && (!s.tagsEn || !s.tagsEn.length)){ tags = (s.tags||[]).map(enTag); }
+  let pts  = (L==='en' ? (s.pointsEn || enPoints(s.points||'')) : s.points);
+  return `<article class="card" data-id="${s.id}" data-lat="${s.lat}" data-lng="${s.lng}">
+    <div class="media">
+      <div class="carousel">${s.photos.map((src,i)=>`<img src="${src}" alt="${s.name} photo ${i+1}">`).join('')}</div>
+      <div class="nav"><button class="prev">‹</button><button class="next">›</button></div>
+    </div>
+    <div class="body">
+      <h3 class="title">${s.name}</h3>
+      <div class="rowmeta">
+        <div>${t('price_hint')} <b>${yen(s.price)}</b></div>
+        <div class="star">★ ${s.rating.toFixed(1)}</div>
+      </div>
+      <div class="tags">${tags.map(t=>`<a class="tag" href="details.html?salonId=${encodeURIComponent(s.id)}">${t}</a>`).join('')}</div>
+      <div class="points">${t('recommend_points')}${pts}</div>
+      <div class="foot">
+        <button class="btn small reserve-btn" onclick="location.href='details.html?salonId=${encodeURIComponent(s.id)}'">${t('details')}</button>
+        <div class="actions">
+          <button class="heart ${favOn?'active':''}" title="Favorite" data-fav="${s.id}" aria-pressed="${favOn?'true':'false'}"><span class="ico">${favOn?'❤':'♡'}</span></button>
+          <button class="btn small primary reserve-btn" data-reserve="${s.id}" data-name="${s.name}">${t('book')}</button>
+        </div>
+      </div>
+    </div>
+    <div class="map-toggle"><button class="btn reserve-btn" data-map="toggle">${t('view_map')}</button> <span class="small">${t('only_this_store')}</span></div>
+    <div class="mapwrap"><div class="map">
+      <iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      <div class="overlay"><button class="map-btn reserve-btn" data-dir>Directions on Google</button></div>
+    </div></div>
+  </article>`;
+}
+function readJSON(k, def){ try{ return JSON.parse(localStorage.getItem(k)||JSON.stringify(def)); }catch(e){ return def; } }
+function writeJSON(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+function favIds(){ const a1=readJSON('bl_favs', []); const a2=readJSON('favorites', []); return Array.from(new Set(a1.concat(a2))); }
+function render(items){
+  const favset = new Set(favIds());
+  list.innerHTML = items.map(s => cardTemplate(s, favset.has(s.id))).join('');
+  attachHandlers();
+}
+function attachHandlers(){
+  document.querySelectorAll('.card').forEach(card=>{
+    const car=card.querySelector('.carousel'); const imgs=car.querySelectorAll('img');
+    let idx=0; function go(i){ idx=(i+imgs.length)%imgs.length; car.scrollTo({left:car.clientWidth*idx,behavior:'smooth'}); }
+    card.querySelector('.prev').onclick=()=>go(idx-1);
+    card.querySelector('.next').onclick=()=>go(idx+1);
+    const mapWrap=card.querySelector('.mapwrap'); const btn=card.querySelector('[data-map="toggle"]');
+    const lat=card.dataset.lat, lng=card.dataset.lng;
+    btn.onclick=()=>{ mapWrap.classList.toggle('show'); if(mapWrap.classList.contains('show')){ const iframe=mapWrap.querySelector('iframe'); iframe.src = `https://www.google.com/maps?q=${lat},${lng}&z=15&hl=ja&output=embed`; } };
+    card.querySelector('[data-dir]').onclick=()=>window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving&hl=ja`,'_blank');
+  });
+  // fav
+  document.querySelectorAll('[data-fav]').forEach(btn=>{
+    const ico=btn.querySelector('.ico'); if(ico){ ico.textContent = btn.classList.contains('active') ? '❤' : '♡'; }
+    btn.onclick = ()=>{
+      if(!requireAuth(location.href)) return;
+      const id = btn.getAttribute('data-fav');
+      let ids = favIds();
+      const set = new Set(ids);
+      const meta = readJSON('bl_fav_meta', {});
+      const salon = DATA.find(x=>x.id===id);
+      if(btn.classList.contains('active')){
+        set.delete(id); delete meta[id]; btn.classList.remove('active'); btn.setAttribute('aria-pressed','false'); if(ico) ico.textContent='♡';
+      }else{
+        set.add(id); meta[id] = { name: salon?.name || ('Salon #'+id), photo: (salon?.photos && salon.photos[0]) || "" };
+        btn.classList.add('active'); btn.setAttribute('aria-pressed','true'); if(ico) ico.textContent='❤';
+      }
+      ids = Array.from(set);
+      writeJSON('bl_favs', ids); writeJSON('favorites', ids); writeJSON('bl_fav_meta', meta);
+    };
+  });
+  // reserve buttons (gate)
+  document.querySelectorAll('[data-reserve]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const id = btn.dataset.reserve, name = btn.dataset.name;
+      const url = `reservation.html?salonId=${encodeURIComponent(id)}&salonName=${encodeURIComponent(name)}`;
+      if(!requireAuth(url)) return;
+      location.href = url;
+    };
+  });
+}
+// initial render
+render(DATA);
+// populate selects (prefill with major cities)
+(function initFilters(){
+  const major = ["コロンボ","ゴール","キャンディ","ヌワラエリヤ","ジャフナ","アルガンベイ","ミリッサ","ウナワトゥナ","トリンコマリー"];
+  const types  = Array.from(new Set(DATA.map(x=>x.type))).sort();
+  const placeSel = document.getElementById('place');
+  const typeSel  = document.getElementById('type');
+  placeSel.insertAdjacentHTML('beforeend', major.map(p=>`<option>${p}</option>`).join(''));
+  typeSel.insertAdjacentHTML('beforeend', types.map(t=>`<option>${t}</option>`).join(''));
+  document.getElementById('searchForm').addEventListener('submit', (ev)=>{
+    ev.preventDefault();
+    const kw = (document.getElementById('kw').value||'').toLowerCase();
+    const place = placeSel.value;
+    const type  = typeSel.value;
+    // filter
+    const items = DATA.filter(s=>
+      (!place || s.place===place) &&
+      (!type  || s.type===type) &&
+      (!kw || (s.name.toLowerCase().includes(kw) || s.points.toLowerCase().includes(kw) || s.tags.join(',').toLowerCase().includes(kw)))
+    );
+    render(items);
+    // history
+    const hist = readJSON('bl_search_history', []);
+    hist.unshift({ place, type, date:'', guests:'', ts: Date.now() });
+    writeJSON('bl_search_history', hist.slice(0,50));
+  });
+})();
+// Splash: show once per session (now uses hero.mp4)
+(function splash(){
+  try{
+    if(sessionStorage.getItem('bl_intro_seen')==='1') return;
+    const wrap = document.getElementById('splash');
+    const vid  = document.getElementById('splashVid');
+    const src  = document.getElementById('splashSrc');
+    const skip = document.getElementById('skipSplash');
+    wrap.classList.add('show');
+    vid.addEventListener('error', ()=>{ src.src='assets/video/hero.mp4'; vid.load(); vid.play().catch(()=>{}); }, {once:true});
+    vid.play().catch(()=>{});
+    function end(){ wrap.classList.remove('show'); sessionStorage.setItem('bl_intro_seen','1'); }
+    vid.addEventListener('ended', end);
+    skip.addEventListener('click', end);
+  }catch(e){}
+})();
+// nav to details via tag
+document.addEventListener('click', (e)=>{
+  const t=e.target.closest('.tag');
+  if(!t) return;
+  const card=e.target.closest('.card');
+  if(!card) return;
+  const id=card.dataset && card.dataset.id;
+  if(!id) return;
+  const lang=(localStorage.getItem('bl_lang')||'').toLowerCase()==='en'?'en':null;
+  const q=new URLSearchParams({salonId:id});
+  if(lang==='en') q.set('lang','en');
+  location.href='details.html?'+q.toString();
+});
+
+// --- make whole card clickable to details (safe delegation) ---
+document.addEventListener('click', function(e){
+  const card = e.target.closest('.card');
+  if(!card) return;
+  if(e.target.closest('button') || e.target.closest('a') || e.target.closest('.actions') || e.target.closest('.heart')) return;
+  const pref=(localStorage.getItem('bl_lang')||'').toLowerCase();
+  const q=new URLSearchParams({salonId:card.dataset.id});
+  if(pref==='en') q.set('lang','en');
+  location.href='details.html?'+q.toString();
+});
+
+
+// --- auto-translate highlights to EN when needed (best effort) ---
+async function maybeTranslateHighlights(pEl){
+  try{
+    const L=(localStorage.getItem('bl_lang')||'').toLowerCase();
+    if(L!=='en') return;
+    const txt = pEl.textContent || '';
+    if(!/[\u3040-\u30FF\u4E00-\u9FFF]/.test(txt)) return;
+    const res = await fetch('https://libretranslate.de/translate', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({q: txt.replace(/^Highlights:\s*/i,''), source:'auto', target:'en', format:'text'})
+    });
+    const j = await res.json();
+    if(j && j.translatedText){
+      pEl.textContent = 'Highlights: ' + j.translatedText;
+    }
+  }catch(e){ }
+}
+
+
+// translate current highlights if needed
+(function(){
+  const els = document.querySelectorAll('.card .points');
+  els.forEach(maybeTranslateHighlights);
+})();
+
+
+// --- Logout pill (if logged in) ---
+(function(){
+  try{
+    const auth = (JSON.parse(localStorage.getItem('bl_auth')||'null'));
+    if(!auth) return;
+    const nav = document.querySelector('.nav-right');
+    if(!nav || document.getElementById('logoutPill')) return;
+    const pill = document.createElement('div');
+    pill.id='logoutPill';
+    pill.innerHTML = '<button class="btn gray reserve-btn" id="btnLogout">Logout</button>';
+    nav.appendChild(pill);
+    document.getElementById('btnLogout').onclick = ()=>{
+      localStorage.removeItem('bl_auth');
+      location.href='index.html?nosplash=1';
+    };
+    // JA label
+    const L=(localStorage.getItem('bl_lang')||'auto');
+    const lang=(L==='en'?'en':(L==='ja'?'ja':((navigator.language||'en').toLowerCase().startsWith('ja')?'ja':'en')));
+    if(lang==='ja'){ document.getElementById('btnLogout').textContent='ログアウト'; }
+  }catch(e){}
+})();
+
+
+// --- global splash skip (only for ?nosplash=1) ---
+(function(){
+  try{
+    const usp=new URLSearchParams(location.search);
+    if(usp.get('nosplash')==='1'){
+      const s=document.querySelector('.splash'); if(s) s.remove();
+    }
+  }catch(e){}
+})();
+
+// --- footer policy links open modal instead of navigate ---
+(function(){
+  function bind(){
+    const modal = document.getElementById('policyModal');
+    if(!modal) return;
+    const body  = document.getElementById('policyBody');
+    const title = document.getElementById('policyTitle');
+    const close = document.getElementById('policyClose');
+    function show(){ modal.style.display='flex'; modal.setAttribute('aria-hidden','false'); }
+    function hide(){ modal.style.display='none'; modal.setAttribute('aria-hidden','true'); if(body) body.innerHTML=''; if(title) title.textContent=''; }
+    if(close){ close.onclick = (ev)=>{ ev.preventDefault(); hide(); }; }
+    modal.addEventListener('click', (e)=>{ if(e.target===modal) hide(); });
+    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') hide(); });
+    function openSheet(t, href){
+      const abs = new URL(href, location.href).href;
+      if(title) title.textContent = t||'Info';
+      const iframe = document.createElement('iframe');
+      iframe.src = abs;
+      iframe.style.width='100%'; iframe.style.height='70vh'; iframe.style.border='0';
+      iframe.setAttribute('sandbox','allow-same-origin allow-scripts allow-forms');
+      if(body){ body.innerHTML=''; body.appendChild(iframe); }
+      show();
+    }
+    document.querySelectorAll('section.policies a').forEach(a=>{
+      a.addEventListener('click', (ev)=>{
+        ev.preventDefault(); ev.stopImmediatePropagation();
+        openSheet((a.textContent||'').trim(), a.getAttribute('href'));
+      }, true);
+    });
+  }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', bind); } else { bind(); }
+})();
+</script>
+<footer>Build v2025-09-14z3</footer>
+
+<section class="policies container" style="margin:30px auto 40px; padding:16px 0; border-top:1px solid var(--stroke);">
+  <div style="display:flex; gap:18px; flex-wrap:wrap; justify-content:center;">
+    <a href="terms.html" class="small">Terms</a>
+    <a href="privacy.html" class="small">Privacy</a>
+    <a href="cancel.html" class="small">Cancel Policy</a>
+    <a href="contact.html" class="small">Contact</a>
+  </div>
+</section>
+
+<!-- lightweight modal -->
+<div id="policyModal" class="modal" aria-hidden="true" style="display:none;position:fixed;inset:0;z-index:10000;align-items:center;justify-content:center;background:rgba(0,0,0,.45)">
+  <div class="sheet" role="dialog" aria-modal="true" style="max-width:780px;width:92%;background:#fff;border-radius:14px;border:1px solid #eadfca;box-shadow:0 18px 40px rgba(0,0,0,.25);">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #eadfca">
+      <h3 id="policyTitle" style="margin:0;font-size:18px">Title</h3>
+      <button id="policyClose" class="btn reserve-btn" style="height:32px">Close</button>
+    </div>
+    <div id="policyBody" style="padding:14px 16px;line-height:1.7;color:#2E1A16"></div>
+  </div>
+</div>
+
+<script id="index-en-mapper">
+// Force English labels on listing cards when site is EN.
+(function(){
+  if(window.__IndexENMapper) return; window.__IndexENMapper = true;
+  const L = (localStorage.getItem('bl_lang')||'auto');
+  const isEN = (L==='en') || (L==='auto' && !((navigator.language||'en').toLowerCase().startsWith('ja')));
+  if(!isEN) return;
+
+  const MAP = new Map([
+    ['アーユルヴェーダ','Ayurveda'],
+    ['リラク','Relaxation'],
+    ['ハーブ','Herbs'],
+    ['まつげ','Lashes'],
+    ['ネイル','Nails'],
+    ['ヘア','Hair'],
+    // snippets
+    ['本格的な','Authentic '],
+    ['本格','Authentic'],
+    ['静かな個室','quiet private room'],
+    ['自社ブレンドのハーブ','our original blended herbs'],
+  ]);
+
+  function toEN(s){ if(!s) return s; let out=s.replaceAll('（','(').replaceAll('）',')'); MAP.forEach((en,ja)=>{ out=out.split(ja).join(en); }); return out; }
+
+  function walk(el){
+    const w=document.createTreeWalker(el||document.body, NodeFilter.SHOW_TEXT, {acceptNode(n){const v=n.nodeValue||''; return /[一-龯ぁ-んァ-ン]/.test(v)?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT;}});
+    const nodes=[]; while(w.nextNode()) nodes.push(w.currentNode);
+    nodes.forEach(n=> n.nodeValue = toEN(n.nodeValue));
+  }
+
+  function run(){
+    document.querySelectorAll('.card, .chip, .badge, .tag, .desc, .lead').forEach(el=> walk(el));
+  }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', run); } else { run(); }
+  new MutationObserver(run).observe(document.body, {childList:true, subtree:true});
+})();
+</script>
+
+<script id="loccat-lang-fix">
+// Force location/category dropdown options based on bl_lang
+(function(){
+  if(window.__LocCatFix) return; window.__LocCatFix = true;
+  function run(){
+    const L = (localStorage.getItem('bl_lang')||'auto');
+    const isJA = (L==='ja') || (L==='auto' && (navigator.language||'').toLowerCase().startsWith('ja'));
+    const areaSel = document.querySelector('select#areaSelect, select[name="area"], .area-select');
+    const catSel = document.querySelector('select#categorySelect, select[name="category"], .category-select');
+    if(areaSel){
+      areaSel.innerHTML = '';
+      const opts = isJA ?
+        ['コロンボ','ゴール','キャンディ','ヌワラエリヤ','ジャフナ','アルガンベイ','ミリッサ','ウナワトゥナ','トリンコマリー'] :
+        ['Colombo','Galle','Kandy','Nuwara Eliya','Jaffna','Arugam Bay','Mirissa','Unawatuna','Trincomalee'];
+      areaSel.appendChild(new Option('', ''));
+      opts.forEach(o=> areaSel.appendChild(new Option(o,o)));
+    }
+    if(catSel){
+      catSel.innerHTML = '';
+      const opts = isJA ?
+        ['ヘア','ネイル','まつげ','アーユルヴェーダ','マッサージ・スパ'] :
+        ['Hair','Nails','Lashes','Ayurveda','Massage/Spa'];
+      catSel.appendChild(new Option('', ''));
+      opts.forEach(o=> catSel.appendChild(new Option(o,o)));
+    }
+  }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', run); } else { run(); }
+  new MutationObserver(run).observe(document.body, {childList:true, subtree:true});
+})();
+</script>
+
+<script id="loccat-lang-fix-v2">
+(function(){
+  if(window.__LocCatFixV2) return; window.__LocCatFixV2 = true;
+  function isJA(){
+    const L = (localStorage.getItem('bl_lang')||'auto');
+    return (L==='ja') || (L==='auto' && (navigator.language||'').toLowerCase().startsWith('ja'));
+  }
+  const LOC_EN = ['Colombo','Galle','Kandy','Nuwara Eliya','Jaffna','Arugam Bay','Mirissa','Unawatuna','Trincomalee'];
+  const LOC_JA = ['コロンボ','ゴール','キャンディ','ヌワラエリヤ','ジャフナ','アルガンベイ','ミリッサ','ウナワトゥナ','トリンコマリー'];
+  const CAT_EN = ['Hair','Nails','Lashes','Ayurveda','Massage/Spa'];
+  const CAT_JA = ['ヘア','ネイル','まつげ','アーユルヴェーダ','マッサージ・スパ'];
+
+  function labelText(sel){
+    let t='';
+    if(sel.id){
+      const lab = document.querySelector(`label[for="${sel.id}"]`);
+      if(lab) t += ' ' + lab.textContent;
+    }
+    if(sel.closest('label')) t += ' ' + sel.closest('label').textContent;
+    if(sel.previousElementSibling && sel.previousElementSibling.tagName==='LABEL')
+      t += ' ' + sel.previousElementSibling.textContent;
+    const fo = sel.options && sel.options.length ? sel.options[0].text : '';
+    t += ' ' + fo + ' ' + sel.id + ' ' + sel.name + ' ' + sel.className;
+    return (t||'').toLowerCase();
+  }
+  function isAreaSel(sel){
+    const t = labelText(sel);
+    return /area|place|location|エリア|場所|ロケーション/.test(t);
+  }
+  function isCatSel(sel){
+    const t = labelText(sel);
+    return /category|カテゴリ|カテゴリー|type|タイプ/.test(t);
+  }
+  function apply(){
+    const ja = isJA();
+    const locs = ja ? LOC_JA : LOC_EN;
+    const cats = ja ? CAT_JA : CAT_EN;
+    document.querySelectorAll('select').forEach(sel=>{
+      if(sel.dataset.loccatFixed==='1') return;
+      if(isAreaSel(sel)){
+        sel.innerHTML = '';
+        sel.appendChild(new Option(ja?'エリア':'Area',''));
+        locs.forEach(x=> sel.appendChild(new Option(x,x)));
+        sel.dataset.loccatFixed='1';
+      }else if(isCatSel(sel)){
+        sel.innerHTML = '';
+        sel.appendChild(new Option(ja?'カテゴリー':'Category',''));
+        cats.forEach(x=> sel.appendChild(new Option(x,x)));
+        sel.dataset.loccatFixed='1';
+      }
+    });
+  }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', apply); } else { apply(); }
+  new MutationObserver(apply).observe(document.body, {childList:true, subtree:true});
+})();
+</script>
+
+<script id="shopinfo-en-auto">
+(function(){
+  if(window.__ShopInfoENAuto) return; window.__ShopInfoENAuto = true;
+  const L = (localStorage.getItem('bl_lang')||'auto');
+  const isEN = (L==='en') || (L==='auto' && !((navigator.language||'en').toLowerCase().startsWith('ja')));
+  if(!isEN) return;
+
+  const D = [
+    // Services/Tags
+    ['アーユルヴェーダ','Ayurveda'],
+    ['リラク','Relaxation'],
+    ['ハーブ','Herbs'],
+    ['まつげ','Lashes'],
+    ['ネイル','Nails'],
+    ['ヘア','Hair'],
+    ['日本語対応','Japanese support'],
+    // Qualities / phrases
+    ['自然で長持ち','Naturally long-lasting'],
+    ['丁寧なカウンセリング','attentive consultation'],
+    ['静かな個室','quiet private room'],
+    ['自社ブレンドのハーブ','our original blended herbs'],
+    ['本格的な','Authentic '],
+    ['本格','Authentic'],
+  ];
+
+  function toEN(s){
+    if(!s) return s;
+    let out = s.replaceAll('（','(').replaceAll('）',')');
+    // numeric units
+    out = out.replace(/(\d+)\s*分/g, '$1 min');
+    out = out.replace(/(\d+)\s*時間/g, '$1 h');
+    D.forEach(([ja,en]) => { out = out.split(ja).join(en); });
+    return out;
+  }
+
+  function walk(root){
+    const w = document.createTreeWalker(root||document.body, NodeFilter.SHOW_TEXT, {acceptNode(n){
+      const v = n.nodeValue||''; if(!/[一-龯ぁ-んァ-ン]/.test(v)) return NodeFilter.FILTER_REJECT;
+      if(n.parentElement && /^(script|style)$/i.test(n.parentElement.tagName)) return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
+    }});
+    const nodes=[]; while(w.nextNode()) nodes.push(w.currentNode);
+    nodes.forEach(n => n.nodeValue = toEN(n.nodeValue));
+  }
+
+  function apply(){
+    document.querySelectorAll('.shop-info, .card, .desc, .lead, .info, .chips, .badge, .tag').forEach(walk);
+  }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', apply); } else { apply(); }
+  new MutationObserver(apply).observe(document.body, {childList:true, subtree:true, characterData:true});
+})();
+</script>
+
+<script>
+/*__INDEX_I18N_SUPPLEMENT__*/
+(function(){
+  try{
+    const pref = localStorage.getItem('bl_lang') || 'auto';
+    const lang = (pref==='en' ? 'en' : (pref==='ja' ? 'ja' : ((navigator.language||'en').toLowerCase().startsWith('ja')?'ja':'en')));
+    if(lang!=='en') return;
+    const map = {
+      '検索':'Search','ログイン':'Log in','新規登録':'Sign up','マイページ':'My Page',
+      '詳細':'Details','予約へ進む':'Book','地図で見る':'View map','（この店舗だけ）':'(this shop only)',
+      'おすすめポイント：':'Highlights: '
+    };
+    document.querySelectorAll('button, a, .tag, [data-i18n], .small').forEach(el=>{
+      const t=(el.childNodes.length===1?(el.textContent||'').trim():'');
+      if(map[t]) el.textContent = map[t];
+    });
+  }catch(e){}
+})();
+</script>
+
+<script src="./app.js"></script>
+
+<script id="final-minimal-enhancements">
+(function authUIEnforce(){
+  try{
+    const auth = JSON.parse(localStorage.getItem('bl_auth')||'null');
+    if(!auth || !auth.email) return;
+    function hideBtns(){
+      ['navLogin','navSignup'].forEach(id=>{
+        const el=document.getElementById(id);
+        if(el){
+          el.style.display='none';
+          el.setAttribute('aria-hidden','true');
+          el.tabIndex=-1;
+        }
+      });
+    }
+    hideBtns();
+    const target = document.querySelector('header') || document.body;
+    new MutationObserver(hideBtns).observe(target, {childList:true, subtree:true});
+  }catch(e){}
+})();
+
+(function currencyLinkage(){
+  try{
+    const sel = document.getElementById('currencySelect');
+    const saved = localStorage.getItem('bl_currency') || (sel ? sel.value : 'JPY') || 'JPY';
+    if(sel){ sel.value = saved; }
+    const RATES = { JPY:1, USD:0.0067, EUR:0.0061, LKR:2.05 };
+    const fmt = (amt, cur)=> new Intl.NumberFormat(((localStorage.getItem('bl_lang')||'auto')==='ja'?'ja-JP':'en-US'), { style:'currency', currency: cur, maximumFractionDigits: (cur==='LKR'?0:0) });
+    window.__yen_original__ = (typeof yen==='function') ? yen : null;
+    window.yen = function(n){
+      const cur = (sel && sel.value) || localStorage.getItem('bl_currency') || 'JPY';
+      const rate = RATES[cur] || 1;
+      const jpy = Number(n)||0;
+      const converted = Math.round(jpy * rate);
+      try{ return fmt(converted, cur).format(converted); }catch(e){
+        const symbols = {JPY:'¥', USD:'$', EUR:'€', LKR:'Rs '};
+        return (symbols[cur]||'') + converted.toLocaleString();
+      }
+    };
+    if(sel){
+      sel.onchange = ()=>{
+        localStorage.setItem('bl_currency', sel.value);
+        try{ if(typeof render==='function'){ render((Array.isArray(DATA)?DATA:[]).slice()); } }catch(e){}
+      };
+    }
+  }catch(e){}
+})();
+</script>
+
+<script id="auth-hide-important">
+(function(){
+  try{
+    const auth = JSON.parse(localStorage.getItem('bl_auth')||'null');
+    if(!auth || !auth.email) return;
+    function reallyHide(id){
+      const el = document.getElementById(id);
+      if(!el) return;
+      try{ el.style.setProperty('display','none','important'); }catch(e){ el.style.display='none'; }
+      el.setAttribute('aria-hidden','true');
+      el.tabIndex = -1;
+    }
+    function apply(){ reallyHide('navLogin'); reallyHide('navSignup'); }
+    apply();
+    const target = document.querySelector('header') || document.body;
+    new MutationObserver(apply).observe(target, {childList:true, subtree:true});
+  }catch(e){}
+})();
+</script>
+
+
+<script id="en-label-fixer-and-modal-capture">
+// 1) English label fixer for reservation history-like tables (non-destructive)
+(function(){
+  try{
+    const L = (localStorage.getItem('bl_lang')||'auto');
+    const isEN = (L==='en') || (L==='auto' && !((navigator.language||'en').toLowerCase().startsWith('ja')));
+    if(!isEN) return;
+    const MAP = new Map([
+      ['予約履歴','Reservation History'],
+      ['店舗','Shop'],
+      ['料金目安','Price'],
+      ['料金','Price'],
+      ['日時','Timestamp'],
+      ['時刻','Timestamp']
+    ]);
+    function trWalk(root){
+      const w = document.createTreeWalker(root||document.body, NodeFilter.SHOW_TEXT, {
+        acceptNode(n){
+          const v=n.nodeValue||'';
+          return /[一-龯ぁ-んァ-ン]/.test(v) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+        }
+      });
+      const nodes=[]; while(w.nextNode()) nodes.push(w.currentNode);
+      nodes.forEach(n=>{
+        let t=n.nodeValue;
+        MAP.forEach((en,ja)=>{ t = t.split(ja).join(en); });
+        n.nodeValue=t;
+      });
+    }
+    function apply(){ trWalk(document.body); }
+    if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', apply); } else { apply(); }
+    new MutationObserver(apply).observe(document.body, {childList:true, subtree:true, characterData:true});
+  }catch(e){}
+})();
+
+
+// 2) Stronger modal capture
+(function(){
+  try{
+    const modal = document.getElementById('policyModal');
+    const body  = document.getElementById('policyBody');
+    const title = document.getElementById('policyTitle');
+    if(!modal || !body || !title) return;
+    function show(){ modal.style.display='flex'; modal.setAttribute('aria-hidden','false'); }
+    function hide(){ modal.style.display='none'; modal.setAttribute('aria-hidden','true'); body.innerHTML=''; title.textContent=''; }
+    const close = document.getElementById('policyClose');
+    if(close){ close.onclick = (ev)=>{ ev.preventDefault(); hide(); }; }
+    modal.addEventListener('click', (e)=>{ if(e.target===modal) hide(); });
+    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') hide(); });
+
+    function openSheet(t, href){
+      const abs = new URL(href, location.href).href;
+      const iframe = document.createElement('iframe');
+      iframe.src = abs;
+      iframe.style.width='100%'; iframe.style.height='70vh'; iframe.style.border='0';
+      iframe.setAttribute('sandbox','allow-same-origin allow-scripts allow-forms');
+      body.innerHTML=''; body.appendChild(iframe); title.textContent = t || 'Info'; show();
+    }
+    const POLICY_FILES = ['terms.html','privacy.html','cancel.html','contact.html'];
+    document.addEventListener('click', function(ev){
+      const a = ev.target.closest && ev.target.closest('a[href]');
+      if(!a) return;
+      const raw = a.getAttribute('href')||'';
+      const low = raw.toLowerCase();
+      if(!POLICY_FILES.some(f=> low.endsWith(f) || low.endsWith('./'+f) || low.includes('/'+f))) return;
+      ev.preventDefault();
+      ev.stopImmediatePropagation();
+      const label = (a.textContent||a.getAttribute('aria-label')||'').trim();
+      openSheet(label, raw);
+    }, true);
+  }catch(e){}
+})();
+</script>
+
+</body>
+
+</html>

@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>予約内容の確認</title>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Shippori+Mincho:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="stylesheet" href="assets/css/theme.css"/>
+  <style>
+    :root{ --base:#F7F1E1; --ink:#310E10; --stroke:#eadfca; --teal:#246A73; --danger:#74070E; --good:#0B7F5F; }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--base);color:#111;font-family:'Zen Kaku Gothic New', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, 'Noto Sans JP', sans-serif}
+    .wrap{max-width:1200px;margin:28px auto;padding:0 20px}
+    .hrow{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    .back{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;border:1px solid var(--stroke);background:#fff;color:#513;text-decoration:none}
+    .h1{font-size:42px;font-family:'Shippori Mincho', serif;font-weight:700;color:#310E10;margin:0 0 8px;letter-spacing:.02em}
+    .card{background:#fff;border:1px solid var(--stroke);border-radius:18px;padding:24px;box-shadow:0 12px 32px rgba(49,14,16,.08);margin:0 0 18px}
+    .title{font-size:28px;font-weight:800;margin:0 0 8px}
+    .meta{opacity:.9;line-height:1.9}
+    .btn{border-radius:999px;padding:14px 22px;font-size:18px;font-weight:800;cursor:pointer;border:1px solid transparent;transition:.15s}
+    .btn-primary{background:#246A73;color:#fff;border-color:#246A73;box-shadow:0 10px 24px rgba(36,106,115,.20)}
+    .btn-outline{background:#fff;color:#246A73;border:1px solid color-mix(in oklab, #246A73 35%, white)}
+    .input{height:48px;border-radius:12px;border:1px solid var(--stroke);padding:0 14px;background:#fff;width:100%;font-size:16px}
+    .input:focus{outline:none;border-color:color-mix(in oklab,#246A73 55%,white);box-shadow:0 0 0 3px color-mix(in oklab,#246A73 20%, transparent)}
+    textarea.input{height:110px;padding:12px;resize:vertical}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:10px}
+    @media (max-width:900px){.form-row{grid-template-columns:1fr}}
+    .sec-title{font-weight:900;font-size:22px;color:#310E10;margin:8px 0}
+    .sec-desc{color:#444;opacity:.85;margin-bottom:8px}
+
+    /* Toast */
+    .toast{
+      position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(12px);
+      background: #fff; color:#513; border:1px solid #f2d09c;
+      box-shadow: 0 16px 40px rgba(49,14,16,.14);
+      padding: 12px 16px; border-radius:14px; z-index:9999; width: min(92vw, 640px);
+      display:flex; align-items:center; gap:10px; opacity:0; pointer-events:none;
+      transition: transform .2s ease, opacity .2s ease;
+    }
+    .toast.warn{ background:#fff8e6; }
+    .toast.ok{   background:#e9fbf3; border-color:#bde9d7; color:#0b5138; }
+    .toast.show{ opacity:1; transform: translateX(-50%) translateY(0); pointer-events:auto; }
+    .toast .badge{font-weight:900}
+    .toast .close{margin-left:auto;border:none;background:transparent;font-size:18px;cursor:pointer;opacity:.6}
+    .toast .close:hover{opacity:1}
+  
+/* confirm-page staff row */
+#confirmStaffRow { margin-top: 6px; }
+
+</style>
+
+<style id="fixed-footer-style">
+#ft{
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  background:#faf6ef;
+  padding:10px 0;
+  text-align:center;
+  color:#6b5e55;
+  font-size:13px;
+  border-top:1px solid #eadfca;
+  z-index:999;
+}
+#ft a{ color:#6b5e55; text-decoration:none; margin:0 10px; }
+#ft a:hover{ text-decoration:underline; }
+body{ padding-bottom:60px; } /* avoid overlap */
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hrow">
+      <a class="back" href="./reservation.html">← 戻る</a>
+      <h1 class="h1">予約内容の確認</h1>
+    </div>
+
+    <div class="card" id="sum">
+      <div class="title" id="s_item">Menu</div>
+      <div class="meta" id="s_salon">#1 / Salon</div>
+      <div class="meta" id="s_time">時間 : 2025/01/01 10:00</div>
+      <div class="meta" id="s_price">支払い : ¥0</div>
+      <div class="meta" id="s_staff">施術者 : <span id="s_staff_name">指名なし</span></div>
+    </div>
+
+    <div class="card" id="userForm">
+      <div class="sec-title" id="uf_title">予約者情報</div>
+      <div class="sec-desc" id="uf_desc">連絡が取れるメールアドレスと電話番号をご入力ください。</div>
+      <div class="form-row">
+        <input id="uf_name" class="input" placeholder="お名前 / Name" autocomplete="name"/>
+        <input id="uf_email" class="input" placeholder="メール / Email" autocomplete="email" inputmode="email"/>
+        <input id="uf_phone" class="input" placeholder="電話番号 / Phone" autocomplete="tel" inputmode="tel"/>
+        <textarea id="uf_note" class="input" placeholder="要望・メモ（任意）"></textarea>
+      </div>
+    </div>
+
+    <div class="row" style="gap:18px;flex-wrap:wrap;margin-top:24px">
+      <a id="btnPay" class="btn btn-primary" href="./payments.html">カードで支払う（PayPal/Stripe）</a>
+      <a id="btnRecord" class="btn btn-primary" style="background:#1F6B72" href="./thankyou.html">現地で支払う（記録）</a>
+      <a href="./index.html" class="btn btn-outline">トップに戻る</a>
+    </div>
+  </div>
+
+  <div id="toast" class="toast warn" role="status" aria-live="polite" style="display:none">
+    <span class="badge">⚠️</span>
+    <span id="toastMsg">未入力があります。</span>
+    <button class="close" aria-label="閉じる" onclick="hideToast()">×</button>
+  </div>
+
+  <script>
+
+// i18n helper
+function getLang(){ try{ const pref=localStorage.getItem('bl_lang')||'auto'; if(pref==='auto'){ const ja=(navigator.language||'en').toLowerCase().startsWith('ja'); return ja?'ja':'en'; } return pref; }catch(e){ return 'ja'; } }
+
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  if(getLang()==='en'){
+    document.querySelector('.h1').textContent = 'Review your reservation';
+    document.getElementById('uf_title').textContent = 'Your info';
+    document.getElementById('uf_desc').textContent = 'Enter an email and a phone number we can reach you at.';
+    const btns = document.querySelectorAll('.btn');
+    btns.forEach(b=>{
+      if(b.textContent.includes('カード')) b.textContent='Pay online (PayPal/Stripe)';
+      if(b.textContent.includes('現地で支払う')) b.textContent='Pay on site (record)';
+      if(b.textContent.includes('トップに戻る')) b.textContent='Back to top';
+    });
+    const sum = document.getElementById('sum');
+    // simple replacements for labels inside sum block
+    sum.innerHTML = sum.innerHTML.replace('時間 :','Time:').replace('支払い :','Payment:');
+  }
+});
+
+  (function(){
+    const nameEl = document.getElementById('uf_name');
+    const mailEl = document.getElementById('uf_email');
+    const telEl  = document.getElementById('uf_phone');
+    const toast  = document.getElementById('toast');
+    const toastMsg = document.getElementById('toastMsg');
+    let toastTimer = null;
+
+    function emailOK(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+    function phoneOK(v){ return String(v).replace(/[^0-9+]/g,'').length >= 6; }
+
+    function showToast(message, ok){
+      toast.style.display = 'flex';
+      toast.classList.remove('ok','warn','show');
+      toast.classList.add(ok ? 'ok':'warn');
+      toastMsg.textContent = message;
+      requestAnimationFrame(()=> toast.classList.add('show'));
+      if(toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(()=> hideToast(), 3600);
+    }
+    window.hideToast = function(){
+      toast.classList.remove('show');
+      setTimeout(()=>{ toast.style.display='none'; }, 200);
+    }
+
+    function validate(){
+      const name = nameEl.value.trim();
+      const email= mailEl.value.trim();
+      const phone= telEl.value.trim();
+      const miss = [];
+      if(!name) miss.push('お名前');
+      if(!email || !emailOK(email)) miss.push('メール');
+      if(!phone || !phoneOK(phone)) miss.push('電話番号');
+      return {ok: miss.length===0, miss};
+    }
+
+    // Intercept payment clicks: warn if invalid, otherwise allow navigation
+    ['btnPay','btnRecord'].forEach(id=>{
+      const a = document.getElementById(id);
+      if(!a) return;
+      a.addEventListener('click', (ev)=>{
+        const {ok, miss} = validate();
+        if(!ok){
+          ev.preventDefault();
+          showToast('お支払いに進むには、' + miss.join('・') + ' を入力してください。', false);
+          // フォーカスを最初の未入力へ
+          if(miss.includes('お名前')) nameEl.focus();
+          else if(miss.includes('メール')) mailEl.focus();
+          else if(miss.includes('電話番号')) telEl.focus();
+        }else{
+          ev.preventDefault();
+          showToast('入力OK。お支払いに進みます…', true);
+          (async ()=>{
+            try{
+              const qs = new URLSearchParams(location.search);
+              const salonId   = qs.get('salonId') || '-';
+              const salonName = qs.get('salonName') || '';
+              const item  = (document.getElementById('s_item')?.textContent || qs.get('item') || 'Reservation').trim();
+              const price = Number(qs.get('price') || 0);
+              const timeISO = qs.get('time') || '';
+              const currency = (qs.get('currency') || 'usd').toLowerCase();
+              // 現地支払いボタンは既存の遷移を維持
+              if(ev.currentTarget && ev.currentTarget.id !== 'btnPay'){ location.href = ev.currentTarget.getAttribute('href') || './'; return; }
+              const resp = await fetch('https://backend-wwis.onrender.com/api/reservations', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({
+                  salonId, salonName, item, price, timeISO,
+                  contact: { name: nameEl.value.trim(), email: mailEl.value.trim(), phone: telEl.value.trim() },
+                  status:'pending_online'
+                })
+              });
+              const j = await resp.json();
+              const rid = j.id || String(Date.now());
+              const url = new URL('./payments.html', location.href);
+              url.searchParams.set('reservationId', rid);
+              url.searchParams.set('item', item);
+              url.searchParams.set('price', String(price));
+              url.searchParams.set('currency', currency);
+              location.href = url.toString();
+            }catch(e){
+              alert('予約の作成に失敗しました。もう一度お試しください。');
+            }
+          })();
+        }
+      }, {capture:true});
+    });
+  })();
+  </script>
+
+<footer id="ft" style="margin:18px 0 40px;text-align:center;color:#6b5e55;font-size:12px">
+  <a href="terms.html" class="ft-link" data-ft="terms" style="margin:0 10px">Terms</a>·
+  <a href="privacy.html" class="ft-link" data-ft="privacy" style="margin:0 10px">Privacy</a>·
+  <a href="cancel.html" class="ft-link" data-ft="cancel" style="margin:0 10px">Cancel Policy</a>·
+  <a href="contact.html" class="ft-link" data-ft="contact" style="margin:0 10px">Contact</a>
+</footer>
+<div id="ftModal" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:9999">
+  <div id="ftBackdrop" style="position:absolute;inset:0;background:rgba(0,0,0,.4)"></div>
+  <div role="dialog" aria-modal="true" aria-labelledby="ftTitle"
+       style="position:relative;background:#fff;border:1px solid #eadfca;border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,.18);
+              width:min(92vw,720px);max-height:80vh;overflow:auto;padding:18px">
+    <div style="display:flex;align-items:center;gap:8px;justify-content:space-between;margin-bottom:8px">
+      <div id="ftTitle" style="font-weight:900">Terms</div>
+      <button id="ftClose" style="border:none;background:#fff;border:1px solid #eadfca;border-radius:10px;padding:6px 10px;cursor:pointer">Close</button>
+    </div>
+    <div id="ftBody" style="line-height:1.7;color:#2E1A16;font-size:14px">
+      <p>Loading…</p>
+    </div>
+  </div>
+</div>
+
+
+
+<script>
+// Footer modal (inline content, no fetch). Ensures single instance and prevents navigation.
+(function(){
+  if(window.__ftModalInstalledInline) return; window.__ftModalInstalledInline = true;
+  const modal = document.getElementById('ftModal');
+  const body  = document.getElementById('ftBody');
+  const title = document.getElementById('ftTitle');
+  const closeBtn = document.getElementById('ftClose');
+  const backdrop = document.getElementById('ftBackdrop');
+
+  const CONTENT = {
+    terms: {title:'Terms', html:'<p>Use of this site is subject to local laws and our booking guidelines. Users agree to provide accurate information and to comply with shop policies.</p>'},
+    privacy: {title:'Privacy', html:'<p>We store minimal data (e.g., favorites, reservations, language) in your browser. We do not sell personal data.</p>'},
+    cancel: {title:'Cancel Policy', html:'<p>Free cancellation until 24 hours before your appointment. Within 24 hours, please contact the shop directly.</p>'},
+    contact: {title:'Contact', html:'<p>Email: support@beautylanka.example<br>Phone: +94 11 000 0000</p>'}
+  };
+
+  function open(kind){
+    const c = CONTENT[kind] || CONTENT.terms;
+    title.textContent = c.title;
+    body.innerHTML = c.html;
+    modal.style.display = 'flex';
+  }
+  function close(){ modal.style.display='none'; }
+
+  document.addEventListener('click', (e)=>{
+    const a = e.target.closest && e.target.closest('a.ft-link');
+    if(a){ e.preventDefault(); open(a.getAttribute('data-ft')); }
+  });
+  closeBtn && closeBtn.addEventListener('click', close);
+  backdrop && backdrop.addEventListener('click', close);
+})();
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', async ()=>{
+  try{
+    const staffId = localStorage.getItem('bl_reservation_staff')||'';
+    let name = (window.BL_lang==='en' ? 'No preference' : '指名なし');
+    if(staffId && window.BL_API && window.BL_API.listStaff){
+      try{
+        const list = await window.BL_API.listStaff();
+        const found = (list||[]).find(x=>String(x.id)===String(staffId));
+        if(found && found.name) name = found.name;
+      }catch(e){}
+    }
+    const row=document.getElementById('confirmStaffRow');
+    const span=document.getElementById('confirmStaffName');
+    if(row && span){ span.textContent=name; row.style.display='block'; }
+  }catch(e){}
+});
+</script>
+
+
+<script id="confirm-fill-from-query">
+(function(){
+  function onReady(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
+  onReady(function(){
+    const qs = new URLSearchParams(location.search);
+    if(!qs.has('item') && !qs.has('time') && !qs.has('salon')) return; // nothing to do
+
+    const elItem  = document.getElementById('s_item');
+    const elSalon = document.getElementById('s_salon');
+    const elTime  = document.getElementById('s_time');
+    const elPrice = document.getElementById('s_price');
+    const elStaff = document.getElementById('s_staff_name') || document.getElementById('confirmStaffName');
+
+    if(elItem)  elItem.textContent  = qs.get('item')  || elItem.textContent;
+    if(elSalon) elSalon.textContent = (qs.get('salon') ? '# ' + qs.get('salon') : elSalon.textContent);
+    if(elTime)  elTime.textContent  = ( (elTime.textContent.split(':')[0] || '時間') + ' : ' + (qs.get('time')||'') );
+    if(elPrice) elPrice.textContent = ( (elPrice.textContent.split(':')[0] || '支払い') + ' : ' + (qs.get('price')||'') );
+    if(elStaff) {
+      const sn = qs.get('staffName') || '';
+      if(sn) elStaff.textContent = sn;
+    }
+  });
+})();
+</script>
+</body>
+</html>
+
+<style>
+/* confirm-page balanced size override */
+body.confirm-page .card {
+  max-width: 720px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding: 16px 20px !important;
+}
+body.confirm-page h1 {
+  font-size: 30px !important;
+}
+@media (max-width: 720px) {
+  body.confirm-page .card { max-width: 100% !important; }
+}
+</style>

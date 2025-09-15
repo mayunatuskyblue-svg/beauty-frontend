@@ -298,24 +298,19 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 
+
 <script id="bl-api-payments-autostart">
 (function(){
   function onReady(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
-  function fetchJSON(url,opt){ return fetch(url, Object.assign({headers:{'Content-Type':'application/json'}},opt)).then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }); }
+  function fetchJSON(u,o){ return fetch(u, Object.assign({headers:{'Content-Type':'application/json'}}, o)).then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }); }
   onReady(function(){
-    try{
-      const q = new URLSearchParams(location.search);
-      const rid = q.get('reservationId')||'';
-      const item  = q.get('item')||'';
-      const price = Number(q.get('price')||0);
-      const currency = (q.get('currency')||'usd').toLowerCase();
-      if(!rid) return; // nothing to do
-      const frontBase = location.origin;
-      const payload = { reservationId: rid, item, price, currency, successBaseUrl: frontBase, cancelBaseUrl: frontBase };
-      fetchJSON('https://backend-wwis.onrender.com/api/create-checkout', { method:'POST', body: JSON.stringify(payload) })
-        .then(j => { if(j.url){ location.href = j.url; } })
-        .catch(e => { console.warn('create-checkout failed', e); });
-    }catch(e){ console.warn(e); }
+    const q=new URLSearchParams(location.search);
+    const rid=q.get('reservationId')||''; const item=q.get('item')||''; const price=Number(q.get('price')||0); const currency=(q.get('currency')||'usd').toLowerCase();
+    if(!rid) return; // 予約IDが無ければ何もしない
+    const frontBase=location.origin; // 例: https://beauty-frontend.onrender.com
+    const payload={reservationId:rid,item,price,currency,successBaseUrl:frontBase,cancelBaseUrl:frontBase};
+    fetchJSON('https://backend-wwis.onrender.com/api/create-checkout',{method:'POST',body:JSON.stringify(payload)})
+      .then(j=>{ if(j.url){ location.href=j.url; } });
   });
 })();
 </script>

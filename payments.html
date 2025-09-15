@@ -141,16 +141,46 @@ const btnStripe = document.getElementById('btnStripe');
 const btnCash   = document.getElementById('btnCash');
 const btnCashOnly = document.getElementById('btnCashOnly');
 
-if (stripeUrl && price > 0) {
-  // Stripeリンクが登録されている場合
+// Checkout セッションを作ってから遷移（webhookで予約IDを拾える）
+if (price > 0) {
   document.getElementById('pay').style.display = 'block';
-  btnStripe.href = stripeUrl; // 新しいタブで開く
+
+  btnStripe.removeAttribute('target'); // 同タブで遷移（任意）
+  btnStripe.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const payload = {
+      reservationId: (new URLSearchParams(location.search)).get('reservationId') || '',
+      item,
+      price,
+      currency: (new URLSearchParams(location.search)).get('currency')?.toLowerCase() || 'usd',
+      successBaseUrl: location.origin,
+      cancelBaseUrl: location.origin,
+    };
+    try{
+      const res = await fetch('https://backend-wwis.onrender.com/api/create-checkout', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.url) {
+        location.href = data.url; // Stripe Checkoutへ
+      } else {
+        alert('決済ページを開けませんでした');
+        console.log(data);
+      }
+    }catch(err){
+      console.error(err);
+      alert('通信エラーが発生しました');
+    }
+  });
+
   btnCash.onclick = (e)=>{ e.preventDefault(); goConfirm(); };
 } else {
-  // 未登録なら現地払いのみ
   document.getElementById('noLink').style.display = 'block';
   btnCashOnly.onclick = (e)=>{ e.preventDefault(); goConfirm(); };
 }
+
 
 function goConfirm(){
   const sp = new URLSearchParams({

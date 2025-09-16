@@ -878,6 +878,75 @@ document.addEventListener('DOMContentLoaded', ()=>{
 </script>
 
 <script src="./app.js"></script>
+<!-- 予約フォーム例（あなたの既存フォーム id/name に合わせてOK） -->
+<form id="reserveForm">
+  <input id="custName"  placeholder="お名前" required>
+  <input id="email"     type="email" placeholder="メール" required>
+  <input id="phone"     placeholder="電話">
+  <input id="date"      type="date" required>
+  <input id="time"      type="time" required>
+  <textarea id="notes"  placeholder="要望など"></textarea>
+  <button type="submit">予約を送信</button>
+</form>
+
+<script>
+/** ここをあなたの Apps Script に置き換え **/
+const SHEET_API = "https://script.google.com/macros/s/XXXXXXXXXXXXXXXX/exec"; // ←デプロイしたWebアプリURL
+const SHEET_TOKEN = "YOUR_LONG_RANDOM_TOKEN";                                // ←Apps Script の TOKEN と同じ
+
+// URLの ?salonId= & salonName= を拾う（index/details から渡しているやつ）
+const usp = new URLSearchParams(location.search);
+const salonId   = usp.get("salonId")   || "UNKNOWN";
+const salonName = usp.get("salonName") || "Unknown Salon";
+
+// ランダムな予約ID（被りにくい）
+function makeBookingId(){
+  if (crypto?.randomUUID) return "BL-" + crypto.randomUUID();
+  return "BL-" + Date.now() + "-" + Math.random().toString(36).slice(2,8);
+}
+
+// スプレッドシートへ1行追加（Step2 の upsertBooking を叩く）
+async function saveBookingToSheet(payload){
+  const res = await fetch(`${SHEET_API}?token=${encodeURIComponent(SHEET_TOKEN)}`, {
+    method: "POST",
+    headers: { "Content-Type":"application/json" },
+    body: JSON.stringify({ action: "upsertBooking", ...payload })
+  });
+  const json = await res.json();
+  if(!res.ok || !json.ok){ throw new Error(json.error || "Save failed"); }
+  return json;
+}
+
+document.getElementById("reserveForm").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const bookingId = makeBookingId();
+
+  // フォームの値を取得（id は上のフォームに合わせて）
+  const payload = {
+    bookingId,
+    createdAt: new Date().toISOString(),
+    salonId, salonName,
+    customerName: document.getElementById("custName").value.trim(),
+    email:       document.getElementById("email").value.trim(),
+    phone:       document.getElementById("phone").value.trim(),
+    bookingDate: document.getElementById("date").value,
+    bookingTime: document.getElementById("time").value,
+    notes:       document.getElementById("notes").value.trim(),
+    // ここは “スマート払い” 導入前なので空でOK
+    stripeCustomerId: "",
+    status: "saved"      // saved = 予約作成（未課金）
+  };
+
+  try{
+    const r = await saveBookingToSheet(payload);
+    alert("予約を受け付けました！");   // お好みで専用の完了画面へ遷移
+    // location.href = "thankyou.html?bookingId=" + encodeURIComponent(bookingId);
+  }catch(err){
+    console.error(err);
+    alert("保存に失敗しました。通信状況をご確認ください。");
+  }
+});
+</script>
 
 <script>
 document.addEventListener('DOMContentLoaded', async ()=>{

@@ -90,6 +90,9 @@ footer{color:#6b5e55;text-align:center;font-size:12px;margin:12px 0}
 .sri2{position:fixed;left:3%;bottom:3%;width:140px;opacity:.12;pointer-events:none;filter:drop-shadow(0 6px 10px rgba(0,0,0,.2))}
 .card{transition:transform 0.3s ease, box-shadow 0.3s ease;}
 .card:hover{transform:translateY(-6px) scale(1.02);box-shadow:0 10px 20px rgba(0,0,0,0.15);} 
+/* splash 層の前後関係を明示 */
+.splash video{ z-index:0; }
+.splash .headline, .splash .skip{ position:relative; z-index:1; }
 
 /* Microinteractions */
 .tag, .chip { transition: transform .06s ease, background-color .2s ease, box-shadow .2s ease; }
@@ -443,36 +446,42 @@ render(DATA);
     writeJSON('bl_search_history', hist.slice(0,50));
   });
 })();
-  <script>
+
 // Splash: show once per session (now uses hero.mp4)
-(function splash(){
+// ---- SAFER SPLASH ----
+(function(){
   try{
-    if(sessionStorage.getItem('bl_intro_seen')==='1') return;
     const wrap = document.getElementById('splash');
+    if(!wrap) return;
+
+    // 既に見た or ?nosplash=1 なら表示しない
+    if (sessionStorage.getItem('bl_intro_seen')==='1' ||
+        new URLSearchParams(location.search).get('nosplash')==='1'){
+      wrap.remove(); return;
+    }
+
     const vid  = document.getElementById('splashVid');
-    const src  = document.getElementById('splashSrc');
     const skip = document.getElementById('skipSplash');
+
+    function end(){
+      sessionStorage.setItem('bl_intro_seen','1');
+      wrap.classList.remove('show');
+      setTimeout(()=>wrap.remove(), 200);
+    }
+
     wrap.classList.add('show');
-    vid.addEventListener('error', ()=>{ src.src='/assets/video/hero.mp4'; vid.load(); vid.play().catch(()=>{}); }, {once:true});
-    vid.play().catch(()=>{});
-    function end(){ wrap.classList.remove('show'); sessionStorage.setItem('bl_intro_seen','1'); }
-    vid.addEventListener('ended', end);
-    skip.addEventListener('click', end);
+
+    // 8秒で必ず閉じる（フェイルセーフ）/ 再生できたら4秒で閉じる
+    const hard = setTimeout(end, 8000);
+    vid.addEventListener('loadeddata', ()=>{ clearTimeout(hard); setTimeout(end, 4000); }, {once:true});
+    vid.addEventListener('ended', end,  {once:true});
+    vid.addEventListener('error', end,  {once:true});
+    skip && skip.addEventListener('click', end);
+
+    vid.play().catch(end);
   }catch(e){}
 })();
-// nav to details via tag
-document.addEventListener('click', (e)=>{
-  const t=e.target.closest('.tag');
-  if(!t) return;
-  const card=e.target.closest('.card');
-  if(!card) return;
-  const id=card.dataset && card.dataset.id;
-  if(!id) return;
-  const lang=(localStorage.getItem('bl_lang')||'').toLowerCase()==='en'?'en':null;
-  const q=new URLSearchParams({salonId:id});
-  if(lang==='en') q.set('lang','en');
-  location.href='details.html?'+q.toString();
-});
+
 
 // --- make whole card clickable to details (safe delegation) ---
 document.addEventListener('click', function(e){

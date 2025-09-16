@@ -43,7 +43,6 @@ h1, h2, h3, .brand, .title, .h1, .sec-title {
 </style>
 
 </head>
-
 <body>
 <div class="container">
   <div class="row">
@@ -80,93 +79,116 @@ h1, h2, h3, .brand, .title, .h1, .sec-title {
 </div>
 
 <script>
-// ---- i18n: ボタンや文言の英語切り替え（おまけ・そのままでOK）
+
+// i18n helper
 function getLang(){ try{ const pref=localStorage.getItem('bl_lang')||'auto'; if(pref==='auto'){ const ja=(navigator.language||'en').toLowerCase().startsWith('ja'); return ja?'ja':'en'; } return pref; }catch(e){ return 'ja'; } }
+
+
 document.addEventListener('DOMContentLoaded', ()=>{
   if(getLang()==='en'){
+    document.querySelector('.h1').textContent = 'Payment';
+    // Buttons
     const b1 = document.getElementById('btnStripe'); if(b1) b1.textContent='Pay with Stripe';
-    const b2 = document.getElementById('btnCash');   if(b2) b2.textContent='Continue with pay-on-site';
+    const b2 = document.getElementById('btnCash'); if(b2) b2.textContent='Continue with pay-on-site';
     const b3 = document.getElementById('btnCashOnly'); if(b3) b3.textContent='Continue with pay-on-site';
+    // Notes
+    document.body.innerHTML = document.body.innerHTML.replace('オンライン決済リンクが未設定','Online payment link not set')
+      .replace('このメニュー/クーポンにはStripeのPayment Linkが未設定です。現地支払いでご予約を続けられます。','No Stripe Payment Link is set for this item. You can continue with pay-on-site.')
+      .replace('もしStripeのPayment Linkを作成していない場合は、','If you have not created a Stripe Payment Link, ')
+      .replace('で作成し、下の','create one in ')
+      .replace('にURLを登録してください。',' and register the URL in STRIPE_LINKS below.');
+    // Summary block keys
+    const sum = document.getElementById('sum');
+    sum.innerHTML = sum.innerHTML.replace('支払い方法を選んでください：','Select a payment method: ')
+                                 .replace('予約希望：','Requested: ');
     const back = document.querySelector('a.btn.gray'); if(back) back.textContent='← Back to site';
   }
 });
 
-// ---- URLパラメータ
-const qs        = new URLSearchParams(location.search);
-const salonId   = qs.get('salonId')   || '-';
-const salonName = qs.get('salonName') || '';
-const item      = qs.get('item')      || 'Reservation';
-const price     = Number(qs.get('price') || 0);
-const timeISO   = qs.get('time')      || '';
-const currency  = (qs.get('currency') || 'usd').toLowerCase();
+// ====== ここに Payment Link を登録する（商品名 or クーポン名 → Payment Link URL） ======
+// 例: "Abhyanga 90min": "https://buy.stripe.com/xxxxxx"
+const STRIPE_LINKS = {
+  "Abhyanga 90min":    "https://buy.stripe.com/test_eVq14nfPcch75pMaEWdUY01", // ← 作成したURLを貼る
+  "Shirodhara 60min":  "https://buy.stripe.com/test_6oU5kD8mK1CtcSe5kCdUY02",
+  "New guest 10% OFF": "",
+  "Lash Lift":         "https://buy.stripe.com/test_5kQ6oH5ay4OF8BY28qdUY03",
+  "Volume 100":        "https://buy.stripe.com/test_fZubJ19qOgxn3hE3cudUY04",
+  "First time set":    "",
+  "Henna & Spa set":   "https://buy.stripe.com/test_28EeVd46u4OF2dAbJ0dUY05",
+  "Therapy 60min":     "https://buy.stripe.com/test_00wfZh32q2GxbOa14mdUY06",
+  "Nail Gel":          "https://buy.stripe.com/test_dRm7sLeL8gxndWi4gydUY07"
+};
 
-// ---- サマリー表示
-const sumEl = document.getElementById('sum');
-sumEl.innerHTML = `
+// ====== クエリ取得（index.html → payments.html?salonId=&item=&price=&time=） ======
+const q = new URLSearchParams(location.search);
+const salonId   = q.get('salonId')   || '-';
+const item      = q.get('item')      || 'Reservation';
+const price     = Number(q.get('price') || 0);
+const timeISO   = q.get('time') || "";  // 予約日時（未指定でもOK）
+const salonName = q.get('salonName') || ""; // あれば表示に使う
+
+// 表示
+document.getElementById('sum').innerHTML = `
   <div style="font-weight:800;font-size:18px">${item}</div>
   <div style="opacity:.85">${salonName ? salonName : 'Salon #'+salonId}</div>
   <div style="margin-top:6px">支払い方法を選んでください：${price ? ('オンライン or 現地払い / $'+price.toFixed(2)) : '現地払いのみ'}</div>
   ${ timeISO ? `<div class="note" style="margin-top:6px">予約希望：${new Date(timeISO).toLocaleString()}</div>` : '' }
 `;
 
-// ---- ボタン参照
-const btnStripe   = document.getElementById('btnStripe');
-const btnCash     = document.getElementById('btnCash');
+// 支払い導線
+const stripeUrl = STRIPE_LINKS[item] || "";
+const btnStripe = document.getElementById('btnStripe');
+const btnCash   = document.getElementById('btnCash');
 const btnCashOnly = document.getElementById('btnCashOnly');
 
-// ---- 現地支払い用
-function goConfirm(){
-  const sp = new URLSearchParams({
-    salonId, salonName, item,
-    price: String(price||0),
-    time: timeISO
-  });
-  location.href = `./confirm.html?${sp.toString()}`;
-}
-
-// ---- 分岐：金額がある＝Stripe前払い可能
 if (price > 0) {
-  // Stripe前払い表示
   document.getElementById('pay').style.display = 'block';
 
-  // Stripe可のときは現地払いボタンを非表示
-  if (btnCash) btnCash.remove();
+  // Stripe可のときは現地払いボタンを隠す
+  const cashBtn = document.getElementById('btnCash');
+  if (cashBtn) cashBtn.remove();
 
-  // Stripe Checkout をバックエンドで生成して遷移
-  if (btnStripe){
-    btnStripe.removeAttribute('target'); // 同タブ遷移（任意）
-    btnStripe.addEventListener('click', async (e) => {
-      e.preventDefault();
-      const payload = {
-        reservationId: qs.get('reservationId') || '',
-        item, price, currency,
-        successBaseUrl: location.origin,
-        cancelBaseUrl:  location.origin,
-      };
-      try{
-        const res  = await fetch('https://backend-wwis.onrender.com/api/create-checkout', {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (data.url) {
-          location.href = data.url;   // Stripe Checkoutへ
-        } else {
-          alert('決済ページを開けませんでした'); console.log(data);
-        }
-      }catch(err){
-        console.error(err); alert('通信エラーが発生しました');
-      }
-    });
-  }
+  // バックエンドでCheckoutセッション作成 → 遷移
+  btnStripe.removeAttribute('target');
+  btnStripe.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const qs = new URLSearchParams(location.search);
+    const payload = {
+      reservationId: qs.get('reservationId') || '',
+      item,
+      price,
+      currency: (qs.get('currency') || 'usd').toLowerCase(),
+      successBaseUrl: location.origin,
+      cancelBaseUrl:  location.origin,
+    };
+    try{
+      const res  = await fetch('https://backend-wwis.onrender.com/api/create-checkout', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.url) location.href = data.url;
+      else { alert('決済ページを開けませんでした'); console.log(data); }
+    }catch(err){ console.error(err); alert('通信エラーが発生しました'); }
+  });
 } else {
-  // Stripe不可 → 現地払いのみ
   document.getElementById('noLink').style.display = 'block';
   if (btnCashOnly) btnCashOnly.addEventListener('click', (e)=>{ e.preventDefault(); goConfirm(); });
 }
-</script>
 
+function goConfirm(){
+  const sp = new URLSearchParams({
+    salonId,
+    salonName,
+    item,
+    price: String(price||0),
+    time: timeISO
+  });
+  // 現地払い/決済後の戻り どちらも confirm.html を利用
+  location.href = `./confirm.html?${sp.toString()}`;
+}
+</script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
 import { getFirestore, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
@@ -302,7 +324,6 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 
-
 <script id="bl-api-payments-autostart">
 (function(){
   function onReady(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
@@ -310,14 +331,15 @@ if ('serviceWorker' in navigator) {
   onReady(function(){
     const q=new URLSearchParams(location.search);
     const rid=q.get('reservationId')||''; const item=q.get('item')||''; const price=Number(q.get('price')||0); const currency=(q.get('currency')||'usd').toLowerCase();
-    if(!rid) return; // 予約IDが無ければ何もしない
-    const frontBase=location.origin; // 例: https://beauty-frontend.onrender.com
+    if(!rid) return;
+    const frontBase=location.origin;
     const payload={reservationId:rid,item,price,currency,successBaseUrl:frontBase,cancelBaseUrl:frontBase};
     fetchJSON('https://backend-wwis.onrender.com/api/create-checkout',{method:'POST',body:JSON.stringify(payload)})
       .then(j=>{ if(j.url){ location.href=j.url; } });
   });
 })();
 </script>
+
 
 </body>
 </html>

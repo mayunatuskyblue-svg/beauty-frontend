@@ -880,19 +880,17 @@ document.addEventListener('DOMContentLoaded', ()=>{
 <script src="./app.js"></script>
 <!-- 予約フォーム例（あなたの既存フォーム id/name に合わせてOK） -->
 <form id="reserveForm">
-  <input id="custName"  placeholder="お名前" required>
-  <input id="email"     type="email" placeholder="メール" required>
-  <input id="phone"     placeholder="電話">
-  <input id="date"      type="date" required>
-  <input id="time"      type="time" required>
-  <textarea id="notes"  placeholder="要望など"></textarea>
+  <input id="resName"  name="name"  placeholder="お名前" required>
+  <input id="resEmail"  name="email"  type="email" placeholder="メール" required>
+  <input id="resPhone"  name="phone"  placeholder="電話">
+  <input id="resDate"  name="date"  type="date" required>
+  <input id="resTime"  name="time"  type="time" required>
+  <textarea id="resNotes"  name="notes"  placeholder="要望など"></textarea>
   <button type="submit">予約を送信</button>
 </form>
 
 <script>
-/** ここをあなたの Apps Script に置き換え **/
-const SHEET_API = "https://script.google.com/macros/s/XXXXXXXXXXXXXXXX/exec"; // ←デプロイしたWebアプリURL
-const SHEET_TOKEN = "YOUR_LONG_RANDOM_TOKEN";                                // ←Apps Script の TOKEN と同じ
+
 
 // URLの ?salonId= & salonName= を拾う（index/details から渡しているやつ）
 const usp = new URLSearchParams(location.search);
@@ -949,44 +947,56 @@ document.getElementById("reserveForm").addEventListener("submit", async (e)=>{
 </script>
 
 <script>
-document.addEventListener('DOMContentLoaded', async ()=>{
-  const sel = document.getElementById('staffSelect');
-  if(!sel || !window.BL_API) return;
-  const staff = await window.BL_API.listStaff();
-  const lang = window.BL_lang || 'en';
-  // keep "no preference" at top
-  staff.forEach(s=>{
-    const opt = document.createElement('option');
-    opt.value = s.id;
-    opt.textContent = s.name;
-    sel.appendChild(opt);
-  });
-});
-</script>
+const SHEET_API   = "https://script.google.com/macros/s/AKfycbxYBpVwuWZ2e1B6oQJnVF-ZWob4OshrJ2Prk2s5CrRr9yV3QK147GOvTDmuH5Nfex1q/exec";
+const SHEET_TOKEN = "WahgalkjKJlkaOka1200j5";
 
-<script>
-document.addEventListener('DOMContentLoaded', async ()=>{
-  const sel = document.getElementById('staffSelect');
-  if(sel && window.BL_API){
-    const staff = await window.BL_API.listStaff();
-    staff.forEach(s=>{
-      const opt = document.createElement('option');
-      opt.value = s.id;
-      opt.textContent = s.name;
-      sel.appendChild(opt);
-    });
-  }
-  // Hook time slot buttons
-  document.querySelectorAll('.time-slot, button[data-time]').forEach(btn=>{
-    btn.addEventListener('click', e=>{
-      e.preventDefault();
-      const time = btn.getAttribute('data-time');
-      const staffId = sel ? sel.value : '';
-      localStorage.setItem('bl_reservation_time', time);
-      localStorage.setItem('bl_reservation_staff', staffId);
-      window.location.href = 'confirm.html';
-    });
+const usp = new URLSearchParams(location.search);
+const salonId   = usp.get("salonId")   || "UNKNOWN";
+const salonName = usp.get("salonName") || "Unknown Salon";
+
+function makeBookingId(){
+  return (crypto?.randomUUID ? "BL-" + crypto.randomUUID()
+                             : "BL-" + Date.now() + "-" + Math.random().toString(36).slice(2,8));
+}
+
+async function saveBookingToSheet(payload){
+  const res  = await fetch(`${SHEET_API}?token=${encodeURIComponent(SHEET_TOKEN)}`, {
+    method: "POST",
+    headers: { "Content-Type":"application/json" },
+    body: JSON.stringify({ action: "upsertBooking", ...payload })
   });
+  const json = await res.json().catch(()=>({}));
+  if(!res.ok || !json.ok){ throw new Error(json.error || `Save failed (${res.status})`); }
+  return json;
+}
+
+document.getElementById("reserveForm").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const f = e.currentTarget;
+
+  const payload = {
+    bookingId:  makeBookingId(),
+    createdAt:  new Date().toISOString(),
+    salonId, salonName,
+    customerName: f.querySelector('#resName').value.trim(),
+    email:        f.querySelector('#resEmail').value.trim(),
+    phone:        f.querySelector('#resPhone').value.trim(),
+    bookingDate:  f.querySelector('#resDate').value,
+    bookingTime:  f.querySelector('#resTime').value,
+    notes:        f.querySelector('#resNotes').value.trim(),
+    stripeCustomerId: "",
+    status: "saved"
+  };
+
+  try{
+    await saveBookingToSheet(payload);
+    alert("予約を受け付けました！");
+    // 例：完了画面へ
+    // location.href = "thankyou.html?bookingId=" + encodeURIComponent(payload.bookingId);
+  }catch(err){
+    console.error(err);
+    alert("保存に失敗しました。通信状況をご確認ください。");
+  }
 });
 </script>
 

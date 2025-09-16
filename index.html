@@ -145,7 +145,7 @@ a.btn, input[type="button"].btn, input[type="submit"].btn {
 <header>
   <div class="container hwrap">
     <a class="brand-left" href="./index.html" aria-label="BeautyLanka">
-      <img class="logo-img" src="/assets/images/logo_mark.png" alt="BeautyLanka logo">
+      <img class="logo-img" src="/assets/img/logo_mark.png" alt="BeautyLanka logo">
     </a>
     <nav class="nav-right">
       <select id="langSelect" class="sel" title="Language"><option value="auto">Auto</option><option value="ja">日本語</option><option value="en">English</option></select>
@@ -194,12 +194,12 @@ a.btn, input[type="button"].btn, input[type="submit"].btn {
   </video>
   <div class="headline">
     <h1>Beauty Lanka</h1>
-    <div class="sri-between-splash"><img src="/assets/images/sri-outline.svg" alt="Sri Lanka line art"></div>
+    <div class="sri-between-splash"><img src="/assets/img/sri-outline.svg" alt="Sri Lanka line art"></div>
     <div class="cap">Salons &amp; Spas in Sri Lanka</div>
   </div>
   <button class="skip" id="skipSplash">Skip</button>
 </div>
-<img class="sri2" src="/assets/images/sri-outline.svg" alt="">
+<img class="sri2" src="/assets/img/sri-outline.svg" alt="">
 <script>
 // ---------- auth helpers ----------
 function getAuth(){ try{ return JSON.parse(localStorage.getItem('bl_auth')||'null'); }catch(e){ return null; } }
@@ -327,9 +327,9 @@ function applyI18N(){
 })();
 // ---------- DATA (assets references remain) ----------
 const DATA=[
-  {id:"S1", name:"Silky Lashes Colombo", type:"マツエク", place:"コロンボ", lat:6.933, lng:79.85, price:4250, rating:4.6, tags:["マツエク","日本語対応"], points:"自然で長持ち。丁寧なカウンセリング。", photos:["/assets/images/lashes_a.webp","/assets/images/lashes_b.webp","/assets/images/lashes_c.webp"]},
-  {id:"S2", name:"Ayur Luxe Spa", type:"スパ", place:"ゴール", lat:6.025, lng:80.217, price:6630, rating:4.7, tags:["アーユルヴェーダ","リラク"], points:"本格アーユルヴェーダと静かな個室。", photos:["/assets/images/spa_massage.webp","/assets/images/herbs_flatlay.webp","/assets/images/lashes_a.webp"]},
-  {id:"S3", name:"Cinnamon Grow", type:"ハーブ", place:"キャンディ", lat:7.293, lng:80.641, price:5610, rating:4.5, tags:["ハーブ","リラク"], points:"自社ブレンドのハーブでリラックス。", photos:["/assets/images/herbs_flatlay.webp","/assets/images/spa_massage.webp","/assets/images/lashes_b.webp"]}
+  {id:"S1", name:"Silky Lashes Colombo", type:"マツエク", place:"コロンボ", lat:6.933, lng:79.85, price:4250, rating:4.6, tags:["マツエク","日本語対応"], points:"自然で長持ち。丁寧なカウンセリング。", photos:["/assets/img/lashes_a.webp","/assets/img/lashes_b.webp","/assets/img/lashes_c.webp"]},
+  {id:"S2", name:"Ayur Luxe Spa", type:"スパ", place:"ゴール", lat:6.025, lng:80.217, price:6630, rating:4.7, tags:["アーユルヴェーダ","リラク"], points:"本格アーユルヴェーダと静かな個室。", photos:["/assets/img/spa_massage.webp","/assets/img/herbs_flatlay.webp","/assets/img/lashes_a.webp"]},
+  {id:"S3", name:"Cinnamon Grow", type:"ハーブ", place:"キャンディ", lat:7.293, lng:80.641, price:5610, rating:4.5, tags:["ハーブ","リラク"], points:"自社ブレンドのハーブでリラックス。", photos:["/assets/img/herbs_flatlay.webp","/assets/img/spa_massage.webp","/assets/img/lashes_b.webp"]}
 ];
 function yen(n){ return "¥"+(Number(n)||0).toLocaleString("ja-JP"); }
 const $=s=>document.querySelector(s); const list=$('#list');

@@ -190,16 +190,16 @@ a.btn, input[type="button"].btn, input[type="submit"].btn {
 <!-- fullscreen intro splash (first visit per session) -->
 <div id="splash" class="splash" role="dialog" aria-label="Intro video">
   <video id="splashVid" playsinline autoplay muted>
-    <source id="splashSrc" src="assets/video/hero.mp4" type="video/mp4" />
+    <source id="splashSrc" src="/assets/video/hero.mp4" type="video/mp4" />
   </video>
   <div class="headline">
     <h1>Beauty Lanka</h1>
-    <div class="sri-between-splash"><img src="assets/images/sri-outline.svg" alt="Sri Lanka line art"></div>
+    <div class="sri-between-splash"><img src="/assets/images/sri-outline.svg" alt="Sri Lanka line art"></div>
     <div class="cap">Salons &amp; Spas in Sri Lanka</div>
   </div>
   <button class="skip" id="skipSplash">Skip</button>
 </div>
-<img class="sri2" src="assets/images/sri-outline.svg" alt="">
+<img class="sri2" src="/assets/images/sri-outline.svg" alt="">
 <script>
 // ---------- auth helpers ----------
 function getAuth(){ try{ return JSON.parse(localStorage.getItem('bl_auth')||'null'); }catch(e){ return null; } }
@@ -327,9 +327,9 @@ function applyI18N(){
 })();
 // ---------- DATA (assets references remain) ----------
 const DATA=[
-  {id:"S1", name:"Silky Lashes Colombo", type:"マツエク", place:"コロンボ", lat:6.933, lng:79.85, price:4250, rating:4.6, tags:["マツエク","日本語対応"], points:"自然で長持ち。丁寧なカウンセリング。", photos:["assets/images/lashes_a.webp","assets/images/lashes_b.webp","assets/images/lashes_c.webp"]},
-  {id:"S2", name:"Ayur Luxe Spa", type:"スパ", place:"ゴール", lat:6.025, lng:80.217, price:6630, rating:4.7, tags:["アーユルヴェーダ","リラク"], points:"本格アーユルヴェーダと静かな個室。", photos:["assets/images/spa_massage.webp","assets/images/herbs_flatlay.webp","assets/images/lashes_a.webp"]},
-  {id:"S3", name:"Cinnamon Grow", type:"ハーブ", place:"キャンディ", lat:7.293, lng:80.641, price:5610, rating:4.5, tags:["ハーブ","リラク"], points:"自社ブレンドのハーブでリラックス。", photos:["assets/images/herbs_flatlay.webp","assets/images/spa_massage.webp","assets/images/lashes_b.webp"]}
+  {id:"S1", name:"Silky Lashes Colombo", type:"マツエク", place:"コロンボ", lat:6.933, lng:79.85, price:4250, rating:4.6, tags:["マツエク","日本語対応"], points:"自然で長持ち。丁寧なカウンセリング。", photos:["/assets/images/lashes_a.webp","/assets/images/lashes_b.webp","/assets/images/lashes_c.webp"]},
+  {id:"S2", name:"Ayur Luxe Spa", type:"スパ", place:"ゴール", lat:6.025, lng:80.217, price:6630, rating:4.7, tags:["アーユルヴェーダ","リラク"], points:"本格アーユルヴェーダと静かな個室。", photos:["/assets/images/spa_massage.webp","/assets/images/herbs_flatlay.webp","/assets/images/lashes_a.webp"]},
+  {id:"S3", name:"Cinnamon Grow", type:"ハーブ", place:"キャンディ", lat:7.293, lng:80.641, price:5610, rating:4.5, tags:["ハーブ","リラク"], points:"自社ブレンドのハーブでリラックス。", photos:["/assets/images/herbs_flatlay.webp","/assets/images/spa_massage.webp","/assets/images/lashes_b.webp"]}
 ];
 function yen(n){ return "¥"+(Number(n)||0).toLocaleString("ja-JP"); }
 const $=s=>document.querySelector(s); const list=$('#list');
@@ -452,7 +452,7 @@ render(DATA);
     const src  = document.getElementById('splashSrc');
     const skip = document.getElementById('skipSplash');
     wrap.classList.add('show');
-    vid.addEventListener('error', ()=>{ src.src='assets/video/hero.mp4'; vid.load(); vid.play().catch(()=>{}); }, {once:true});
+    vid.addEventListener('error', ()=>{ src.src='/assets/video/hero.mp4'; vid.load(); vid.play().catch(()=>{}); }, {once:true});
     vid.play().catch(()=>{});
     function end(){ wrap.classList.remove('show'); sessionStorage.setItem('bl_intro_seen','1'); }
     vid.addEventListener('ended', end);

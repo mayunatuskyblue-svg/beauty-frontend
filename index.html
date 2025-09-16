@@ -90,9 +90,19 @@ footer{color:#6b5e55;text-align:center;font-size:12px;margin:12px 0}
 .sri2{position:fixed;left:3%;bottom:3%;width:140px;opacity:.12;pointer-events:none;filter:drop-shadow(0 6px 10px rgba(0,0,0,.2))}
 .card{transition:transform 0.3s ease, box-shadow 0.3s ease;}
 .card:hover{transform:translateY(-6px) scale(1.02);box-shadow:0 10px 20px rgba(0,0,0,0.15);} 
-/* splash 層の前後関係を明示 */
+/* splash 層の前後関係を明示（Skipは固定配置のまま） */
 .splash video{ z-index:0; }
-.splash .headline, .splash .skip{ position:relative; z-index:1; }
+.splash .headline{ position:relative; z-index:1; }
+/* Skip は右下固定 */
+.splash .skip{
+  position:absolute;           /* ← relative をやめる */
+  right:16px;
+  bottom:16px;
+  z-index:2;
+}
+@media (max-width:480px){
+  .splash .skip{ right:12px; bottom:12px; padding:8px 12px; }
+}
 
 /* Microinteractions */
 .tag, .chip { transition: transform .06s ease, background-color .2s ease, box-shadow .2s ease; }

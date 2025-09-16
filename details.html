@@ -135,18 +135,7 @@ footer{color:#6b5e55;text-align:center;font-size:12px;margin:12px 0}
 
       <div class="section">
         <h2 data-i18n="menu">メニュー</h2>
-
-        <!-- HTMLはそのまま -->
-<div id="menuSelectWrap" class="box" style="margin:14px 0 6px;padding:12px 16px">
-  <label class="title" id="menuSelectLabel">メニュー</label>
-  <select id="menuSelect" style="margin-left:12px;min-width:260px"></select>
-  <div id="menuHint" class="small" style="margin-top:8px;opacity:.85"></div>
-  <div id="menuSelectActions" class="actions" style="margin-top:8px">
-    <button id="goReserveByMenu" class="btn reserve-btn" disabled>予約へ進む</button>
-  </div>
-</div>
-
-
+        <!-- セレクト＋上部CTAは廃止。行ボタンのみで予約 -->
         <div id="menuList"></div>
       </div>
 
@@ -228,7 +217,7 @@ footer{color:#6b5e55;text-align:center;font-size:12px;margin:12px 0}
   </div>
 </div>
 
-<footer>Build v2025-09-15d</footer>
+<footer>Build v2025-09-15e</footer>
 
 <script>
 /* -----------------------
@@ -251,19 +240,19 @@ function setLangSelect(){
 const T = {
   ja: {
     shop_info:'店舗情報', menu:'メニュー', coupons:'クーポン', map:'地図・道順', reviews:'口コミ',
-    back:'一覧に戻る', book:'予約へ進む', route:'Googleで道順', price_from:'料金目安：', select_menu:'メニューを選択',
-    select_menu_label:'メニュー', select_menu_btn:'予約へ進む', see_more:'もっと見る',
+    back:'一覧に戻る', book:'予約へ進む', route:'Googleで道順', price_from:'料金目安：',
+    see_more:'もっと見る',
     review_gate:'※投稿は予約済みの方のみ（Thank You 到達で自動開放）',
-    your_name:'お名前', your_experience:'体験を教えてください', select_country:'国籍を選択', submit:'投稿',
-    not_available:'この店舗では準備中です'
+    your_name:'お名前', your_experience:'体験を教えてください', select_country:'国籍を選択',
+    submit:'投稿', not_available:'この店舗では準備中です'
   },
   en: {
     shop_info:'Shop info', menu:'Menu', coupons:'Coupons', map:'Map & Directions', reviews:'Reviews',
-    back:'Back to list', book:'Book', route:'Directions on Google', price_from:'From ', select_menu:'Select a menu',
-    select_menu_label:'Menu', select_menu_btn:'Book', see_more:'View all',
+    back:'Back to list', book:'Book', route:'Directions on Google', price_from:'From ',
+    see_more:'View all',
     review_gate:'* Review posting is limited to completed bookings.',
-    your_name:'Your name', your_experience:'Share your experience', select_country:'Select nationality', submit:'Submit',
-    not_available:'Not available at this shop'
+    your_name:'Your name', your_experience:'Share your experience', select_country:'Select nationality',
+    submit:'Submit', not_available:'Not available at this shop'
   }
 };
 function t(k){ const L=getLangPref(); return (T[L]&&T[L][k])||k; }
@@ -374,8 +363,6 @@ document.getElementById('reserve').textContent    = t('book');
 document.getElementById('route').textContent      = t('route');
 document.getElementById('gateMsg').textContent    = t('review_gate');
 document.getElementById('viewAllReviews').textContent = t('see_more');
-document.getElementById('menuSelectLabel').textContent = t('select_menu_label');
-document.getElementById('goReserveByMenu').textContent  = t('select_menu_btn');
 
 // Shop header
 document.getElementById('name').textContent = shop.name;
@@ -400,12 +387,13 @@ document.getElementById('backToList').onclick = ()=>{
   if(history.length>1){ history.back(); } else { location.href='index.html?nosplash=1'; }
 };
 document.getElementById('reserve').onclick = ()=>{
-  const sel = document.getElementById('menuSelect');
-  if(sel && !sel.disabled){
-    document.getElementById('menuSelectWrap').scrollIntoView({behavior:'smooth', block:'center'});
-    sel.focus();
+  // メニュー行の先頭ボタンへスクロール＆フォーカス
+  const firstBtn = document.querySelector('#menuList .menu [data-go]');
+  if(firstBtn){
+    firstBtn.closest('.menu').scrollIntoView({behavior:'smooth', block:'center'});
+    firstBtn.focus();
   }else{
-    // fallback: go to reservation with shop only
+    // fallback: 直接予約ページへ
     const q = new URLSearchParams({salonId:shop.id, salonName:shop.name});
     if(LANG==='en') q.set('lang','en');
     location.href = 'reservation.html?'+q.toString();
@@ -424,42 +412,6 @@ document.getElementById('next').onclick=()=>go(cidx+1);
 timgs.forEach(t=>t.onclick=()=>go(parseInt(t.dataset.idx||'0',10)));
 if(timgs[0]) timgs[0].classList.add('active');
 
-// Menu select + list
-(function setupMenuSelect(){
-  const sel = document.getElementById('menuSelect');
-  const go  = document.getElementById('goReserveByMenu');
-  const hint= document.getElementById('menuHint');
-  const items = MENUS[shop.id] || [];
-
-  sel.innerHTML = `<option value="" disabled selected>${t('select_menu')}</option>`;
-  items.forEach((it,idx)=>{
-    const name = (LANG==='en'? enMenuName(it.name) : it.name);
-    const dur  = it.minutes ? ` (${it.minutes}${LANG==='en'?' min':'分'})` : '';
-    const price= fmtCurrencyFromJPY(it.price, getCurrency());
-    sel.insertAdjacentHTML('beforeend', `<option value="${idx}">${name}${dur} - ${price}</option>`);
-  });
-  if(items.length===0){ sel.disabled=true; hint.textContent = t('not_available'); go.disabled=true; }
-
-  sel.addEventListener('change', ()=>{
-    const i = sel.value;
-    if(i===''){ go.disabled=true; hint.textContent=''; return; }
-    const it = items[i];
-    const name = (LANG==='en'? enMenuName(it.name) : it.name);
-    const timeTxt = it.minutes ? (LANG==='en'?`${it.minutes} min`:`${it.minutes}分`) : '';
-    const priceTxt = fmtCurrencyFromJPY(it.price, getCurrency());
-    hint.textContent = [name, timeTxt, priceTxt].filter(Boolean).join(' · ');
-    go.disabled=false;
-  });
-  go.addEventListener('click', ()=>{
-    const i = sel.value; if(i==='') return;
-    const it = items[i];
-    const q = new URLSearchParams({salonId:shop.id, salonName:shop.name, type:'menu'});
-    if(it && it.id) q.set('itemId', it.id);
-    if(LANG==='en') q.set('lang','en');
-    location.href = 'reservation.html?'+q.toString();
-  });
-})();
-
 // Menu & coupon lists
 function renderList(elId, items, type){
   const el=document.getElementById(elId);
@@ -468,7 +420,7 @@ function renderList(elId, items, type){
     const name = (LANG==='en'? enMenuName(it.name) : it.name);
     const dur  = it.minutes ? (LANG==='en'? `${it.minutes} min` : `${it.minutes}分`) : '';
     const price= fmtCurrencyFromJPY(it.price, getCurrency());
-    return `<div class="menu">
+    return `<div class="menu" data-item="${it.id}">
       <div><div class="name">${name}</div><div class="meta">${dur}</div></div>
       <div class="actions"><span class="price" data-jpy="${it.price}">${price}</span>
         <button class="btn primary reserve-btn" data-go data-type="${type}" data-id="${it.id}">${t('book')}</button></div>
@@ -503,7 +455,7 @@ updateCurrencies();
 ----------------------- */
 function booked(id){ try{return (JSON.parse(localStorage.getItem('bl_completed_bookings')||'[]')).includes(id)}catch(e){return false} }
 const form=document.getElementById('revform'); const gate=document.getElementById('gateMsg');
-if(!booked(shop.id)){ form.style.opacity=".6"; form.style.pointerEvents="none"; gate.style.color= getLangPref()==='en' ? "#a06" : "#a06"; }
+if(!booked(shop.id)){ form.style.opacity=".6"; form.style.pointerEvents="none"; gate.style.color="#a06"; }
 
 document.getElementById('revSubmit').onclick=()=>{
   if(!booked(shop.id)) return alert(getLangPref()==='en'?'Only completed bookings can post a review.':'予約済みの方のみ投稿可です。');
@@ -537,7 +489,6 @@ if(LANG==='en'){
   let items = [];
   try{
     if(window.BL_API && typeof window.BL_API.listReviews === 'function'){
-      // 推奨: salonId でフィルタ
       const res = await window.BL_API.listReviews({ salonId: shop.id });
       items = Array.isArray(res) ? res : [];
     }

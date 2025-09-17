@@ -1019,6 +1019,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   <input id="resTime"  name="time"  type="time" required>
   <textarea id="resNotes"  name="notes"  placeholder="要望など"></textarea>
   <button type="submit">予約を送信</button>
+  <button id="btnCompleteReservation" class="btn primary">予約を確定</button> 
 </form>
 
 
@@ -1368,6 +1369,42 @@ document.getElementById("reserveForm").addEventListener("submit", async (e)=>{
       console.warn('postToGAS failed:', e);
     }
   }
+</script>
+<script>
+(function(){
+  const btn = document.getElementById('btnCompleteReservation');
+  if(!btn) return;
+
+  // 画面の入力値や現在の選択値の取り方は、あなたのID/変数名に合わせて調整してね
+  const qs = new URLSearchParams(location.search);
+
+  btn.addEventListener('click', () => {
+    const bookingId   = window.currentBookingId || ('BL-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '-' + Math.random().toString(36).slice(2,5));
+    const salonId     = qs.get('salonId') || window.salon?.id || '';
+    const salonName   = qs.get('salonName') || window.salon?.name || (document.getElementById('name')?.textContent || '');
+    const menuType    = qs.get('type') || 'menu';
+    const itemId      = qs.get('itemId') || window.selectedItem?.id || '';
+    const itemName    = window.selectedItem?.name || document.querySelector('#menuSelect option:checked')?.text || '';
+
+    const customerName  = document.querySelector('#yourName')?.value || '';
+    const customerEmail = document.querySelector('#yourEmail')?.value || '';
+    const customerPhone = document.querySelector('#yourPhone')?.value || '';
+    const country       = document.querySelector('#yourCountry')?.value || '';
+
+    const amountJPY   = Math.round(Number(document.querySelector('[data-total]')?.dataset.total || window.totalPrice || 0));
+    const stripe      = window.BL_STRIPE || {}; // カード保存済みなら {customerId, paymentMethodId} が入ってる
+
+    postToGAS('booking', {
+      bookingId, salonId, salonName, menuType, itemId, itemName,
+      customerName, customerEmail, customerPhone, country,
+      stripeCustomerId: stripe.customerId || '',
+      paymentMethodId:  stripe.paymentMethodId || '',
+      amountJPY, currency: 'JPY',
+      status: 'reserved',
+      note: ''
+    });
+  });
+})();
 </script>
 
 

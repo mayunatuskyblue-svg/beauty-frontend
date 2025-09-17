@@ -3,6 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="bl-sheet-hook" content="https://script.google.com/macros/s/AKfycbwlpW6ZQ-sOMfWCr_DWbNf27ezZb1ul6Cia9M7kMX4CSL-rRecpIWvh1qCbkVjA2xk/exec">
+
   <title>予約内容の確認</title>
   <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Shippori+Mincho:wght@600;700&display=swap" rel="stylesheet">
   <link rel="manifest" href="./manifest.json">
@@ -48,6 +50,21 @@
 /* confirm-page staff row */
 #confirmStaffRow { margin-top: 6px; }
 
+</style>
+  <style>
+/* confirm-page balanced size override */
+body.confirm-page .card {
+  max-width: 720px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding: 16px 20px !important;
+}
+body.confirm-page h1 {
+  font-size: 30px !important;
+}
+@media (max-width: 720px) {
+  body.confirm-page .card { max-width: 100% !important; }
+}
 </style>
 
 <style id="fixed-footer-style">
@@ -107,6 +124,11 @@ body{ padding-bottom:60px; } /* avoid overlap */
     <span id="toastMsg">未入力があります。</span>
     <button class="close" aria-label="閉じる" onclick="hideToast()">×</button>
   </div>
+  <section class="section">
+  <h2>カード情報の保存（後払い用）</h2>
+  <div id="bl-card-box"></div>
+</section>
+
 
   <script>
 
@@ -281,17 +303,15 @@ document.addEventListener('DOMContentLoaded', ()=>{
 document.addEventListener('DOMContentLoaded', async ()=>{
   try{
     const staffId = localStorage.getItem('bl_reservation_staff')||'';
-    let name = (window.BL_lang==='en' ? 'No preference' : '指名なし');
-    if(staffId && window.BL_API && window.BL_API.listStaff){
-      try{
-        const list = await window.BL_API.listStaff();
-        const found = (list||[]).find(x=>String(x.id)===String(staffId));
-        if(found && found.name) name = found.name;
-      }catch(e){}
+    if(!staffId) return;
+    if(window.BL_API && window.BL_API.listStaff){
+      const list = await window.BL_API.listStaff();
+      const found = (list||[]).find(x=> String(x.id)===String(staffId));
+      if(found?.name){
+        const span = document.getElementById('s_staff_name');
+        if(span) span.textContent = found.name;
+      }
     }
-    const row=document.getElementById('confirmStaffRow');
-    const span=document.getElementById('confirmStaffName');
-    if(row && span){ span.textContent=name; row.style.display='block'; }
   }catch(e){}
 });
 </script>
@@ -322,22 +342,129 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 })();
 </script>
   <script src="https://js.stripe.com/v3"></script>
+  <script>
+  window.BL_PAY = {
+    // ★Stripeの公開鍵
+    pk: 'pk_test_51S59dhHFHLP5RXi1qkW9cuPEJAlJPuSaFeWFb5GuYhsXs9vkX6RJYfVYwQEdK8TwN3eKF7wEctQftyhYxb2rRIZN00146bOW8U
+',
+    // ★RenderのベースURL（/apiの親）
+    base: 'https://pay-server-uis7.onrender.com'
+  };
+</script>
+<script>
+(() => {
+  // 既に保存済みなら状態だけ見せる（変更ボタンでフォームを出す）
+  const holder = document.getElementById('bl-card-box');
+  if(!holder) return;
+
+  const saved = (()=>{ try{return JSON.parse(localStorage.getItem('bl_saved_card')||'null')}catch(e){return null} })();
+  if(saved){
+    holder.innerHTML = `
+      <div class="notice" style="padding:10px;border:1px solid #eadfca;border-radius:10px">
+        カード情報は保存済みです ✅<br>
+        <small>（customerId: ${saved.customerId} / pm: ${saved.paymentMethodId}）</small><br>
+        <button id="bl-change" class="btn" style="margin-top:8px">別のカードにする</button>
+      </div>`;
+    document.getElementById('bl-change').onclick = mountForm;
+  }else{
+    mountForm();
+  }
+
+  function mountForm(){
+    const base = (window.BL_PAY?.base||'').replace(/\/$/,'');
+    const pk   = window.BL_PAY?.pk;
+    if(!pk || !base){ holder.textContent='設定不足（pk/base）'; return; }
+
+    holder.innerHTML = `
+      <div style="max-width:520px">
+        <label>メール<input id="sp_email" placeholder="you@example.com" style="width:100%"></label>
+        <label>お名前<input id="sp_name"  placeholder="Taro Yamada" style="width:100%"></label>
+        <div id="sp_card" style="border:1px solid #eadfca;border-radius:10px;padding:12px;margin:10px 0"></div>
+        <button id="sp_save" class="btn primary">カードを保存する</button>
+        <div id="sp_msg" class="notice" style="margin-top:8px"></div>
+      </div>`;
+
+    const stripe   = Stripe(pk);
+    const elements = stripe.elements();
+    const card     = elements.create('card', { hidePostalCode:true });
+    card.mount('#sp_card');
+
+    const $ = id => document.getElementById(id);
+    const msg = (t, ok=false) => { $('sp_msg').textContent = t; $('sp_msg').style.color = ok ? '#246A73' : '#6f5a54'; };
+
+    // 既存フォームから自動推測（あれば）
+    const val = s => {const el=document.querySelector(s); return el && el.value ? el.value.trim() : ''};
+    $('sp_email').value = val('#email') || val('[name="email"]');
+    $('sp_name').value  = val('#name')  || val('[name="name"]');
+
+    $('sp_save').addEventListener('click', async () => {
+      try{
+        const email = ($('sp_email').value||'').trim();
+        const name  = ($('sp_name').value||'').trim();
+        if(!email || !name) return msg('メールとお名前を入力してください');
+
+        msg('カード保存の準備中…');
+
+        // 1) SetupIntent を発行
+        const siRes = await fetch(base + '/api/setup-intent', {
+          method:'POST', headers:{ 'Content-Type':'application/json' },
+          body: JSON.stringify({ email, name })
+        });
+        const si = await siRes.json();
+        if(!si.ok) throw new Error(si.error||'setup-intent failed');
+
+        // 2) confirmCardSetup で保存
+        const result = await Stripe(pk).confirmCardSetup(si.clientSecret, {
+          payment_method: { card, billing_details: { email, name } }
+        });
+        if(result.error) throw result.error;
+
+        const payload = {
+          email, name,
+          customerId: si.customerId,
+          paymentMethodId: result.setupIntent.payment_method,
+          ts: Date.now()
+        };
+        localStorage.setItem('bl_saved_card', JSON.stringify(payload));
+
+        msg('カードを保存しました。', true);
+
+        // 3) スプレッドシートに記録（③-4：URLを渡したら自動で走る）
+        sendToSheet(payload);
+      }catch(e){
+        console.error(e);
+        msg('保存に失敗しました：' + (e.message||e));
+      }
+    });
+
+    // ③-4 で設定された URL があれば投げる
+    async function sendToSheet(payload){
+      const WEBHOOK =
+        // A) metaタグから取得（推奨）
+        (document.querySelector('meta[name="bl-sheet-hook"]')?.content) ||
+        // B) 事前にローカルに保存しておく方式
+        localStorage.getItem('bl_sheet_hook') ||
+        // C) ここに直書きしてもOK（空なら送らない）
+        '';
+
+      if(!WEBHOOK) return; // 未設定なら何もしない
+
+      try{
+        await fetch(WEBHOOK, {
+          method:'POST',
+          headers:{ 'Content-Type':'text/plain;charset=utf-8' }, // プリフライト回避
+          body: JSON.stringify({
+            kind:'card_saved',
+            salonId:  (new URLSearchParams(location.search)).get('salonId') || '',
+            salonName:(new URLSearchParams(location.search)).get('salonName') || '',
+            ...payload
+          })
+        });
+      }catch(e){ console.warn('Sheet logging failed', e); }
+    }
+  }
+})();
+</script>
 
 </body>
 </html>
-
-<style>
-/* confirm-page balanced size override */
-body.confirm-page .card {
-  max-width: 720px !important;
-  margin-left: auto !important;
-  margin-right: auto !important;
-  padding: 16px 20px !important;
-}
-body.confirm-page h1 {
-  font-size: 30px !important;
-}
-@media (max-width: 720px) {
-  body.confirm-page .card { max-width: 100% !important; }
-}
-</style>

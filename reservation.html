@@ -294,8 +294,15 @@ body{ padding-bottom:60px; } /* avoid overlap */
     const res = await fetch(GAS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload)
-    });
+      body: JSON.stringify(payload),
+      type: 'booking',
+      bookingId,           // BL-20250917-001 みたいなID
+      email, name,
+      amountJPY,           // 整数
+      customerId           // 保存済みの顧客ID（あれば）
+    })
+  });
+
     // 必要なら結果を見る
     try {
       const json = await res.json();

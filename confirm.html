@@ -465,6 +465,23 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   }
 })();
 </script>
+<!-- confirm.html の </body> 直前に追加 -->
+<script>
+(function(){
+  const p = new URLSearchParams(location.search);
+  const email = p.get('email')||'';
+  const cid   = p.get('customerId')||'';
+  const box = document.createElement('div');
+  box.style = 'margin:12px 0;padding:12px;border:1px solid #eadfca;border-radius:12px;background:#fff';
+  box.innerHTML = `
+    <div style="font-weight:700">SmartPay（後課金）</div>
+    <div style="color:#6f5a54;margin-top:6px">
+      ${ email ? `Email: <b>${email}</b><br>` : '' }
+      ${ cid ? `カード保存済み（Customer: <code>${cid}</code>）` : 'カード未保存' }
+    </div>`;
+  document.body.appendChild(box);
+})();
+</script>
 
 </body>
 </html>

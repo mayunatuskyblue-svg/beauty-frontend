@@ -191,6 +191,129 @@ body{ padding-bottom:60px; } /* avoid overlap */
 #hpGrid table{ width:auto !important; margin:0 auto; display:table; }
 </style>
 </head>
+  <!doctype html>
+<meta charset="utf-8">
+<title>Save card test</title>
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+  body{font:16px/1.6 system-ui; max-width:720px; margin:24px auto; padding:0 16px}
+  .row{margin:8px 0}
+  #card-element{padding:.75rem;border:1px solid #ddd;border-radius:8px;background:#fff}
+  button{padding:.6rem 1rem;border-radius:10px;border:1px solid #ddd;cursor:pointer}
+  pre{background:#f7f7f7;border:1px solid #eee;padding:10px;border-radius:8px;white-space:pre-wrap}
+</style>
+
+<h1>Save card (SetupIntent) – test</h1>
+
+<div class="row">
+  <label>Email<br><input id="email" placeholder="you@example.com" style="width:360px"></label>
+  <!-- メール入力の直後に入れる（無理なら省略可。Cで自動生成されます） -->
+<small id="cardStatus" class="meta" style="margin-left:8px;opacity:.8"></small>
+
+</div>
+<div class="row">
+  <label>Name<br><input id="name" placeholder="Your name" style="width:360px"></label>
+</div>
+<div class="row">
+  <label>Card<br><div id="card-element"></div></label>
+  <div style="font-size:12px;opacity:.7">テストカード: 4242 4242 4242 4242 / 任意の有効期限 / 任意のCVC</div>
+</div>
+<div class="row">
+  <button id="save">Save card</button>
+</div>
+<pre id="out">Waiting…</pre>
+
+<script>
+  // ① 自分の値に置き換える
+  const STRIPE_PK = 'pk_test_51S59dhHFHLP5RXi1qkW9cuPEJAlJPuSaFeWFb5GuYhsXs9vkX6RJYfVYwQEdK8TwN3eKF7wEctQftyhYxb2rRIZN00146bOW8U';               // 例: pk_test_51...
+  const BASE_URL  = 'https://pay-server-uis7.onrender.com'.replace(/\/$/,''); // 例: https://pay-server-xxxx.onrender.com
+
+  // ② Stripe.js 初期化 & Elements
+  const stripe = Stripe(STRIPE_PK);
+  const elements = stripe.elements();
+  const card = elements.create('card');
+  card.mount('#card-element');
+
+  const $ = id => document.getElementById(id);
+  const out = $('out');
+
+  // ③ Save card ボタン
+  $('save').onclick = async () => {
+    try{
+      out.textContent = 'Creating SetupIntent…';
+      const email = $('email').value.trim();
+      const name  = $('name').value.trim();
+      if(!email){ alert('Email を入れてね'); return; }
+
+      // 1) 自前サーバーで SetupIntent を作成（clientSecret と customerId をもらう）
+      const r1 = await fetch(BASE_URL + '/api/setup-intent', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ email, name })
+      });
+      const j1 = await r1.json();
+      if(!j1.ok) throw new Error('setup-intent error: '+JSON.stringify(j1));
+
+      out.textContent = 'Confirming card setup…';
+
+      // 2) フロントでカード入力を確定（confirmCardSetup）
+      const {setupIntent, error} = await stripe.confirmCardSetup(j1.clientSecret, {
+        payment_method: {
+          card,
+          billing_details: { email, name }
+        }
+      });
+      if(error) throw error;
+
+      // 3) 保存結果（customerId + payment_method）をローカルに保存＆表示
+      const saved = {
+        email, name,
+        customerId: j1.customerId,
+        paymentMethodId: setupIntent.payment_method,
+        ts: Date.now()
+      };
+      localStorage.setItem('bl_saved_card', JSON.stringify(saved));
+      out.textContent = 'Saved! You can charge later with:\n' + JSON.stringify(saved, null, 2);
+
+      // おまけ：Stripeの顧客画面のヒント
+      console.log('Go check in Stripe: Customers ->', email);
+    }catch(e){
+      console.error(e);
+      out.textContent = 'Error: ' + (e.message || String(e));
+      alert('Error: ' + (e.message || String(e)));
+    }
+  };
+</script>
+<script>
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbzq2D1VBZfwXTM8Le20OYVJdkZyNHTeBveWPy4-N6V1pDjJLyqY7gC6OKCCFZCL9MU/exec'; // ②で控えたURL
+  const GAS_KEY = 'bl_gas_key_manjnjIHFkgj148jjs';         // ②の GAS_KEY と同じ
+
+  async function recordToSheet({ email, name, customerId, paymentMethodId }) {
+    const payload = { key: GAS_KEY, email, name, customerId, paymentMethodId };
+    // CORSが厳しい環境では Content-Type を text/plain に
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    // 必要なら結果を見る
+    try {
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || 'GAS error');
+      console.log('Sheet saved:', json);
+    } catch (e) {
+      console.warn('Sheet save (parse) error:', e);
+    }
+  }
+
+  // ★ save-card 成功時の既存コードの最後に足すだけ
+  // 例: save-card-test.htmlの成功表示の直後など
+  async function onCardSavedSuccess({ email, name, customerId, paymentMethodId }) {
+    await recordToSheet({ email, name, customerId, paymentMethodId });
+  }
+</script>
+
+
 <body>
   <div class="container">
     <a id="back" class="back-link" href="./index.html">← サイトへ戻る</a>
@@ -887,7 +1010,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
 <!-- 予約フォーム例（あなたの既存フォーム id/name に合わせてOK） -->
 <form id="reserveForm">
   <input id="resName"  name="name"  placeholder="お名前" required>
-  <input id="resEmail"  name="email"  type="email" placeholder="メール" required>
+  <input id="resEmail"  name="email"  type="email" placeholder="you@example.com" required>
+  <!-- メール入力の直後に入れる（無理なら省略可。Cで自動生成されます） -->
+<small id="cardStatus" class="meta" style="margin-left:8px;opacity:.8"></small>
+
   <input id="resPhone"  name="phone"  placeholder="電話">
   <input id="resDate"  name="date"  type="date" required>
   <input id="resTime"  name="time"  type="time" required>
@@ -1031,6 +1157,9 @@ document.getElementById("reserveForm").addEventListener("submit", async (e)=>{
     holder.innerHTML = `
       <div style="max-width:520px">
         <label>メール<input id="sp_email" placeholder="you@example.com" style="width:100%"></label>
+        <!-- メール入力の直後に入れる（無理なら省略可。Cで自動生成されます） -->
+<small id="cardStatus" class="meta" style="margin-left:8px;opacity:.8"></small>
+
         <label>お名前<input id="sp_name"  placeholder="Taro Yamada" style="width:100%"></label>
         <div id="sp_card" style="border:1px solid #eadfca;border-radius:10px;padding:12px;margin:10px 0"></div>
         <button id="sp_save" class="btn primary">カードを保存する</button>
@@ -1118,6 +1247,107 @@ document.getElementById("reserveForm").addEventListener("submit", async (e)=>{
   }
 })();
 </script>
+<!-- === 保存済みカードの有無チェック: BODY 終了直前に追加 === -->
+<script>
+(function(){
+  const $ = (s, r=document)=> r.querySelector(s);
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // 1) メール入力とステータス表示
+    const emailInput =
+      $('#email') ||
+      $('input[type="email"]') ||
+      $('input[name="email"]');
+
+    if(!emailInput) return; // メール入力が無ければ何もしない
+
+    let statusEl = $('#cardStatus');
+    if(!statusEl){
+      statusEl = document.createElement('small');
+      statusEl.id = 'cardStatus';
+      statusEl.className = 'meta';
+      statusEl.style.marginLeft = '8px';
+      statusEl.style.opacity = '.85';
+      emailInput.insertAdjacentElement('afterend', statusEl);
+    }
+
+    // 2) 取得した customerId をフォームに載せる hidden
+    let hiddenCid = $('#customerId');
+    if(!hiddenCid){
+      hiddenCid = document.createElement('input');
+      hiddenCid.type = 'hidden';
+      hiddenCid.name = 'customerId';
+      hiddenCid.id = 'customerId';
+      (emailInput.form || document.body).appendChild(hiddenCid);
+    }
+
+    const setStatus = (text, good) => {
+      statusEl.textContent = text || '';
+      statusEl.style.color = good ? '#246A73' : '#6f5a54';
+    };
+
+    const debounce = (fn, ms=450) => {
+      let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); };
+    };
+
+    // 3) 入力監視 → GASに問い合わせ
+    const check = debounce(async ()=>{
+      const email = (emailInput.value||'').trim();
+      if(!email){ setStatus('', false); hiddenCid.value=''; return; }
+      setStatus('Checking…', false);
+      const cid = await findCustomerIdByEmail(email);
+      if(cid){
+        hiddenCid.value = cid;
+        setStatus('Card on file ✓', true);
+        // 任意: ローカルキャッシュ（同じ端末の体験を少し快適に）
+        localStorage.setItem('bl_cid_'+email, cid);
+      }else{
+        hiddenCid.value = '';
+        setStatus('No card on file', false);
+        localStorage.removeItem('bl_cid_'+email);
+      }
+    }, 450);
+
+    emailInput.addEventListener('input', check);
+    check(); // 初期表示も更新
+
+    // 4) フォーム送信時 or 「予約へ進む」ボタン押下時に、customerId を次画面へ渡す
+    //   (a) 予約フォームそのものがある場合
+    const form = emailInput.form || $('form');
+    if(form){
+      form.addEventListener('submit', (e)=>{
+        // hiddenCid.value に customerId が入っていればそのまま送信される
+        // 未保存時にブロックしたい場合は以下を解放:
+        // if(!hiddenCid.value){ e.preventDefault(); alert('先にカード保存をお願いします'); }
+      });
+    }
+
+    //   (b) フォームが無く、ボタンで confirm.html に遷移する構成の場合
+    //       → パラメータで渡す（既存の遷移ロジックに合わせて調整）
+    const nextBtn =
+      $('#reserve') ||
+      $('#goReserve') ||
+      $('button[data-go]') ||
+      $('.reserve-btn.primary') ||
+      $('.btn.primary');
+
+    if(nextBtn && !form){
+      nextBtn.addEventListener('click', (ev)=>{
+        ev.preventDefault();
+        // 既存のクエリを引き継いで confirm.html に遷移し、email/customerId を追加
+        const dest = new URL('confirm.html', location.href);
+        const cur  = new URL(location.href);
+        cur.searchParams.forEach((v,k)=>dest.searchParams.set(k,v));
+        const email = (emailInput.value||'').trim();
+        if(email) dest.searchParams.set('email', email);
+        if(hiddenCid.value) dest.searchParams.set('customerId', hiddenCid.value);
+        location.href = dest.toString();
+      });
+    }
+  });
+})();
+</script>
+<!-- === /BODY 終了直前 ここまで === -->
 
 
 </body>

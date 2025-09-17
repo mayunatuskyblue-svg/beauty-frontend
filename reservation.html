@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="bl-sheet-hook" content="https://script.google.com/macros/s/AKfycbwlpW6ZQ-sOMfWCr_DWbNf27ezZb1ul6Cia9M7kMX4CSL-rRecpIWvh1qCbkVjA2xk/exec">
   <title>Reserve time (font unified + timetable fix)</title>
   <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Shippori+Mincho:wght@600;700&display=swap" rel="stylesheet">
   <link rel="manifest" href="./manifest.json">
@@ -894,68 +895,12 @@ document.addEventListener('DOMContentLoaded', ()=>{
   <button type="submit">予約を送信</button>
 </form>
 
-<script>
-
-
-// URLの ?salonId= & salonName= を拾う（index/details から渡しているやつ）
-const usp = new URLSearchParams(location.search);
-const salonId   = usp.get("salonId")   || "UNKNOWN";
-const salonName = usp.get("salonName") || "Unknown Salon";
-
-// ランダムな予約ID（被りにくい）
-function makeBookingId(){
-  if (crypto?.randomUUID) return "BL-" + crypto.randomUUID();
-  return "BL-" + Date.now() + "-" + Math.random().toString(36).slice(2,8);
-}
-
-// スプレッドシートへ1行追加（Step2 の upsertBooking を叩く）
-async function saveBookingToSheet(payload){
-  const res = await fetch(`${SHEET_API}?token=${encodeURIComponent(SHEET_TOKEN)}`, {
-    method: "POST",
-    headers: { "Content-Type":"application/json" },
-    body: JSON.stringify({ action: "upsertBooking", ...payload })
-  });
-  const json = await res.json();
-  if(!res.ok || !json.ok){ throw new Error(json.error || "Save failed"); }
-  return json;
-}
-
-document.getElementById("reserveForm").addEventListener("submit", async (e)=>{
-  e.preventDefault();
-  const bookingId = makeBookingId();
-
-  // フォームの値を取得（id は上のフォームに合わせて）
-  const payload = {
-    bookingId,
-    createdAt: new Date().toISOString(),
-    salonId, salonName,
-    customerName: document.getElementById("custName").value.trim(),
-    email:       document.getElementById("email").value.trim(),
-    phone:       document.getElementById("phone").value.trim(),
-    bookingDate: document.getElementById("date").value,
-    bookingTime: document.getElementById("time").value,
-    notes:       document.getElementById("notes").value.trim(),
-    // ここは “スマート払い” 導入前なので空でOK
-    stripeCustomerId: "",
-    status: "saved"      // saved = 予約作成（未課金）
-  };
-
-  try{
-    const r = await saveBookingToSheet(payload);
-    alert("予約を受け付けました！");   // お好みで専用の完了画面へ遷移
-    // location.href = "thankyou.html?bookingId=" + encodeURIComponent(bookingId);
-  }catch(err){
-    console.error(err);
-    alert("保存に失敗しました。通信状況をご確認ください。");
-  }
-});
-</script>
 
 <script>
 const SHEET_API   = "https://script.google.com/macros/s/AKfycbxYBpVwuWZ2e1B6oQJnVF-ZWob4OshrJ2Prk2s5CrRr9yV3QK147GOvTDmuH5Nfex1q/exec";
 const SHEET_TOKEN = "WahgalkjKJlkaOka1200j5";
 
-const usp = new URLSearchParams(location.search);
+const usp2 = new URLSearchParams(location.search);
 const salonId   = usp.get("salonId")   || "UNKNOWN";
 const salonName = usp.get("salonName") || "Unknown Salon";
 
@@ -1054,9 +999,9 @@ document.getElementById("reserveForm").addEventListener("submit", async (e)=>{
   <script>
   window.BL_PAY = {
     // ★Stripeの公開鍵
-    pk: 'pk_test_XXXXXXXXXXXXXXXXXXXXXXXX',
+    pk: 'pk_test_51S59dhHFHLP5RXi1qkW9cuPEJAlJPuSaFeWFb5GuYhsXs9vkX6RJYfVYwQEdK8TwN3eKF7wEctQftyhYxb2rRIZN00146bOW8U',
     // ★RenderのベースURL（/apiの親）
-    base: 'https://pay-server-xxxx.onrender.com'
+    base: 'https://pay-server-uis7.onrender.com'
   };
 </script>
   <script>

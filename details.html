@@ -148,6 +148,23 @@ async function getCatalog(){ const url=GAS_URL+'?kind=catalog&key='+encodeURICom
 // --- Boot ---
 (async function(){
   const L = getLang();
+  // Localize section headings
+  const hReviews = document.querySelector('[data-i18n="reviews"]');
+  if(hReviews) hReviews.textContent = (L==='en' ? 'Reviews' : '口コミ');
+  const hShop = document.querySelector('[data-i18n="shop_info"]');
+  if(hShop) hShop.textContent = (L==='en' ? 'Shop info' : '店舗情報');
+  const hMap = document.querySelector('#mapSection h2');
+  if(hMap) hMap.textContent = (L==='en' ? 'Map & directions' : '地図・道順');
+  const hMenu = document.querySelector('#menuSection h2, .section > h2:nth-of-type(1)'); // fallback
+  // Extra: localize Menu & Coupon headings safely by text match
+  const allH2 = Array.from(document.querySelectorAll('.section h2'));
+  const hMenu2 = allH2.find(h => /^\s*(メニュー|Menu)\s*$/.test(h.textContent||''));
+  if(hMenu2) hMenu2.textContent = (L==='en' ? 'Menu' : 'メニュー');
+  const hCoupon = allH2.find(h => /^\s*(クーポン|Coupons?)\s*$/.test(h.textContent||''));
+  if(hCoupon) hCoupon.textContent = (L==='en' ? 'Coupons' : 'クーポン');
+
+  if(hMenu && hMenu.textContent.trim().match(/^(メニュー|Menu)$/)) hMenu.textContent = (L==='en' ? 'Menu' : 'メニュー');
+
   const params = new URLSearchParams(location.search);
   const salonId = params.get('salonId')||'';
   try{

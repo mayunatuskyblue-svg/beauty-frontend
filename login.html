@@ -1,4 +1,15 @@
-<!doctype html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<!doctype html><html lang="ja"><head><script>
+  (function(){
+    try{
+      const host = location.hostname;
+      // wwwで来たらapexに寄せる（beautylk.comへ統一）
+      if(/^www\./i.test(host)){
+        location.replace(location.href.replace('//www.', '//'));
+        return; // 以降の処理を実行せずに終了
+      }
+    }catch(e){}
+  })();
+  </script><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ログイン | BeautyLanka</title>
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>

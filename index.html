@@ -482,6 +482,34 @@ async function initCatalog(){
 
 // 呼び出し（元の render(DATA) の代わり）
 initCatalog();
+// カタログの後で:
+async function fetchReviewSummary(){
+  const url = GAS_URL + '?kind=reviews&key=' + encodeURIComponent(GAS_KEY);
+  const r   = await fetch(url); const j=await r.json();
+  if(!j.ok) return {};
+  return j.summary || {};
+}
+
+async function initCatalog(){
+  const L = getLang();
+  try{
+    const rows = await loadCatalog();
+    const summary = await fetchReviewSummary();
+    const DATA = rows.map(r=>{
+      const x = normalizeForUI(r, L);
+      const s = summary[r.id] || null;
+      if (s && s.count>0){
+        x.rating = s.avg;     // ★平均に差し替え
+        x._rcnt  = s.count;   // 件数（必要ならUIに「(12)」などで出す）
+      }
+      return x;
+    });
+    render(DATA);
+  }catch(e){
+    console.warn(e); render([]);
+  }
+}
+
 </script>
 
 // initial render

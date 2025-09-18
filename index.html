@@ -97,9 +97,17 @@ footer{color:#6b5e55;text-align:center;font-size:12px;margin:12px 0}
 @media(max-width:820px){ .splash .headline h1{font-size:40px} .splash .headline .sri-inline{width:56px} }
 
 /* second Sri outline (page decoration) */
-.sri2{position:fixed;left:3%;bottom:3%;width:140px;opacity:.12;pointer-events:none;filter:drop-shadow(0 6px 10px rgba(0,0,0,.2))}
-.card{transition:transform 0.3s ease, box-shadow 0.3s ease;}
-.card:hover{transform:translateY(-6px) scale(1.02);box-shadow:0 10px 20px rgba(0,0,0,0.15);}
+.hero-head{ position:relative; }
+.hero-sri{
+  position:absolute; left:50%; top:50%;
+  transform:translate(-50%,-50%);
+  width:min(38vw, 320px);  /* 大きさは好みで */
+  opacity:.8;              /* 濃さは好みで */
+  z-index:0;               /* ← 後ろへ */
+  pointer-events:none;     /* クリック透過 */
+  filter:drop-shadow(0 6px 18px rgba(0,0,0,.25));
+}
+.hero-head .container{ position:relative; z-index:1; }  /* ← 文字を前面に */
 
 /* breadcrumbs & header controls */
 .breadcrumbs { display:flex; gap:.5rem; align-items:center; font-size:.9rem; color: var(--muted); margin: .5rem 0 1rem; }
@@ -196,18 +204,13 @@ body.no-scroll{overflow:hidden}
   <video id="splashVid" playsinline autoplay muted>
     <source id="splashSrc" src="/assets/video/hero.mp4" type="video/mp4" />
   </video>
-  .hero-head{ position:relative; }
-.hero-sri{
-  position:absolute; left:50%; top:50%;
-  transform:translate(-50%,-50%);
-  width:min(38vw, 320px);  /* 大きさは好みで */
-  opacity:.8;              /* 濃さは好みで */
-  z-index:0;               /* ← 後ろへ */
-  pointer-events:none;     /* クリック透過 */
-  filter:drop-shadow(0 6px 18px rgba(0,0,0,.25));
-}
-.hero-head .container{ position:relative; z-index:1; }  /* ← 文字を前面に */
-
+  <div class="headline">
+    <img class="sri-center" src="/assets/img/sri-outline.svg" alt="Sri Lanka line art">
+    <h1>Beauty Lanka</h1>
+    <div class="cap">Salons &amp; Spas in Sri Lanka</div>
+  </div>
+  <button class="skip" id="skipSplash">Skip</button>
+</div>
 <img class="sri2" src="/assets/img/sri-outline.svg" alt="">
 
 <script>

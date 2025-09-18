@@ -338,12 +338,7 @@ function applyI18N(){
     myBtn.onclick=()=>location.href='mypage.html';
   }
 })();
-// ---------- DATA (assets references remain) ----------
-const DATA=[
-  {id:"S1", name:"Silky Lashes Colombo", type:"マツエク", place:"コロンボ", lat:6.933, lng:79.85, price:4250, rating:4.6, tags:["マツエク","日本語対応"], points:"自然で長持ち。丁寧なカウンセリング。", photos:["/assets/img/lashes_a.webp","/assets/img/lashes_b.webp","/assets/img/lashes_c.webp"]},
-  {id:"S2", name:"Ayur Luxe Spa", type:"スパ", place:"ゴール", lat:6.025, lng:80.217, price:6630, rating:4.7, tags:["アーユルヴェーダ","リラク"], points:"本格アーユルヴェーダと静かな個室。", photos:["/assets/img/spa_massage.webp","/assets/img/herbs_flatlay.webp","/assets/img/lashes_a.webp"]},
-  {id:"S3", name:"Cinnamon Grow", type:"ハーブ", place:"キャンディ", lat:7.293, lng:80.641, price:5610, rating:4.5, tags:["ハーブ","リラク"], points:"自社ブレンドのハーブでリラックス。", photos:["/assets/img/herbs_flatlay.webp","/assets/img/spa_massage.webp","/assets/img/lashes_b.webp"]}
-];
+
 function yen(n){ return "¥"+(Number(n)||0).toLocaleString("ja-JP"); }
 const $=s=>document.querySelector(s); const list=$('#list');
 function cardTemplate(s, favOn){
@@ -428,6 +423,67 @@ function attachHandlers(){
     };
   });
 }
+  <script>
+// ==== カタログ読み込み（GASから） ====
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzEb8ji5P7OwietqSWWp0kfl_yXB1ZkRbQt8aVDxwXqkVuqCmdLQvSV-6Q9rLfms7Vf/exec';
+const GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
+
+function getLang(){
+  const pref = localStorage.getItem('bl_lang') || 'auto';
+  if(pref==='auto'){
+    const ja = (navigator.language||'en').toLowerCase().startsWith('ja');
+    return ja ? 'ja' : 'en';
+  }
+  return pref;
+}
+
+async function loadCatalog(){
+  const url = GAS_URL + '?kind=catalog&key=' + encodeURIComponent(GAS_KEY);
+  const res = await fetch(url, { method:'GET' });
+  const j = await res.json();
+  if(!j.ok) throw new Error(j.error||'catalog error');
+  return j.items || [];
+}
+
+function normalizeForUI(raw, L){
+  // シートの1件を、既存 UI が使っていた形に変換
+  const tags = (L==='en'
+    ? String(raw.tags_en||'').split('|')
+    : String(raw.tags_ja||'').split('|')
+  ).map(s=>s.trim()).filter(Boolean);
+
+  const points = (L==='en' ? raw.points_en : raw.points_ja) || '';
+  return {
+    id:     raw.id,
+    name:   (L==='en' ? (raw.name_en||raw.name_ja) : (raw.name_ja||raw.name_en)),
+    type:   (L==='en' ? (raw.type_en||raw.type_ja) : (raw.type_ja||raw.type_en)),
+    place:  (L==='en' ? (raw.place_en||raw.place_ja) : (raw.place_ja||raw.place_en)),
+    lat:    raw.lat, lng: raw.lng,
+    price:  raw.price_jpy,
+    rating: raw.rating || 0,
+    tags,
+    points,
+    photos: Array.isArray(raw.photos) ? raw.photos : []
+  };
+}
+
+async function initCatalog(){
+  const L = getLang();
+  try{
+    const rows = await loadCatalog();
+    const DATA = rows.map(r => normalizeForUI(r, L));
+    // 既存の render() がそのまま使える
+    render(DATA);
+  }catch(e){
+    console.warn('catalog load failed, fallback to empty', e);
+    render([]);  // 失敗時は空表示（or 旧ハードコードにフォールバックしてもOK）
+  }
+}
+
+// 呼び出し（元の render(DATA) の代わり）
+initCatalog();
+</script>
+
 // initial render
 render(DATA);
 // populate selects (prefill with major cities)

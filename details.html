@@ -117,6 +117,45 @@ footer{color:#6b5e55;text-align:center;font-size:12px;margin:16px 0}
 <textarea id="revText" placeholder="良かった点や気になった点など" rows="4" style="width:100%;border:1px solid var(--stroke);border-radius:10px;padding:10px;resize:vertical"></textarea>
 </label>
 <button class="btn primary" id="revSubmit">投稿する</button>
+  <!-- 送信ボタンの近くに案内を置くと親切 -->
+<p id="reviewNotice"></p>
+<script>
+  const params = new URLSearchParams(location.search);
+  const rid   = params.get('rid');
+  const token = params.get('token');
+  const exp   = params.get('exp');
+
+  const canPost = !!(rid && token && exp);
+  const btn = document.querySelector('#submitBtn');
+  const note = document.querySelector('#reviewNotice');
+  if (!canPost) {
+    if (btn) btn.disabled = true;
+    if (note) note.textContent = '口コミ投稿は、施術完了後に届く専用リンクからのみ可能です。';
+  }
+
+  async function submitReview() {
+    const payload = {
+      bookingId: rid,
+      token, exp,
+      salonId: window.currentSalonId || '',
+      rating: Number(document.querySelector('#rating').value),
+      comment: document.querySelector('#comment').value,
+      name: document.querySelector('#name')?.value || ''
+    };
+    const res = await fetch('<<あなたのGAS公開URL>>', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ action:'reviews.addVerified', payload })
+    }).then(r=>r.json());
+    if (res.ok) {
+      alert('ありがとうございました！レビューが投稿されました。');
+      // 必要ならフォームリセットやボタン無効化
+    } else {
+      alert('投稿に失敗しました：' + res.error);
+    }
+  }
+</script>
+
 <div class="meta" id="revNotice" style="margin-top:8px;color:#6b5e55"></div>
 </div>
 </div>

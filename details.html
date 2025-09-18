@@ -25,6 +25,12 @@ header{position:sticky;top:0;z-index:40;background:rgba(247,241,225,.92);backdro
 .header-controls label.small{font-size:12px;color:var(--muted) }
 .header-controls select{ border:1px solid var(--stroke); background:#fff; padding:.4rem .6rem; border-radius:10px; font-size:.95rem; }
 
+/* breadcrumbs */
+.breadcrumbs { display:flex; gap:.5rem; align-items:center; font-size:.9rem; color: var(--muted); margin: .5rem 0 1rem; }
+.breadcrumbs a { color: inherit; text-decoration: none; }
+.breadcrumbs a[aria-current="page"] { color: var(--ink); font-weight: 600; }
+.breadcrumbs .sep { opacity:.6; }
+
 /* main grid */
 .main{display:grid;grid-template-columns:1.25fr .75fr;gap:16px;margin:14px 0}
 @media(max-width:960px){ .main{grid-template-columns:1fr} }
@@ -36,7 +42,7 @@ header{position:sticky;top:0;z-index:40;background:rgba(247,241,225,.92);backdro
 .nav{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
 .nav button{pointer-events:auto;border:none;background:rgba(0,0,0,.35);width:44px;height:44px;border-radius:999px;color:#fff;font-size:18px;cursor:pointer}
 .thumbs{display:flex;gap:6px;overflow-x:auto;padding:8px}
-.thumbs img{width:96px;height:64px;object-fit:cover;border-radius:6px;opacity:.8;cursor:pointer;border:1px solid #eee}
+.thumbs img{width:96px;height:64px;object-fit:cover;border-radius:6px;opacity:.85;cursor:pointer;border:1px solid #eee}
 .thumbs img.active{opacity:1;outline:2px solid var(--teal)}
 
 /* sections */
@@ -62,7 +68,14 @@ header{position:sticky;top:0;z-index:40;background:rgba(247,241,225,.92);backdro
 .btn.primary{background:var(--teal);border-color:var(--teal);color:#fff;box-shadow:0 6px 14px rgba(36,106,115,.18)}
 .reserve-btn { font-size:1.05rem; padding:.7rem 1.1rem; border-radius:14px; }
 
+/* quick select box */
+.box{border:1px dashed var(--stroke); border-radius:12px; padding:12px 16px; background:#fffdf8}
+
 /* reviews */
+.rating { display:inline-flex; gap:4px; align-items:center; user-select:none; }
+.rating button { font: inherit; font-size:22px; line-height:1; padding:2px 4px; border:1px solid var(--stroke); background:#fff; border-radius:8px; cursor:pointer; }
+.rating button.on { background:#fff8e5; }
+.rating button:focus { outline:2px solid var(--teal); outline-offset:2px; }
 .notice{font-size:12px;color:var(--muted)}
 .reviews{display:grid;gap:12px;margin:8px 0 12px}
 .review{background:#fff;border:1px solid var(--stroke);border-radius:14px;padding:12px 14px}
@@ -76,22 +89,43 @@ header{position:sticky;top:0;z-index:40;background:rgba(247,241,225,.92);backdro
 .policies .small { font-size:12px; color:#6b5e55; }
 .policies .links { display:flex; gap:18px; flex-wrap:wrap; justify-content:center; }
 
-/* lightweight modal (same style as index) */
+/* lightweight modal */
 #policyModal { display:none; position:fixed; inset:0; z-index:10000; align-items:center; justify-content:center; background:rgba(0,0,0,.45) }
 #policyModal .sheet { max-width:780px; width:92%; background:#fff; border-radius:14px; border:1px solid #eadfca; box-shadow:0 18px 40px rgba(0,0,0,.25); }
 #policyModal header { display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-bottom:1px solid #eadfca }
 #policyModal #policyBody { padding:14px 16px; line-height:1.7; color:#2E1A16 }
-  
-/* Microinteractions */
-.tag, .chip { transition: transform .06s ease, background-color .2s ease, box-shadow .2s ease; }
-.tag.pressed, .chip.pressed { transform: translateY(1px) scale(0.98); box-shadow: inset 0 2px 6px rgba(0,0,0,.08); }
 
-.fade-on-scroll { opacity:0; transform: translateY(8px); transition: opacity .6s ease, transform .6s ease; }
-.fade-on-scroll.in { opacity:1; transform:none; }
-
-/* Bigger CTA */
-.btn-primary, .reserve-btn { font-size:1.05rem; padding:.9rem 1.25rem; border-radius:14px; }
+/* footer */
 footer{color:#6b5e55;text-align:center;font-size:12px;margin:12px 0}
+
+/* === Spacing normalization (8px grid) === */
+:root { --space-1:8px; --space-2:12px; --space-3:16px; --space-4:20px; --space-5:24px; }
+
+/* headings & sections */
+.section { margin: var(--space-3) 0; padding: var(--space-3); }
+.section h2 { margin: 0 0 10px; }
+
+/* media & thumbs */
+.thumbs { padding: var(--space-1); margin-top: var(--space-1); }
+
+/* breadcrumbs */
+.breadcrumbs { margin: var(--space-1) 0 var(--space-3); }
+
+/* menus & coupons */
+.menu { margin: 10px 0; padding: 12px; }
+
+/* forms */
+.row2 { margin-top: var(--space-1); }
+#revText { margin-top: var(--space-1) !important; }
+#menuSelectWrap { margin: var(--space-3) 0 var(--space-1) !important; padding: 12px 16px !important; }
+
+/* map */
+.mapwrap iframe { margin-top: var(--space-1); }
+
+/* policies & footer */
+.policies { margin: var(--space-5) auto calc(var(--space-5) + 8px); padding: var(--space-3) 0; }
+footer { margin: var(--space-3) 0; }
+
 </style>
 </head>
 <body>
@@ -119,9 +153,11 @@ footer{color:#6b5e55;text-align:center;font-size:12px;margin:12px 0}
   </div>
 </header>
 
-<div class="container">
-  <nav class="breadcrumbs" aria-label="Breadcrumb"></nav>
-</div>
+<div class="container"><nav class="breadcrumbs" aria-label="Breadcrumb">
+  <a href="index.html?nosplash=1">Home</a><span class="sep">›</span>
+  <a href="index.html?nosplash=1#list">Salons</a><span class="sep">›</span>
+  <a aria-current="page">Details</a>
+</nav></div>
 
 <div class="container">
   <div class="main">
@@ -144,7 +180,15 @@ footer{color:#6b5e55;text-align:center;font-size:12px;margin:12px 0}
 
       <div class="section">
         <h2 data-i18n="menu">メニュー</h2>
-        <!-- セレクト＋上部CTAは廃止。行ボタンのみで予約 -->
+        <!-- 追加: クイックメニュー選択（任意） -->
+        <div id="menuSelectWrap" class="box" style="margin:14px 0 6px;padding:12px 16px;display:none">
+          <label id="menuSelectLabel" style="display:block;font-weight:700;margin-bottom:6px">メニュー</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <select id="menuSelect" style="min-width:220px;padding:.5rem;border:1px solid var(--stroke);border-radius:10px"></select>
+            <button class="btn primary reserve-btn" id="goReserveByMenu" disabled>予約へ進む</button>
+            <div id="menuHint" class="small" style="opacity:.85"></div>
+          </div>
+        </div>
         <div id="menuList"></div>
       </div>
 
@@ -192,7 +236,17 @@ footer{color:#6b5e55;text-align:center;font-size:12px;margin:12px 0}
               <option>India</option><option>China</option><option>Korea</option><option>France</option><option>Germany</option>
             </select>
           </div>
-          <textarea id="revText" rows="3" placeholder="体験を教えてください" style="margin-top:6px"></textarea>
+          <div class="row2" style="margin-top:6px; align-items:center">
+      <label id="revRatingLabel" for="revStars" style="font-weight:700;margin-right:6px">評価</label>
+      <div class="rating" id="revStars" role="radiogroup" aria-label="Rating">
+        <button type="button" data-v="1" role="radio" aria-checked="false" aria-label="1 star">☆</button>
+        <button type="button" data-v="2" role="radio" aria-checked="false" aria-label="2 stars">☆</button>
+        <button type="button" data-v="3" role="radio" aria-checked="false" aria-label="3 stars">☆</button>
+        <button type="button" data-v="4" role="radio" aria-checked="false" aria-label="4 stars">☆</button>
+        <button type="button" data-v="5" role="radio" aria-checked="true"  aria-label="5 stars" class="on">★</button>
+      </div>
+    </div>
+    <textarea id="revText" rows="3" placeholder="体験を教えてください" style="margin-top:6px"></textarea>
           <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px">
             <button class="btn reserve-btn" id="revSubmit">投稿</button>
           </div>
@@ -205,17 +259,17 @@ footer{color:#6b5e55;text-align:center;font-size:12px;margin:12px 0}
   </div>
 </div>
 
-<!-- Policies (same UX as index: links open modal) -->
+<!-- Policies (modal open) -->
 <section class="policies container">
   <div class="links">
-    <a href="terms.html" class="small">Terms</a>
-    <a href="privacy.html" class="small">Privacy</a>
-    <a href="cancel.html" class="small">Cancel Policy</a>
-    <a href="contact.html" class="small">Contact</a>
+    <a href="terms.html" class="small ft-link" data-ft="terms">Terms</a>
+    <a href="privacy.html" class="small ft-link" data-ft="privacy">Privacy</a>
+    <a href="cancel.html" class="small ft-link" data-ft="cancel">Cancel Policy</a>
+    <a href="contact.html" class="small ft-link" data-ft="contact">Contact</a>
   </div>
 </section>
 
-<!-- lightweight modal (same DOM as index) -->
+<!-- lightweight modal -->
 <div id="policyModal" class="modal" aria-hidden="true">
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="policyTitle">
     <header>
@@ -226,7 +280,7 @@ footer{color:#6b5e55;text-align:center;font-size:12px;margin:12px 0}
   </div>
 </div>
 
-<footer>Build v2025-09-15e</footer>
+<footer>Build v2025-09-18m</footer>
 
 <script>
 /* -----------------------
@@ -253,7 +307,7 @@ const T = {
     see_more:'もっと見る',
     review_gate:'※投稿は予約済みの方のみ（Thank You 到達で自動開放）',
     your_name:'お名前', your_experience:'体験を教えてください', select_country:'国籍を選択',
-    submit:'投稿', not_available:'この店舗では準備中です'
+    submit:'投稿', not_available:'この店舗では準備中です', rating:'評価'
   },
   en: {
     shop_info:'Shop info', menu:'Menu', coupons:'Coupons', map:'Map & Directions', reviews:'Reviews',
@@ -261,14 +315,12 @@ const T = {
     see_more:'View all',
     review_gate:'* Review posting is limited to completed bookings.',
     your_name:'Your name', your_experience:'Share your experience', select_country:'Select nationality',
-    submit:'Submit', not_available:'Not available at this shop'
+    submit:'Submit', not_available:'Not available at this shop', rating:'Rating'
   }
 };
 function t(k){ const L=getLangPref(); return (T[L]&&T[L][k])||k; }
 
-/* -----------------------
-   English mappings
------------------------ */
+/* English mappings */
 function enTag(s){
   const map = {
     'マツエク':'Lashes','まつげ':'Lashes','スパ':'Spa','ハーブ':'Herbs','ヘア':'Hair','ネイル':'Nails',
@@ -326,7 +378,7 @@ function fmtCurrencyFromJPY(jpy, cur){
   const converted = Math.round(n * rate);
   try{
     return new Intl.NumberFormat((getLangPref()==='ja'?'ja-JP':'en-US'), {
-      style:'currency', currency: cur, maximumFractionDigits:(cur==='USD'||cur==='EUR'?0:0)
+      style:'currency', currency: cur, maximumFractionDigits:0
     }).format(converted);
   }catch(e){
     const symbols = {JPY:'¥', USD:'$', EUR:'€', LKR:'Rs '};
@@ -335,7 +387,7 @@ function fmtCurrencyFromJPY(jpy, cur){
 }
 
 /* -----------------------
-   Static data
+   Static data (sample)
 ----------------------- */
 const DATA=[
   {id:"S1", name:"Silky Lashes Colombo", type:"マツエク", place:"コロンボ", lat:6.933, lng:79.85, price:4250, rating:4.6, tags:["マツエク","日本語対応"], points:"自然で長持ち。丁寧なカウンセリング。", photos:["/assets/img/lashes_a.webp","/assets/img/lashes_b.webp","/assets/img/lashes_c.webp"]},
@@ -372,6 +424,7 @@ document.getElementById('reserve').textContent    = t('book');
 document.getElementById('route').textContent      = t('route');
 document.getElementById('gateMsg').textContent    = t('review_gate');
 document.getElementById('viewAllReviews').textContent = t('see_more');
+const rr=document.getElementById('revRatingLabel'); if(rr) rr.textContent=t('rating');
 
 // Shop header
 document.getElementById('name').textContent = shop.name;
@@ -402,18 +455,21 @@ document.getElementById('reserve').onclick = ()=>{
     firstBtn.closest('.menu').scrollIntoView({behavior:'smooth', block:'center'});
     firstBtn.focus();
   }else{
-    // fallback: 直接予約ページへ
     const q = new URLSearchParams({salonId:shop.id, salonName:shop.name});
     if(LANG==='en') q.set('lang','en');
     location.href = 'reservation.html?'+q.toString();
   }
 };
 
-// Carousel
+// Carousel (with simple fallback for /assets/images paths)
 const car = document.getElementById('carousel');
 const thumbs = document.getElementById('thumbs');
-car.innerHTML = (shop.photos||[]).map((src,i)=>`<img src="${src}" alt="${shop.name} photo ${i+1}">`).join('');
-thumbs.innerHTML = (shop.photos||[]).map((src,i)=>`<img data-idx="${i}" src="${src}" alt="thumb ${i+1}">`).join('');
+const photos = (shop.photos||[]).map(src => src).concat( // fallback copy with images -> img swap
+  (shop.photos||[]).map(src => src.replace('/assets/img/','/assets/images/'))
+);
+const uniquePhotos = [...new Set(photos)];
+car.innerHTML = uniquePhotos.map((src,i)=>`<img src="${src}" alt="${shop.name} photo ${i+1}">`).join('');
+thumbs.innerHTML = uniquePhotos.map((src,i)=>`<img data-idx="${i}" src="${src}" alt="thumb ${i+1}">`).join('');
 let cidx=0; const imgs=car.querySelectorAll('img'); const timgs=thumbs.querySelectorAll('img');
 function go(i){ cidx=(i+imgs.length)%imgs.length; car.scrollTo({left:car.clientWidth*cidx,behavior:'smooth'}); timgs.forEach(x=>x.classList.remove('active')); if(timgs[cidx]) timgs[cidx].classList.add('active'); }
 document.getElementById('prev').onclick=()=>go(cidx-1);
@@ -444,6 +500,53 @@ function renderList(elId, items, type){
 renderList('menuList', MENUS[shop.id], 'menu');
 renderList('couponList', COUPONS[shop.id], 'coupon');
 
+// Quick select (optional) — auto-show if there are menus
+(function(){
+  const wrap = document.getElementById('menuSelectWrap');
+  const label = document.getElementById('menuSelectLabel');
+  const hint = document.getElementById('menuHint');
+  const go = document.getElementById('goReserveByMenu');
+  const sel = document.getElementById('menuSelect');
+  const items = MENUS[shop.id] || [];
+  if(!wrap || !sel) return;
+  if(items.length === 0) { wrap.style.display='none'; return; }
+  wrap.style.display='block';
+  if(LANG==='en'){
+    label.textContent='Menu';
+    go.textContent='Book';
+    sel.insertAdjacentHTML('beforeend','<option value="" disabled selected>Select a menu</option>');
+  }else{
+    label.textContent='メニュー';
+    go.textContent='予約へ進む';
+    sel.insertAdjacentHTML('beforeend','<option value="" disabled selected>メニューを選択</option>');
+  }
+  items.forEach((it, idx)=>{
+    const txt = (LANG==='en'? enMenuName(it.name): it.name);
+    const dur = it.minutes ? ` (${it.minutes}${LANG==='en'?' min':'分'})` : '';
+    const price = fmtCurrencyFromJPY(it.price, getCurrency());
+    sel.insertAdjacentHTML('beforeend', `<option value="${idx}">${txt}${dur} - ${price}</option>`);
+  });
+  sel.addEventListener('change', ()=>{
+    const i = sel.value;
+    if(i===''){ go.disabled = true; hint.textContent=''; return; }
+    const it = items[i];
+    const txt = (LANG==='en'? enMenuName(it.name): it.name);
+    const timeTxt = it.minutes ? (LANG==='en'?`${it.minutes} min`:`${it.minutes}分`) : '';
+    const priceTxt = fmtCurrencyFromJPY(it.price, getCurrency());
+    hint.textContent = [txt, timeTxt, priceTxt].filter(Boolean).join(' · ');
+    go.disabled = false;
+  });
+  go.addEventListener('click', ()=>{
+    const i = sel.value;
+    if(i===''){ return; }
+    const it = items[i];
+    const q = new URLSearchParams({salonId:shop.id, salonName:shop.name, type:'menu'});
+    if(it && it.id) q.set('itemId', it.id);
+    if(LANG==='en') q.set('lang','en');
+    location.href = 'reservation.html?' + q.toString();
+  });
+})();
+
 // Currency update across page
 function updateCurrencies(){
   // Top "From" price
@@ -460,165 +563,144 @@ function updateCurrencies(){
 updateCurrencies();
 
 /* -----------------------
-   Reviews: gate + local post
+   Reviews: gate + GAS post + local render
 ----------------------- */
 function booked(id){ try{return (JSON.parse(localStorage.getItem('bl_completed_bookings')||'[]')).includes(id)}catch(e){return false} }
 const form=document.getElementById('revform'); const gate=document.getElementById('gateMsg');
 if(!booked(shop.id)){ form.style.opacity=".6"; form.style.pointerEvents="none"; gate.style.color="#a06"; }
 
-<script>
-  // すでにどこかで使っている値をそのまま使う
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbzEb8ji5P7OwietqSWWp0kfl_yXB1ZkRbQt8aVDxwXqkVuqCmdLQvSV-6Q9rLfms7Vf/exec';
-  const GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
+// GAS endpoint (replace with your live URL & key)
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzEb8ji5P7OwietqSWWp0kfl_yXB1ZkRbQt8aVDxwXqkVuqCmdLQvSV-6Q9rLfms7Vf/exec';
+const GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
 
-  const form = document.getElementById('revform');
-  const gate = document.getElementById('gateMsg');
-  const revBtn = document.getElementById('revSubmit');
 
-  // 予約済みゲート（あなたの既存関数を流用）
-  function booked(id){
-    try{ return (JSON.parse(localStorage.getItem('bl_completed_bookings')||'[]')).includes(id); }
-    catch(e){ return false; }
+// star rating widget setup
+let REV_RATING = 5;
+(function(){
+  const wrap = document.getElementById('revStars');
+  if(!wrap) return;
+  function draw(){
+    wrap.querySelectorAll('button').forEach(btn=>{
+      const v = Number(btn.dataset.v||'0');
+      const on = v <= REV_RATING;
+      btn.textContent = on ? '★' : '☆';
+      btn.classList.toggle('on', on);
+      btn.setAttribute('aria-checked', String(on && v==REV_RATING));
+    });
   }
-  if(!booked(s.id)){
-    form.style.opacity=".6"; form.style.pointerEvents="none"; gate.style.color="#a06";
-  }
+  wrap.addEventListener('click', (e)=>{
+    const b = e.target.closest('button'); if(!b) return;
+    REV_RATING = Number(b.dataset.v||'5') || 5;
+    draw();
+  });
+  wrap.addEventListener('keydown', (e)=>{
+    if(e.key==='ArrowLeft' || e.key==='ArrowDown'){ REV_RATING = Math.max(1, REV_RATING-1); draw(); e.preventDefault(); }
+    if(e.key==='ArrowRight' || e.key==='ArrowUp'){ REV_RATING = Math.min(5, REV_RATING+1); draw(); e.preventDefault(); }
+  });
+  // initial draw (ensure all buttons reflect default 5)
+  draw();
+})();
 
-  // ★ここが差し替え：GASへ投稿 → 成功したら画面に反映
-  revBtn.onclick = async () => {
-    if(!booked(s.id)){ alert('予約済みの方のみ投稿可です。'); return; }
+document.getElementById('revSubmit').onclick = async () => {
+  if(!booked(shop.id)){ alert(LANG==='en'?'Only completed bookings can post.':'予約済みの方のみ投稿可です。'); return; }
 
-    const name    = (document.getElementById('revName').value || 'ゲスト').trim();
-    const country = (document.getElementById('revCountry').value || '').trim();
-    const text    = (document.getElementById('revText').value || '').trim();
-    const rating  = 5; // ★評価UIが無ければ仮で 5。星入力を作るならその値に置き換え
+  const name    = (document.getElementById('revName').value || (LANG==='en'?'Guest':'ゲスト')).trim();
+  const country = (document.getElementById('revCountry').value || '').trim();
+  const text    = (document.getElementById('revText').value || '').trim();
+  const rating  = REV_RATING || 5;
 
-    if(!text){ alert('口コミを入力してください'); return; }
+  if(!text){ alert(LANG==='en'?'Please enter your review.':'口コミを入力してください'); return; }
 
-    const payload = {
-      key: GAS_KEY,
-      kind: 'review_add',
-      data: {
-        salonId: s.id,
-        name,
-        country,
-        rating,
-        text,
-        source: 'form' // 由来メモ（任意）
-      }
-    };
-
-    try{
-      // preflightを避けるため text/plain 推奨
-      const res = await fetch(GAS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type':'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload)
-      });
-      const j = await res.json().catch(()=> ({}));
-      if(!res.ok || j.ok===false) throw new Error(j.error || 'save failed');
-
-      // 成功 → 画面に即反映
-      const div = document.createElement('div');
-      div.className='rev';
-      div.innerHTML = `
-        <div class="row2">
-          <strong>${name}</strong>
-          <span class="notice">（${country||'-'}）</span>
-        </div>
-        <p style="margin:.4em 0 0"></p>`;
-      div.querySelector('p').textContent = text;
-      document.getElementById('revlist').prepend(div);
-      document.getElementById('revText').value = '';
-
-      alert('Thanks! 投稿しました ✅');
-    }catch(e){
-      console.warn(e);
-      alert('投稿に失敗しました。少し時間をおいて再試行してください。');
-    }
+  const payload = {
+    key: GAS_KEY,
+    kind: 'review_add',
+    data: { salonId: shop.id, name, country, rating, text, source: 'form' }
   };
-</script>
 
+  try{
+    const res = await fetch(GAS_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(payload) });
+    // ignore body on success; we optimistically render
+    const div = document.createElement('div');
+    div.className='rev';
+    div.innerHTML = `<div class="row2"><strong>${name}</strong><span class="notice">（${country||'-'}）</span><span class="notice">・ ★${rating}</span></div><p style="margin:.4em 0 0"></p>`;
+    div.querySelector('p').textContent = text;
+    document.getElementById('revlist').prepend(div);
+    document.getElementById('revText').value = '';
+    alert(LANG==='en'?'Thanks! Posted ✅':'Thanks! 投稿しました ✅');
+  }catch(e){
+    console.warn(e);
+    alert(LANG==='en'?'Failed to post. Please try again later.':'投稿に失敗しました。少し時間をおいて再試行してください。');
+  }
+};
 
-// Placeholders i18n
-if(LANG==='en'){
-  document.getElementById('revName').placeholder = t('your_name');
-  document.getElementById('revText').placeholder = t('your_experience');
-  const selNat = document.querySelector('#revCountry option[value=""]');
-  if(selNat) selNat.textContent = t('select_country');
+/* Placeholder listReviews (optional external) */
+if(window.BL_API && typeof window.BL_API.listReviews==='function'){
+  (async function(){
+    const list = document.getElementById('reviewList');
+    const btn = document.getElementById('viewAllReviews');
+    const all = await window.BL_API.listReviews();
+    function render(n){
+      const items = all.slice(0,n).map(r=> `<div class="review"><div class="meta">${r.user} ・ ★${r.rating}</div><div>${r.text}</div></div>`).join('');
+      list.innerHTML = items;
+    }
+    render(3);
+    btn.style.display = (all.length>3?'inline-flex':'none');
+    btn.addEventListener('click', ()=>{ render(all.length); btn.style.display='none'; });
+  })();
 }
 
 /* -----------------------
-   External reviews via window.BL_API
+   Footer modal loader (Terms/Privacy/Cancel/Contact)
 ----------------------- */
-(async function externalReviews(){
-  const listEl = document.getElementById('reviewList');
-  const btn = document.getElementById('viewAllReviews');
-  if(!listEl) return;
+(function(){
+  const modal = document.getElementById('policyModal');
+  const body  = document.getElementById('policyBody');
+  const title = document.getElementById('policyTitle');
+  const closeBtn = document.getElementById('policyClose');
 
-  let items = [];
-  try{
-    if(window.BL_API && typeof window.BL_API.listReviews === 'function'){
-      const res = await window.BL_API.listReviews({ salonId: shop.id });
-      items = Array.isArray(res) ? res : [];
+  const MAP = {
+    terms:  {title:'Terms',  url:'terms.html'},
+    privacy:{title:'Privacy',url:'privacy.html'},
+    cancel: {title:'Cancel Policy',url:'cancel.html'},
+    contact:{title:'Contact',url:'contact.html'}
+  };
+  async function open(kind){
+    const item = MAP[kind] || MAP.terms;
+    title.textContent = item.title;
+    body.innerHTML = '<p>Loading…</p>';
+    try{
+      const res = await fetch(item.url, {credentials:'omit'});
+      const txt = await res.text();
+      const match = txt.match(/<div class="container"[\\s\\S]*?>([\\s\\S]*?)<\\/div>\\s*<\\/body>/i);
+      body.innerHTML = match ? match[1] : txt;
+    }catch(e){
+      body.textContent = 'Failed to load. Please try again.';
     }
-  }catch(e){ /* ignore */ }
-
-  if(items.length===0){ btn.style.display='none'; return; }
-
-  function card(r){
-    const user = r.user || (LANG==='en'?'Guest':'ゲスト');
-    const rating = (r.rating!=null ? `・ ★${Number(r.rating).toFixed(1)}` : '');
-    const text = (r.text || '').toString();
-    const nat  = r.country ? `（${r.country}）` : '';
-    return `<div class="review"><div class="meta">${user}${nat} ${rating}</div><div>${text}</div></div>`;
+    modal.style.display = 'flex';
   }
-  function render(n){
-    const slice = items.slice(0, n);
-    listEl.innerHTML = slice.map(card).join('');
-    btn.style.display = (n < items.length) ? 'inline-flex' : 'none';
-  }
+  function close(){ modal.style.display='none'; }
 
-  render(3);
-  btn.addEventListener('click', ()=> render(items.length));
+  document.addEventListener('click', (e)=>{
+    const a = e.target.closest && e.target.closest('a.ft-link');
+    if(a){
+      e.preventDefault();
+      const kind = a.getAttribute('data-ft');
+      open(kind);
+    }
+  });
+  closeBtn && closeBtn.addEventListener('click', close);
+  modal.addEventListener('click', (e)=>{
+    if(e.target===modal) close();
+  });
 })();
 
-/* -----------------------
-   Policies modal (same as index)
------------------------ */
-(function policiesModal(){
-  function bind(){
-    const modal = document.getElementById('policyModal');
-    if(!modal) return;
-    const body  = document.getElementById('policyBody');
-    const title = document.getElementById('policyTitle');
-    const close = document.getElementById('policyClose');
-
-    function show(){ modal.style.display='flex'; modal.setAttribute('aria-hidden','false'); }
-    function hide(){ modal.style.display='none'; modal.setAttribute('aria-hidden','true'); if(body) body.innerHTML=''; if(title) title.textContent=''; }
-
-    if(close){ close.onclick = (ev)=>{ ev.preventDefault(); hide(); }; }
-    modal.addEventListener('click', (e)=>{ if(e.target===modal) hide(); });
-    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') hide(); });
-
-    function openSheet(t, href){
-      const abs = new URL(href, location.href).href;
-      if(title) title.textContent = t||'Info';
-      const iframe = document.createElement('iframe');
-      iframe.src = abs;
-      iframe.style.width='100%'; iframe.style.height='70vh'; iframe.style.border='0';
-      iframe.setAttribute('sandbox','allow-same-origin allow-scripts allow-forms');
-      if(body){ body.innerHTML=''; body.appendChild(iframe); }
-      show();
-    }
-    document.querySelectorAll('section.policies a').forEach(a=>{
-      a.addEventListener('click', (ev)=>{
-        ev.preventDefault(); ev.stopImmediatePropagation();
-        openSheet((a.textContent||'').trim(), a.getAttribute('href'));
-      }, true);
-    });
+// i18n placeholders after dom ready
+(function(){
+  if(LANG==='en'){
+    document.getElementById('revName').placeholder = t('your_name');
+    document.getElementById('revText').placeholder = t('your_experience');
+    const rr=document.getElementById('revRatingLabel'); if(rr) rr.textContent=t('rating');
   }
-  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', bind); } else { bind(); }
 })();
 </script>
 </body>

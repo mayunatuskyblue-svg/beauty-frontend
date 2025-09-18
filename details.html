@@ -457,18 +457,79 @@ function booked(id){ try{return (JSON.parse(localStorage.getItem('bl_completed_b
 const form=document.getElementById('revform'); const gate=document.getElementById('gateMsg');
 if(!booked(shop.id)){ form.style.opacity=".6"; form.style.pointerEvents="none"; gate.style.color="#a06"; }
 
-document.getElementById('revSubmit').onclick=()=>{
-  if(!booked(shop.id)) return alert(getLangPref()==='en'?'Only completed bookings can post a review.':'予約済みの方のみ投稿可です。');
-  const name=document.getElementById('revName').value|| (LANG==='en'?'Guest':'ゲスト');
-  const nat =document.getElementById('revCountry').value||'-';
-  const text=document.getElementById('revText').value.trim();
-  if(!text) return alert(LANG==='en'?'Please enter your review.':'口コミを入力してください');
-  const div=document.createElement('div'); div.className='review';
-  const meta = `${name} ${nat!=='-'? '（'+nat+'）':''}`;
-  div.innerHTML=`<div class="meta">${meta}</div><div>${text}</div>`;
-  document.getElementById('revlist').prepend(div);
-  document.getElementById('revText').value='';
-};
+<script>
+  // すでにどこかで使っている値をそのまま使う
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbzEb8ji5P7OwietqSWWp0kfl_yXB1ZkRbQt8aVDxwXqkVuqCmdLQvSV-6Q9rLfms7Vf/exec';
+  const GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
+
+  const form = document.getElementById('revform');
+  const gate = document.getElementById('gateMsg');
+  const revBtn = document.getElementById('revSubmit');
+
+  // 予約済みゲート（あなたの既存関数を流用）
+  function booked(id){
+    try{ return (JSON.parse(localStorage.getItem('bl_completed_bookings')||'[]')).includes(id); }
+    catch(e){ return false; }
+  }
+  if(!booked(s.id)){
+    form.style.opacity=".6"; form.style.pointerEvents="none"; gate.style.color="#a06";
+  }
+
+  // ★ここが差し替え：GASへ投稿 → 成功したら画面に反映
+  revBtn.onclick = async () => {
+    if(!booked(s.id)){ alert('予約済みの方のみ投稿可です。'); return; }
+
+    const name    = (document.getElementById('revName').value || 'ゲスト').trim();
+    const country = (document.getElementById('revCountry').value || '').trim();
+    const text    = (document.getElementById('revText').value || '').trim();
+    const rating  = 5; // ★評価UIが無ければ仮で 5。星入力を作るならその値に置き換え
+
+    if(!text){ alert('口コミを入力してください'); return; }
+
+    const payload = {
+      key: GAS_KEY,
+      kind: 'review_add',
+      data: {
+        salonId: s.id,
+        name,
+        country,
+        rating,
+        text,
+        source: 'form' // 由来メモ（任意）
+      }
+    };
+
+    try{
+      // preflightを避けるため text/plain 推奨
+      const res = await fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type':'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      const j = await res.json().catch(()=> ({}));
+      if(!res.ok || j.ok===false) throw new Error(j.error || 'save failed');
+
+      // 成功 → 画面に即反映
+      const div = document.createElement('div');
+      div.className='rev';
+      div.innerHTML = `
+        <div class="row2">
+          <strong>${name}</strong>
+          <span class="notice">（${country||'-'}）</span>
+        </div>
+        <p style="margin:.4em 0 0"></p>`;
+      div.querySelector('p').textContent = text;
+      document.getElementById('revlist').prepend(div);
+      document.getElementById('revText').value = '';
+
+      alert('Thanks! 投稿しました ✅');
+    }catch(e){
+      console.warn(e);
+      alert('投稿に失敗しました。少し時間をおいて再試行してください。');
+    }
+  };
+</script>
+
 
 // Placeholders i18n
 if(LANG==='en'){

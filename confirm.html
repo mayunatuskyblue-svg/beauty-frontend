@@ -482,27 +482,75 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   document.body.appendChild(box);
 })();
 </script>
+<!-- ↓↓↓ ここからを confirm.html の </body> の直前に貼る ↓↓↓ -->
 <script>
-  // ここは「あなたの Web App URL(GAS_URL)」に差し替え
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxDJ_Tygj9CGP4r6ijAsJLWuWtrft4sZpFPky16eUiEI3ReM8GuyvwPa52GDKSygmUJ/exec';
+  // ① GAS へ送る関数（まだ無ければこのまま使う）
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbzEb8ji5P7OwietqSWWp0kfl_yXB1ZkRbQt8aVDxwXqkVuqCmdLQvSV-6Q9rLfms7Vf/exec'; 
+  const GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';               
 
-  async function postToGAS(kind, data) {
-    const payload = JSON.stringify({ kind, ...data });
-    // text/plain にすると CORS の事前フライトが回避されやすい
-    try {
-      await fetch(GAS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: payload,
-        // レスポンスを読みたいときは mode:'cors'（ダメなら 'no-cors' に）
-        mode: 'cors'
-      });
-      // 返り値を使わないなら何もせずOK（シートに入れば勝ち）
-    } catch (e) {
-      console.warn('postToGAS failed:', e);
-    }
+  async function postBookingToSheet({ bookingId, date, menu, minutes, amountJPY, email, name }) {
+    // 可能なら保存カードから customerId を同梱（任意）
+    let customerId = '';
+    try { customerId = JSON.parse(localStorage.getItem('bl_saved_card')||'null')?.customerId || ''; } catch {}
+    const payload = { key: GAS_KEY, kind: 'booking',
+      data: { bookingId, date, menu, minutes, amountJPY, email, name, customerId }
+    };
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // preflight回避
+      body: JSON.stringify(payload)
+    });
+    const j = await res.json().catch(()=>({}));
+    if (!j.ok) console.warn('GAS booking write failed:', j.error);
+    return !!j.ok;
   }
+
+  // ② URL（?bookingId=...）から予約情報を拾う or 事前に保存しておいたデータを拾う
+  function readBookingFromPage() {
+    const qs = new URLSearchParams(location.search);
+    // A. クエリで受け取る運用（推奨）
+    let booking = {
+      bookingId:  qs.get('bookingId') || '',
+      date:       qs.get('date') || new Date().toISOString(),
+      menu:       qs.get('menu') || '',
+      minutes:    Number(qs.get('minutes') || 0) || 0,
+      amountJPY:  Number(qs.get('amountJPY') || 0) || 0,
+      email:      qs.get('email') || '',
+      name:       qs.get('name') || ''
+    };
+    // B. 予約ページで sessionStorage/localStorage に入れてある場合のフォールバック（あれば使う）
+    if (!booking.bookingId) {
+      try {
+        const saved = JSON.parse(sessionStorage.getItem('bl_pending_booking') || localStorage.getItem('bl_pending_booking') || 'null');
+        if (saved && saved.bookingId) booking = Object.assign(booking, saved);
+      } catch {}
+    }
+    return booking;
+  }
+
+  // ③ 1回だけ送る（同じ bookingId での二重送信防止）
+  document.addEventListener('DOMContentLoaded', async () => {
+    const b = readBookingFromPage();
+    if (!b.bookingId) { console.warn('bookingId が無いので送信しません'); return; }
+
+    const sentKey = `bl_booking_sent_${b.bookingId}`;
+    if (localStorage.getItem(sentKey)) return; // 既に送っていれば何もしない
+
+    const ok = await postBookingToSheet({
+      bookingId: b.bookingId,
+      date:      b.date || new Date().toISOString(),
+      menu:      b.menu,
+      minutes:   b.minutes,
+      amountJPY: b.amountJPY,     // ←整数（3500など）
+      email:     b.email,
+      name:      b.name
+    });
+
+    if (ok) localStorage.setItem(sentKey, '1');
+  });
 </script>
+<!-- ↑↑↑ ここまでを </body> の直前に貼る ↑↑↑ -->
+
 
 </body>
 </html>

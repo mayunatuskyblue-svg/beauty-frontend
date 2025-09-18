@@ -196,13 +196,18 @@ body.no-scroll{overflow:hidden}
   <video id="splashVid" playsinline autoplay muted>
     <source id="splashSrc" src="/assets/video/hero.mp4" type="video/mp4" />
   </video>
-  <div class="headline">
-    <img class="sri-center" src="/assets/img/sri-outline.svg" alt="Sri Lanka line art">
-    <h1>Beauty Lanka</h1>
-    <div class="cap">Salons &amp; Spas in Sri Lanka</div>
-  </div>
-  <button class="skip" id="skipSplash">Skip</button>
-</div>
+  .hero-head{ position:relative; }
+.hero-sri{
+  position:absolute; left:50%; top:50%;
+  transform:translate(-50%,-50%);
+  width:min(38vw, 320px);  /* 大きさは好みで */
+  opacity:.8;              /* 濃さは好みで */
+  z-index:0;               /* ← 後ろへ */
+  pointer-events:none;     /* クリック透過 */
+  filter:drop-shadow(0 6px 18px rgba(0,0,0,.25));
+}
+.hero-head .container{ position:relative; z-index:1; }  /* ← 文字を前面に */
+
 <img class="sri2" src="/assets/img/sri-outline.svg" alt="">
 
 <script>

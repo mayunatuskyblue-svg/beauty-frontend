@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
+<meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>BeautyLanka | 詳細</title>
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -57,14 +57,14 @@ header{position:sticky;top:0;z-index:40;background:rgba(247,241,225,.92);backdro
 .price{font-weight:900;font-size:20px;margin:4px 0 10px}
 
 /* map */
-.mapwrap iframe{width:100%;height:260px;border:0;border-radius:12px}
+.mapwrap iframe{width:100%;height:240px;border:0;border-radius:12px}
 
 /* menu + coupon */
 .menu{border:1px solid var(--stroke);border-radius:12px;padding:10px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;gap:10px}
 .menu .name{font-weight:900}
 .menu .meta{font-size:12px;color:#6b5e55}
 .menu .price{font-weight:900}
-.btn{height:40px;border-radius:12px;border:1px solid var(--stroke);background:#fff;padding:0 14px;font-weight:700;cursor:pointer}
+.btn{height:40px;border-radius:12px;border:1px solid var(--stroke);background:#fff;padding:0 14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
 .btn.primary{background:var(--teal);border-color:var(--teal);color:#fff;box-shadow:0 6px 14px rgba(36,106,115,.18)}
 .reserve-btn { font-size:1.05rem; padding:.7rem 1.1rem; border-radius:14px; }
 
@@ -72,10 +72,6 @@ header{position:sticky;top:0;z-index:40;background:rgba(247,241,225,.92);backdro
 .box{border:1px dashed var(--stroke); border-radius:12px; padding:12px 16px; background:#fffdf8}
 
 /* reviews */
-.rating { display:inline-flex; gap:4px; align-items:center; user-select:none; }
-.rating button { font: inherit; font-size:22px; line-height:1; padding:2px 4px; border:1px solid var(--stroke); background:#fff; border-radius:8px; cursor:pointer; }
-.rating button.on { background:#fff8e5; }
-.rating button:focus { outline:2px solid var(--teal); outline-offset:2px; }
 .notice{font-size:12px;color:var(--muted)}
 .reviews{display:grid;gap:12px;margin:8px 0 12px}
 .review{background:#fff;border:1px solid var(--stroke);border-radius:14px;padding:12px 14px}
@@ -83,6 +79,12 @@ header{position:sticky;top:0;z-index:40;background:rgba(247,241,225,.92);backdro
 .rev input,.rev textarea,.rev select{width:100%;border:1px solid var(--stroke);border-radius:10px;padding:8px 10px;font:inherit}
 .row2{display:flex;gap:8px;flex-wrap:wrap}
 .actions{display:flex;gap:8px;align-items:center}
+
+/* rating stars */
+.rating { display:inline-flex; gap:4px; align-items:center; user-select:none; }
+.rating button { font: inherit; font-size:22px; line-height:1; padding:2px 4px; border:1px solid var(--stroke); background:#fff; border-radius:8px; cursor:pointer; }
+.rating button.on { background:#fff8e5; }
+.rating button:focus { outline:2px solid var(--teal); outline-offset:2px; }
 
 /* policies section (footer-like) */
 .policies { margin:30px auto 40px; padding:16px 0; border-top:1px solid var(--stroke); }
@@ -100,32 +102,17 @@ footer{color:#6b5e55;text-align:center;font-size:12px;margin:12px 0}
 
 /* === Spacing normalization (8px grid) === */
 :root { --space-1:8px; --space-2:12px; --space-3:16px; --space-4:20px; --space-5:24px; }
-
-/* headings & sections */
 .section { margin: var(--space-3) 0; padding: var(--space-3); }
 .section h2 { margin: 0 0 10px; }
-
-/* media & thumbs */
 .thumbs { padding: var(--space-1); margin-top: var(--space-1); }
-
-/* breadcrumbs */
 .breadcrumbs { margin: var(--space-1) 0 var(--space-3); }
-
-/* menus & coupons */
 .menu { margin: 10px 0; padding: 12px; }
-
-/* forms */
 .row2 { margin-top: var(--space-1); }
 #revText { margin-top: var(--space-1) !important; }
 #menuSelectWrap { margin: var(--space-3) 0 var(--space-1) !important; padding: 12px 16px !important; }
-
-/* map */
 .mapwrap iframe { margin-top: var(--space-1); }
-
-/* policies & footer */
 .policies { margin: var(--space-5) auto calc(var(--space-5) + 8px); padding: var(--space-3) 0; }
 footer { margin: var(--space-3) 0; }
-
 </style>
 </head>
 <body>
@@ -180,7 +167,7 @@ footer { margin: var(--space-3) 0; }
 
       <div class="section">
         <h2 data-i18n="menu">メニュー</h2>
-        <!-- 追加: クイックメニュー選択（任意） -->
+        <!-- クイックメニュー選択（任意） -->
         <div id="menuSelectWrap" class="box" style="margin:14px 0 6px;padding:12px 16px;display:none">
           <label id="menuSelectLabel" style="display:block;font-weight:700;margin-bottom:6px">メニュー</label>
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
@@ -196,14 +183,6 @@ footer { margin: var(--space-3) 0; }
         <h2 data-i18n="coupons">クーポン</h2>
         <div id="couponList"></div>
       </div>
-
-      <div class="section">
-        <h2 data-i18n="map">地図・道順</h2>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
-          <button class="btn reserve-btn" id="route">Googleで道順</button>
-        </div>
-        <div class="mapwrap"><iframe id="map" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
-      </div>
     </div>
 
     <aside>
@@ -214,6 +193,15 @@ footer { margin: var(--space-3) 0; }
           <button class="btn reserve-btn" id="backToList">一覧に戻る</button>
           <button class="btn primary reserve-btn" id="reserve">予約へ進む</button>
         </div>
+      </div>
+
+      <!-- Moved Map section to the right column -->
+      <div class="section" id="mapSection">
+        <h2 data-i18n="map">地図・道順</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+          <button class="btn reserve-btn" id="route">Googleで道順</button>
+        </div>
+        <div class="mapwrap"><iframe id="map" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
       </div>
 
       <div class="section" id="reviewsSection">
@@ -228,6 +216,16 @@ footer { margin: var(--space-3) 0; }
 
         <!-- ユーザー投稿領域（ゲート） -->
         <div id="revform" class="rev">
+          <div class="row2" style="margin-top:6px; align-items:center">
+            <label id="revRatingLabel" for="revStars" style="font-weight:700;margin-right:6px">評価</label>
+            <div class="rating" id="revStars" role="radiogroup" aria-label="Rating">
+              <button type="button" data-v="1" role="radio" aria-checked="false" aria-label="1 star">☆</button>
+              <button type="button" data-v="2" role="radio" aria-checked="false" aria-label="2 stars">☆</button>
+              <button type="button" data-v="3" role="radio" aria-checked="false" aria-label="3 stars">☆</button>
+              <button type="button" data-v="4" role="radio" aria-checked="false" aria-label="4 stars">☆</button>
+              <button type="button" data-v="5" role="radio" aria-checked="true"  aria-label="5 stars" class="on">★</button>
+            </div>
+          </div>
           <div class="row2" style="margin-top:6px">
             <input id="revName" placeholder="お名前">
             <select id="revCountry">
@@ -236,17 +234,7 @@ footer { margin: var(--space-3) 0; }
               <option>India</option><option>China</option><option>Korea</option><option>France</option><option>Germany</option>
             </select>
           </div>
-          <div class="row2" style="margin-top:6px; align-items:center">
-      <label id="revRatingLabel" for="revStars" style="font-weight:700;margin-right:6px">評価</label>
-      <div class="rating" id="revStars" role="radiogroup" aria-label="Rating">
-        <button type="button" data-v="1" role="radio" aria-checked="false" aria-label="1 star">☆</button>
-        <button type="button" data-v="2" role="radio" aria-checked="false" aria-label="2 stars">☆</button>
-        <button type="button" data-v="3" role="radio" aria-checked="false" aria-label="3 stars">☆</button>
-        <button type="button" data-v="4" role="radio" aria-checked="false" aria-label="4 stars">☆</button>
-        <button type="button" data-v="5" role="radio" aria-checked="true"  aria-label="5 stars" class="on">★</button>
-      </div>
-    </div>
-    <textarea id="revText" rows="3" placeholder="体験を教えてください" style="margin-top:6px"></textarea>
+          <textarea id="revText" rows="3" placeholder="体験を教えてください" style="margin-top:6px"></textarea>
           <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px">
             <button class="btn reserve-btn" id="revSubmit">投稿</button>
           </div>
@@ -280,12 +268,10 @@ footer { margin: var(--space-3) 0; }
   </div>
 </div>
 
-<footer>Build v2025-09-18m</footer>
+<footer>Build v2025-09-18m-mapRight</footer>
 
 <script>
-/* -----------------------
-   Helpers (Lang / i18n)
------------------------ */
+/* Helpers (Lang / i18n) */
 function getLangPref(){
   const pref = localStorage.getItem('bl_lang') || 'auto';
   if(pref==='auto'){
@@ -301,31 +287,12 @@ function setLangSelect(){
   sel.onchange = ()=>{ localStorage.setItem('bl_lang', sel.value); location.reload(); };
 }
 const T = {
-  ja: {
-    shop_info:'店舗情報', menu:'メニュー', coupons:'クーポン', map:'地図・道順', reviews:'口コミ',
-    back:'一覧に戻る', book:'予約へ進む', route:'Googleで道順', price_from:'料金目安：',
-    see_more:'もっと見る',
-    review_gate:'※投稿は予約済みの方のみ（Thank You 到達で自動開放）',
-    your_name:'お名前', your_experience:'体験を教えてください', select_country:'国籍を選択',
-    submit:'投稿', not_available:'この店舗では準備中です', rating:'評価'
-  },
-  en: {
-    shop_info:'Shop info', menu:'Menu', coupons:'Coupons', map:'Map & Directions', reviews:'Reviews',
-    back:'Back to list', book:'Book', route:'Directions on Google', price_from:'From ',
-    see_more:'View all',
-    review_gate:'* Review posting is limited to completed bookings.',
-    your_name:'Your name', your_experience:'Share your experience', select_country:'Select nationality',
-    submit:'Submit', not_available:'Not available at this shop', rating:'Rating'
-  }
+  ja: { shop_info:'店舗情報', menu:'メニュー', coupons:'クーポン', map:'地図・道順', reviews:'口コミ', back:'一覧に戻る', book:'予約へ進む', route:'Googleで道順', price_from:'料金目安：', see_more:'もっと見る', review_gate:'※投稿は予約済みの方のみ（Thank You 到達で自動開放）', your_name:'お名前', your_experience:'体験を教えてください', select_country:'国籍を選択', submit:'投稿', not_available:'この店舗では準備中です', rating:'評価' },
+  en: { shop_info:'Shop info', menu:'Menu', coupons:'Coupons', map:'Map & Directions', reviews:'Reviews', back:'Back to list', book:'Book', route:'Directions on Google', price_from:'From ', see_more:'View all', review_gate:'* Review posting is limited to completed bookings.', your_name:'Your name', your_experience:'Share your experience', select_country:'Select nationality', submit:'Submit', not_available:'Not available at this shop', rating:'Rating' }
 };
 function t(k){ const L=getLangPref(); return (T[L]&&T[L][k])||k; }
-
-/* English mappings */
 function enTag(s){
-  const map = {
-    'マツエク':'Lashes','まつげ':'Lashes','スパ':'Spa','ハーブ':'Herbs','ヘア':'Hair','ネイル':'Nails',
-    'アーユルヴェーダ':'Ayurveda','リラク':'Relaxation','日本語対応':'Japanese support'
-  };
+  const map = {'マツエク':'Lashes','まつげ':'Lashes','スパ':'Spa','ハーブ':'Herbs','ヘア':'Hair','ネイル':'Nails','アーユルヴェーダ':'Ayurveda','リラク':'Relaxation','日本語対応':'Japanese support'};
   return map[s]||s;
 }
 function enType(s){ return enTag(s); }
@@ -345,26 +312,12 @@ function enPoints(s){
   return x;
 }
 function enMenuName(s){
-  const map = {
-    'フルセット 120本':'Full set (120 lashes)',
-    'フルセット（120本）':'Full set (120 lashes)',
-    'フルセット(120本)':'Full set (120 lashes)',
-    'ボリュームラッシュ':'Volume lashes',
-    'ハーブ蒸し':'Herbal steam',
-    'ボディスクラブ':'Body scrub',
-    '全身アーユルヴェーダ':'Full-body Ayurveda',
-    'オイルトリートメント':'Oil treatment',
-    'ラッシュリフト':'Lash lift',
-    'ヘッドスパ':'Head spa',
-    'フェイシャル':'Facial'
-  };
+  const map = {'フルセット 120本':'Full set (120 lashes)','フルセット（120本）':'Full set (120 lashes)','フルセット(120本)':'Full set (120 lashes)','ボリュームラッシュ':'Volume lashes','ハーブ蒸し':'Herbal steam','ボディスクラブ':'Body scrub','全身アーユルヴェーダ':'Full-body Ayurveda','オイルトリートメント':'Oil treatment','ラッシュリフト':'Lash lift','ヘッドスパ':'Head spa','フェイシャル':'Facial'};
   return map[s]||s;
 }
 
-/* -----------------------
-   Currency (match index)
------------------------ */
-const RATES = { JPY:1, USD:0.0067, EUR:0.0061, LKR:2.05 }; // JPY -> target
+/* Currency */
+const RATES = { JPY:1, USD:0.0067, EUR:0.0061, LKR:2.05 };
 function getCurrency(){ return (localStorage.getItem('bl_currency') || 'JPY'); }
 function setCurrencySelectAndWire(){
   const sel = document.getElementById('currencySelect');
@@ -377,37 +330,79 @@ function fmtCurrencyFromJPY(jpy, cur){
   const rate = RATES[cur] || 1;
   const converted = Math.round(n * rate);
   try{
-    return new Intl.NumberFormat((getLangPref()==='ja'?'ja-JP':'en-US'), {
-      style:'currency', currency: cur, maximumFractionDigits:0
-    }).format(converted);
+    return new Intl.NumberFormat((getLangPref()==='ja'?'ja-JP':'en-US'), { style:'currency', currency: cur, maximumFractionDigits:0 }).format(converted);
   }catch(e){
     const symbols = {JPY:'¥', USD:'$', EUR:'€', LKR:'Rs '};
     return (symbols[cur]||'') + converted.toLocaleString();
   }
 }
 
-/* -----------------------
-   Static data (sample)
------------------------ */
+/* Data */
 const DATA=[
   {id:"S1", name:"Silky Lashes Colombo", type:"マツエク", place:"コロンボ", lat:6.933, lng:79.85, price:4250, rating:4.6, tags:["マツエク","日本語対応"], points:"自然で長持ち。丁寧なカウンセリング。", photos:["/assets/img/lashes_a.webp","/assets/img/lashes_b.webp","/assets/img/lashes_c.webp"]},
   {id:"S2", name:"Ayur Luxe Spa", type:"スパ", place:"ゴール", lat:6.025, lng:80.217, price:6630, rating:4.7, tags:["アーユルヴェーダ","リラク"], points:"本格アーユルヴェーダと静かな個室。", photos:["/assets/img/spa_massage.webp","/assets/img/herbs_flatlay.webp","/assets/img/lashes_a.webp"]},
   {id:"S3", name:"Cinnamon Grow", type:"ハーブ", place:"キャンディ", lat:7.293, lng:80.641, price:5610, rating:4.5, tags:["ハーブ","リラク"], points:"自社ブレンドのハーブでリラックス。", photos:["/assets/img/herbs_flatlay.webp","/assets/img/spa_massage.webp","/assets/img/lashes_b.webp"]}
 ];
-const MENUS={
-  "S1":[{id:"m1", name:"フルセット 120本", minutes:90, price:4250},{id:"m2", name:"ボリュームラッシュ", minutes:120, price:5200}],
-  "S2":[{id:"m1", name:"全身アーユルヴェーダ", minutes:90, price:6630},{id:"m2", name:"オイルトリートメント", minutes:60, price:4200}],
-  "S3":[{id:"m1", name:"ハーブ蒸し", minutes:45, price:3500},{id:"m2", name:"ボディスクラブ", minutes:60, price:4800}]
-};
-const COUPONS={
-  "S1":[{id:"c1", name:"初回10%OFF", minutes:90, price:3825}],
-  "S2":[{id:"c1", name:"セット割", minutes:120, price:9800}],
-  "S3":[{id:"c1", name:"平日割", minutes:60, price:3200}]
-};
+const MENUS={"S1":[{id:"m1", name:"フルセット 120本", minutes:90, price:4250},{id:"m2", name:"ボリュームラッシュ", minutes:120, price:5200}],"S2":[{id:"m1", name:"全身アーユルヴェーダ", minutes:90, price:6630},{id:"m2", name:"オイルトリートメント", minutes:60, price:4200}],"S3":[{id:"m1", name:"ハーブ蒸し", minutes:45, price:3500},{id:"m2", name:"ボディスクラブ", minutes:60, price:4800}]};
+const COUPONS={"S1":[{id:"c1", name:"初回10%OFF", minutes:90, price:3825}],"S2":[{id:"c1", name:"セット割", minutes:120, price:9800}],"S3":[{id:"c1", name:"平日割", minutes:60, price:3200}]};
 
-/* -----------------------
-   Page init
------------------------ */
+
+// === Google Sheets (GViz) loader ===
+// Accepts ?sheet=<gviz-json-url> and optional ?sheetMenus=<gviz-json-url>
+async function fetchGVizJSON(url){
+  const res = await fetch(url, { credentials:'omit', cache:'no-store' });
+  const txt = await res.text();
+  // Strip GViz wrapper
+  const m = txt.match(/google\.visualization\.Query\.setResponse\(([\s\S]*?)\);/);
+  const json = JSON.parse(m ? m[1] : txt);
+  if(!json || !json.table || !json.table.rows) throw new Error('Invalid GViz JSON');
+  const cols = json.table.cols.map(c=>c && (c.label||c.id||'')).map(s=>String(s||'').trim());
+  const rows = json.table.rows.map(r => (r.c||[]).map(x=>x ? (x.f ?? x.v) : ''));
+  return { cols, rows };
+}
+
+function normalizeShopFromSheet(cols, rows, idWanted, lang){
+  // Expected columns (case-insensitive):
+  // id,name_ja,name_en,type_ja,type_en,place_ja,place_en,lat,lng,price_jpy,points_ja,points_en,tags_ja,tags_en,photos
+  const idx = Object.fromEntries(cols.map((c,i)=>[c.toLowerCase(), i]));
+  const row = rows.find(r => String(r[idx['id']]||'').trim() === idWanted);
+  if(!row) return null;
+  function val(key){ return row[idx[key]] ?? ''; }
+  const photosCell = String(val('photos')||'').split(/\s*\|\s*|\n/g).filter(Boolean);
+  return {
+    id: String(val('id')||idWanted),
+    name: (lang==='en' ? (val('name_en')||val('name_ja')) : (val('name_ja')||val('name_en'))) || ('Salon '+idWanted),
+    type: (lang==='en' ? (val('type_en')||val('type_ja')) : (val('type_ja')||val('type_en'))) || '',
+    place:(lang==='en' ? (val('place_en')||val('place_ja')) : (val('place_ja')||val('place_en'))) || '',
+    lat: Number(val('lat')||0), lng: Number(val('lng')||0),
+    price: Number(val('price_jpy')||0),
+    rating: Number(val('rating')||0) || 0,
+    tags: (lang==='en' ? String(val('tags_en')||'') : String(val('tags_ja')||'')).split(/\s*\|\s*/).filter(Boolean),
+    points: (lang==='en' ? (val('points_en')||'') : (val('points_ja')||'')),
+    photos: photosCell
+  };
+}
+
+function buildMenusFromSheet(cols, rows, salonId, lang){
+  // Expected columns: salon_id,item_id,name_ja,name_en,minutes,price_jpy,type
+  const idx = Object.fromEntries(cols.map((c,i)=>[c.toLowerCase(), i]));
+  const items = rows.filter(r => String(r[idx['salon_id']]||'').trim()===salonId);
+  const MEN=[], CPN=[];
+  items.forEach(r=>{
+    const typ = String(r[idx['type']]||'menu').toLowerCase();
+    const obj = {
+      id: String(r[idx['item_id']]||''),
+      name: lang==='en' ? (r[idx['name_en']]||r[idx['name_ja']]||'') : (r[idx['name_ja']]||r[idx['name_en']]||''),
+      minutes: Number(r[idx['minutes']]||0),
+      price: Number(r[idx['price_jpy']]||0)
+    };
+    if(typ==='coupon') CPN.push(obj); else MEN.push(obj);
+  });
+  return {MEN, CPN};
+}
+
+
+/* Page init */
 const p = new URLSearchParams(location.search);
 const salonId = p.get('salonId') || 'S1';
 const shop = DATA.find(x=>x.id===salonId) || DATA[0];
@@ -449,7 +444,6 @@ document.getElementById('backToList').onclick = ()=>{
   if(history.length>1){ history.back(); } else { location.href='index.html?nosplash=1'; }
 };
 document.getElementById('reserve').onclick = ()=>{
-  // メニュー行の先頭ボタンへスクロール＆フォーカス
   const firstBtn = document.querySelector('#menuList .menu [data-go]');
   if(firstBtn){
     firstBtn.closest('.menu').scrollIntoView({behavior:'smooth', block:'center'});
@@ -461,12 +455,10 @@ document.getElementById('reserve').onclick = ()=>{
   }
 };
 
-// Carousel (with simple fallback for /assets/images paths)
+// Carousel (with fallback images path)
 const car = document.getElementById('carousel');
 const thumbs = document.getElementById('thumbs');
-const photos = (shop.photos||[]).map(src => src).concat( // fallback copy with images -> img swap
-  (shop.photos||[]).map(src => src.replace('/assets/img/','/assets/images/'))
-);
+const photos = (shop.photos||[]).map(src => src).concat((shop.photos||[]).map(src => src.replace('/assets/img/','/assets/images/')));
 const uniquePhotos = [...new Set(photos)];
 car.innerHTML = uniquePhotos.map((src,i)=>`<img src="${src}" alt="${shop.name} photo ${i+1}">`).join('');
 thumbs.innerHTML = uniquePhotos.map((src,i)=>`<img data-idx="${i}" src="${src}" alt="thumb ${i+1}">`).join('');
@@ -478,13 +470,14 @@ timgs.forEach(t=>t.onclick=()=>go(parseInt(t.dataset.idx||'0',10)));
 if(timgs[0]) timgs[0].classList.add('active');
 
 // Menu & coupon lists
+function fmtJPYtoCur(n){ return fmtCurrencyFromJPY(n, getCurrency()); }
 function renderList(elId, items, type){
   const el=document.getElementById(elId);
   if(!items || !items.length){ el.innerHTML=`<div class="meta">${t('not_available')}</div>`; return; }
   el.innerHTML = items.map(it=>{
     const name = (LANG==='en'? enMenuName(it.name) : it.name);
     const dur  = it.minutes ? (LANG==='en'? `${it.minutes} min` : `${it.minutes}分`) : '';
-    const price= fmtCurrencyFromJPY(it.price, getCurrency());
+    const price= fmtJPYtoCur(it.price);
     return `<div class="menu" data-item="${it.id}">
       <div><div class="name">${name}</div><div class="meta">${dur}</div></div>
       <div class="actions"><span class="price" data-jpy="${it.price}">${price}</span>
@@ -500,7 +493,67 @@ function renderList(elId, items, type){
 renderList('menuList', MENUS[shop.id], 'menu');
 renderList('couponList', COUPONS[shop.id], 'coupon');
 
-// Quick select (optional) — auto-show if there are menus
+
+// Try to load from Google Sheets if provided
+(async function(){
+  try{
+    const SHEET = p.get('sheet') || '';
+    const SHEET_M = p.get('sheetMenus') || '';
+    if(SHEET){
+      const {cols, rows} = await fetchGVizJSON(SHEET);
+      const loaded = normalizeShopFromSheet(cols, rows, salonId, LANG);
+      if(loaded){
+        window.shop = loaded;
+        document.title = loaded.name + " | BeautyLanka";
+        // reapply headings before lists
+        document.getElementById('name').textContent = loaded.name;
+        document.getElementById('meta').textContent = (LANG==='en'
+          ? `${loaded.place} · ${enType(loaded.type)} / ★${(loaded.rating||0).toFixed(1)}`
+          : `${loaded.place}・${loaded.type}／★${(loaded.rating||0).toFixed(1)}`);
+        document.getElementById('price').dataset.jpy = String(loaded.price||0);
+        document.getElementById('points').textContent = (LANG==='en' ? enPoints(loaded.points) : loaded.points);
+        // tags
+        document.getElementById('tags').innerHTML = (loaded.tags||[]).map(tg => `<span class="tag">${tg}</span>`).join('');
+        // photos (override carousel)
+        (function(){
+          const car = document.getElementById('carousel');
+          const thumbs = document.getElementById('thumbs');
+          const photos = (loaded.photos||[]);
+          if(photos.length){
+            car.innerHTML = photos.map((src,i)=>`<img src="${src}" alt="${loaded.name} photo ${i+1}">`).join('');
+            thumbs.innerHTML = photos.map((src,i)=>`<img data-idx="${i}" src="${src}" alt="thumb ${i+1}">`).join('');
+          }
+          let cidx=0; const imgs=car.querySelectorAll('img'); const timgs=thumbs.querySelectorAll('img');
+          function go(i){ cidx=(i+imgs.length)%imgs.length; car.scrollTo({left:car.clientWidth*cidx,behavior:'smooth'}); timgs.forEach(x=>x.classList.remove('active')); if(timgs[cidx]) timgs[cidx].classList.add('active'); }
+          document.getElementById('prev').onclick=()=>go(cidx-1);
+          document.getElementById('next').onclick=()=>go(cidx+1);
+          timgs.forEach(t=>t.onclick=()=>go(parseInt(t.dataset.idx||'0',10)));
+          if(timgs[0]) timgs[0].classList.add('active');
+          // map
+          document.getElementById('route').onclick=()=>window.open(`https://www.google.com/maps/dir/?api=1&destination=${loaded.lat},${loaded.lng}&travelmode=driving&hl=${LANG}`,'_blank');
+          document.getElementById('map').src = `https://www.google.com/maps?q=${loaded.lat},${loaded.lng}&z=15&hl=${LANG}&output=embed`;
+        })();
+      }
+    }
+    if(SHEET_M){
+      const {cols: c2, rows: r2} = await fetchGVizJSON(SHEET_M);
+      const {MEN, CPN} = buildMenusFromSheet(c2, r2, salonId, LANG);
+      if(MEN.length || CPN.length){
+        window.MENUS = Object.assign({}, MENUS, { [salonId]: MEN });
+        window.COUPONS= Object.assign({}, COUPONS, { [salonId]: CPN });
+        renderList('menuList', MEN, 'menu');
+        renderList('couponList', CPN, 'coupon');
+      }
+    }
+    // Refresh currency display after potential overrides
+    updateCurrencies();
+  }catch(e){
+    console.warn('Sheet load failed', e);
+  }
+})();
+
+
+// Quick select (optional)
 (function(){
   const wrap = document.getElementById('menuSelectWrap');
   const label = document.getElementById('menuSelectLabel');
@@ -511,19 +564,12 @@ renderList('couponList', COUPONS[shop.id], 'coupon');
   if(!wrap || !sel) return;
   if(items.length === 0) { wrap.style.display='none'; return; }
   wrap.style.display='block';
-  if(LANG==='en'){
-    label.textContent='Menu';
-    go.textContent='Book';
-    sel.insertAdjacentHTML('beforeend','<option value="" disabled selected>Select a menu</option>');
-  }else{
-    label.textContent='メニュー';
-    go.textContent='予約へ進む';
-    sel.insertAdjacentHTML('beforeend','<option value="" disabled selected>メニューを選択</option>');
-  }
+  if(LANG==='en'){ label.textContent='Menu'; go.textContent='Book'; sel.insertAdjacentHTML('beforeend','<option value="" disabled selected>Select a menu</option>'); }
+  else{ label.textContent='メニュー'; go.textContent='予約へ進む'; sel.insertAdjacentHTML('beforeend','<option value="" disabled selected>メニューを選択</option>'); }
   items.forEach((it, idx)=>{
     const txt = (LANG==='en'? enMenuName(it.name): it.name);
     const dur = it.minutes ? ` (${it.minutes}${LANG==='en'?' min':'分'})` : '';
-    const price = fmtCurrencyFromJPY(it.price, getCurrency());
+    const price = fmtJPYtoCur(it.price);
     sel.insertAdjacentHTML('beforeend', `<option value="${idx}">${txt}${dur} - ${price}</option>`);
   });
   sel.addEventListener('change', ()=>{
@@ -532,7 +578,7 @@ renderList('couponList', COUPONS[shop.id], 'coupon');
     const it = items[i];
     const txt = (LANG==='en'? enMenuName(it.name): it.name);
     const timeTxt = it.minutes ? (LANG==='en'?`${it.minutes} min`:`${it.minutes}分`) : '';
-    const priceTxt = fmtCurrencyFromJPY(it.price, getCurrency());
+    const priceTxt = fmtJPYtoCur(it.price);
     hint.textContent = [txt, timeTxt, priceTxt].filter(Boolean).join(' · ');
     go.disabled = false;
   });
@@ -549,30 +595,20 @@ renderList('couponList', COUPONS[shop.id], 'coupon');
 
 // Currency update across page
 function updateCurrencies(){
-  // Top "From" price
   const priceEl = document.getElementById('price');
   const jpy = Number(priceEl.dataset.jpy||shop.price||0);
-  priceEl.textContent = (LANG==='en' ? (t('price_from') + fmtCurrencyFromJPY(jpy, getCurrency()))
-                                     : (t('price_from') + fmtCurrencyFromJPY(jpy, getCurrency()) + (getCurrency()==='JPY'?'〜':'')));
-  // Items
+  priceEl.textContent = (LANG==='en' ? (t('price_from') + fmtJPYtoCur(jpy)) : (t('price_from') + fmtJPYtoCur(jpy) + (getCurrency()==='JPY'?'〜':'')));
   document.querySelectorAll('.price[data-jpy]').forEach(span=>{
     const base = Number(span.dataset.jpy||'0');
-    span.textContent = fmtCurrencyFromJPY(base, getCurrency());
+    span.textContent = fmtJPYtoCur(base);
   });
 }
 updateCurrencies();
 
-/* -----------------------
-   Reviews: gate + GAS post + local render
------------------------ */
+/* Reviews: gate + GAS post + local render */
 function booked(id){ try{return (JSON.parse(localStorage.getItem('bl_completed_bookings')||'[]')).includes(id)}catch(e){return false} }
 const form=document.getElementById('revform'); const gate=document.getElementById('gateMsg');
 if(!booked(shop.id)){ form.style.opacity=".6"; form.style.pointerEvents="none"; gate.style.color="#a06"; }
-
-// GAS endpoint (replace with your live URL & key)
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzEb8ji5P7OwietqSWWp0kfl_yXB1ZkRbQt8aVDxwXqkVuqCmdLQvSV-6Q9rLfms7Vf/exec';
-const GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
-
 
 // star rating widget setup
 let REV_RATING = 5;
@@ -597,29 +633,23 @@ let REV_RATING = 5;
     if(e.key==='ArrowLeft' || e.key==='ArrowDown'){ REV_RATING = Math.max(1, REV_RATING-1); draw(); e.preventDefault(); }
     if(e.key==='ArrowRight' || e.key==='ArrowUp'){ REV_RATING = Math.min(5, REV_RATING+1); draw(); e.preventDefault(); }
   });
-  // initial draw (ensure all buttons reflect default 5)
   draw();
 })();
 
+// GAS endpoint (replace with live)
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzEb8ji5P7OwietqSWWp0kfl_yXB1ZkRbQt8aVDxwXqkVuqCmdLQvSV-6Q9rLfms7Vf/exec';
+const GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
+
 document.getElementById('revSubmit').onclick = async () => {
   if(!booked(shop.id)){ alert(LANG==='en'?'Only completed bookings can post.':'予約済みの方のみ投稿可です。'); return; }
-
   const name    = (document.getElementById('revName').value || (LANG==='en'?'Guest':'ゲスト')).trim();
   const country = (document.getElementById('revCountry').value || '').trim();
   const text    = (document.getElementById('revText').value || '').trim();
   const rating  = REV_RATING || 5;
-
   if(!text){ alert(LANG==='en'?'Please enter your review.':'口コミを入力してください'); return; }
-
-  const payload = {
-    key: GAS_KEY,
-    kind: 'review_add',
-    data: { salonId: shop.id, name, country, rating, text, source: 'form' }
-  };
-
+  const payload = { key: GAS_KEY, kind: 'review_add', data: { salonId: shop.id, name, country, rating, text, source: 'form' } };
   try{
     const res = await fetch(GAS_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(payload) });
-    // ignore body on success; we optimistically render
     const div = document.createElement('div');
     div.className='rev';
     div.innerHTML = `<div class="row2"><strong>${name}</strong><span class="notice">（${country||'-'}）</span><span class="notice">・ ★${rating}</span></div><p style="margin:.4em 0 0"></p>`;
@@ -633,65 +663,28 @@ document.getElementById('revSubmit').onclick = async () => {
   }
 };
 
-/* Placeholder listReviews (optional external) */
-if(window.BL_API && typeof window.BL_API.listReviews==='function'){
-  (async function(){
-    const list = document.getElementById('reviewList');
-    const btn = document.getElementById('viewAllReviews');
-    const all = await window.BL_API.listReviews();
-    function render(n){
-      const items = all.slice(0,n).map(r=> `<div class="review"><div class="meta">${r.user} ・ ★${r.rating}</div><div>${r.text}</div></div>`).join('');
-      list.innerHTML = items;
-    }
-    render(3);
-    btn.style.display = (all.length>3?'inline-flex':'none');
-    btn.addEventListener('click', ()=>{ render(all.length); btn.style.display='none'; });
-  })();
-}
-
-/* -----------------------
-   Footer modal loader (Terms/Privacy/Cancel/Contact)
------------------------ */
+/* Footer modal loader */
 (function(){
   const modal = document.getElementById('policyModal');
   const body  = document.getElementById('policyBody');
   const title = document.getElementById('policyTitle');
   const closeBtn = document.getElementById('policyClose');
-
-  const MAP = {
-    terms:  {title:'Terms',  url:'terms.html'},
-    privacy:{title:'Privacy',url:'privacy.html'},
-    cancel: {title:'Cancel Policy',url:'cancel.html'},
-    contact:{title:'Contact',url:'contact.html'}
-  };
+  const MAP = { terms:  {title:'Terms',  url:'terms.html'}, privacy:{title:'Privacy',url:'privacy.html'}, cancel: {title:'Cancel Policy',url:'cancel.html'}, contact:{title:'Contact',url:'contact.html'} };
   async function open(kind){
     const item = MAP[kind] || MAP.terms;
-    title.textContent = item.title;
-    body.innerHTML = '<p>Loading…</p>';
+    title.textContent = item.title; body.innerHTML = '<p>Loading…</p>';
     try{
       const res = await fetch(item.url, {credentials:'omit'});
       const txt = await res.text();
       const match = txt.match(/<div class="container"[\\s\\S]*?>([\\s\\S]*?)<\\/div>\\s*<\\/body>/i);
       body.innerHTML = match ? match[1] : txt;
-    }catch(e){
-      body.textContent = 'Failed to load. Please try again.';
-    }
+    }catch(e){ body.textContent = 'Failed to load. Please try again.'; }
     modal.style.display = 'flex';
   }
   function close(){ modal.style.display='none'; }
-
-  document.addEventListener('click', (e)=>{
-    const a = e.target.closest && e.target.closest('a.ft-link');
-    if(a){
-      e.preventDefault();
-      const kind = a.getAttribute('data-ft');
-      open(kind);
-    }
-  });
+  document.addEventListener('click', (e)=>{ const a = e.target.closest && e.target.closest('a.ft-link'); if(a){ e.preventDefault(); open(a.getAttribute('data-ft')); } });
   closeBtn && closeBtn.addEventListener('click', close);
-  modal.addEventListener('click', (e)=>{
-    if(e.target===modal) close();
-  });
+  modal.addEventListener('click', (e)=>{ if(e.target===modal) close(); });
 })();
 
 // i18n placeholders after dom ready

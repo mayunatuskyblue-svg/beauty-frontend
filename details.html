@@ -205,71 +205,7 @@ async function getCatalog(){ const url=GAS_URL+'?kind=catalog&key='+encodeURICom
     timgs.forEach(t=>t.onclick=()=>go(parseInt(t.dataset.idx||'0',10)));
     if(timgs[0]) timgs[0].classList.add('active');
 
-    <script>
-// row.photos は 配列 or カンマ区切り文字列 のどちらでもOK
-function toPhotoArray(photosRaw){
-  if (Array.isArray(photosRaw)) return photosRaw.filter(Boolean);
-  if (typeof photosRaw === 'string')
-    return photosRaw.split(',').map(s=>s.trim()).filter(Boolean);
-  return [];
-}
-
-// ★設定：プレースホルダーの出し方
-// 0 → 画像が1枚も無いときだけプレースホルダー1枚
-// 'match' → 登録枚数に合わせてプレースホルダーも同数（ローディング演出や同数枠を保ちたいとき）
-const PLACEHOLDER_MODE = 0; // 0 or 'match'
-const PLACEHOLDER_SRC = '/assets/placeholder.png'; // お好みの画像に
-
-function renderGallery(photosRaw){
-  const photos = toPhotoArray(photosRaw);
-  const gallery = document.querySelector('#gallery');       // メイン表示コンテナ
-  const thumbs  = document.querySelector('#galleryThumbs'); // サムネ行コンテナ
-  if(!gallery || !thumbs) return;
-
-  gallery.innerHTML = '';
-  thumbs.innerHTML = '';
-
-  let list = photos.slice();
-
-  // プレースホルダーの可変ロジック
-  if (list.length === 0 && PLACEHOLDER_MODE === 0) {
-    list = [PLACEHOLDER_SRC];
-  } else if (PLACEHOLDER_MODE === 'match') {
-    // 画像それぞれに対し「まずプレースホルダーを置いて、実画像onloadで差し替え」パターン
-    // → 今回は単純に同数の枠のみ作る実装（必要に応じて差し替えロジックも追記可）
-  }
-
-  // メインスライド生成
-  list.forEach((src, idx) => {
-    const slide = document.createElement('div');
-    slide.className = 'slide';
-    slide.innerHTML = `<img loading="lazy" src="${src}" alt="photo ${idx+1}">`;
-    slide.dataset.index = String(idx);
-    gallery.appendChild(slide);
-  });
-
-  // サムネ生成（自動折返し）
-  list.forEach((src, idx) => {
-    const t = document.createElement('button');
-    t.className = 'thumb';
-    t.innerHTML = `<img loading="lazy" src="${src}" alt="thumb ${idx+1}">`;
-    t.addEventListener('click', () => setActiveSlide(idx));
-    thumbs.appendChild(t);
-  });
-
-  setActiveSlide(0);
-}
-
-function setActiveSlide(i){
-  const slides = [...document.querySelectorAll('#gallery .slide')];
-  const thumbs = [...document.querySelectorAll('#galleryThumbs .thumb')];
-  slides.forEach((el,idx)=> el.style.display = (idx===i?'block':'none'));
-  thumbs.forEach((el,idx)=> el.classList.toggle('active', idx===i));
-}
-
-// 呼び出し例：catalogのrowを取得後
-// renderGallery(row.photos);
-</script>
+    
 
     // Map
     const lat = Number(row.lat||row.latitude||0);

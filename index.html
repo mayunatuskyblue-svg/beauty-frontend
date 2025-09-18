@@ -252,6 +252,17 @@ function fmtCurrencyFromJPY(jpy, cur){
   }catch(e){
     const symbols = {JPY:'¥', USD:'$', EUR:'€', LKR:'Rs '};
     return (symbols[cur]||'') + converted.toLocaleString();
+    // L は getLang() の戻り ("en" or "ja")
+    const areaSet = new Set();
+    const catSet  = new Set();
+    for (const r of items) {
+      const area = (L==='en' ? (r.place_en||r.place_ja) : (r.place_ja||r.place_en));
+      const cat  = (L==='en' ? (r.type_en ||r.type_ja)  : (r.type_ja ||r.type_en ));
+      if (area) areaSet.add(area);
+      if (cat)  catSet.add(cat);
+    }
+    const AREAS = Array.from(areaSet);
+    const CATS  = Array.from(catSet);
   }
 }
 const T = {

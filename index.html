@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="ja">
 <head>
@@ -563,6 +564,58 @@ document.addEventListener('click', function(e){
   location.href='details.html?'+q.toString();
 });
 
+
+// === i18n-aware Area/Category injection (added; no deletions) ===
+function fillSelect(sel, list, placeholderJa, placeholderEn){
+  if(!sel) return;
+  const L = getLang();
+  const placeholder = (L==='en' ? placeholderEn : placeholderJa);
+  const prev = sel.value;
+  sel.innerHTML = '';
+  const opt0 = document.createElement('option');
+  opt0.value = '';
+  opt0.textContent = placeholder;
+  sel.appendChild(opt0);
+  (list||[]).sort().forEach(v=>{
+    const o = document.createElement('option');
+    o.value = v; o.textContent = v;
+    sel.appendChild(o);
+  });
+  if(prev && Array.from(sel.options).some(o=>o.value===prev)) sel.value = prev;
+}
+function refreshFiltersFrom(items){
+  try{
+    const areas = new Set(), cats = new Set();
+    (items||[]).forEach(s=>{ if(s.place) areas.add(s.place); if(s.type) cats.add(s.type); });
+    fillSelect(document.getElementById('place'), Array.from(areas), '場所', 'Area');
+    fillSelect(document.getElementById('type'),  Array.from(cats),  '種類', 'Category');
+  }catch(e){ console.warn('refreshFiltersFrom failed', e); }
+}
+// Wrap render so that every time list changes, selects are refreshed in the current language.
+if(typeof render==='function'){
+  const __renderOrig = render;
+  render = function(items){ __renderOrig(items); try{ refreshFiltersFrom(items); }catch(e){} };
+}
+
+// Improved submit handler that runs after the existing one, using current-language values in items.
+(function attachI18nSubmit(){
+  try{
+    const form = document.getElementById('searchForm');
+    form.addEventListener('submit', function(ev){
+      // Let the original handler run first (it was added earlier), then re-render with the same criteria but applied to the latest items.
+      const kw = (document.getElementById('kw').value||'').toLowerCase();
+      const placeSel = document.getElementById('place').value;
+      const typeSel  = document.getElementById('type').value;
+      const src = (typeof _DATA_CURRENT!=='undefined' && Array.isArray(_DATA_CURRENT) && _DATA_CURRENT.length>0) ? _DATA_CURRENT : DATA_FALLBACK;
+      const items = src.filter(s=>
+        (!placeSel || s.place===placeSel) &&
+        (!typeSel  || s.type===typeSel) &&
+        (!kw || (String(s.name).toLowerCase().includes(kw) || String(s.points||'').toLowerCase().includes(kw) || (s.tags||[]).join(',').toLowerCase().includes(kw)))
+      );
+      render(items);
+    });
+  }catch(e){ console.warn('attachI18nSubmit failed', e); }
+})();
 // Init filters with fallback, then fetch GAS catalog (will re-render on success)
 initFilters(DATA_FALLBACK);
 render(DATA_FALLBACK);

@@ -1118,6 +1118,11 @@ document.getElementById("reserveForm").addEventListener("submit", async (e)=>{
         const cur = new URL(location.href);
         const salonId = cur.searchParams.get('salonId');
         if(salonId){ p.set('salonId', salonId); }
+        // 予約確定時に保存しておく
+sessionStorage.setItem('bl_pending_booking', JSON.stringify({
+  bookingId, amountJPY, menu, minutes, email, name, date: new Date().toISOString()
+}));
+// その後に confirm.html へ遷移
 
         // Go to confirm
         location.href = 'confirm.html?' + p.toString();

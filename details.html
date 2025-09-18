@@ -218,7 +218,7 @@ async function getCatalog(){ const url=GAS_URL+'?kind=catalog&key='+encodeURICom
     document.getElementById('backToList').onclick=()=>{ if(history.length>1){ history.back(); } else { location.href='index.html?nosplash=1'; } };
     document.getElementById('reserve').onclick = ()=>{ const q=new URLSearchParams({salonId: row.id, salonName: name}); if(L==='en') q.set('lang','en'); location.href='reservation.html?'+q.toString(); };
 
-  
+      await setupMenusAndCoupons(L, row);
       await setupReviews(L, row, name);
   }catch(e){
     console.error(e);

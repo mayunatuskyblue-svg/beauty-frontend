@@ -1,657 +1,286 @@
-<!DOCTYPE html>
-
+<!doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1" name="viewport"/>
-<title>BeautyLanka | 詳細</title>
-<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700&amp;family=Zen+Kaku+Gothic+New:wght@400;500;700;900&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Noto+Sans+JP:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>BeautyLanka – サロン詳細</title>
 <style>
-:root{ --base:#F7F1E1; --ink:#2E1A16; --stroke:#eadfca; --teal:#246A73; --muted:#6f5a54; }
-*{box-sizing:border-box} body{margin:0;background:var(--base);color:var(--ink);font-family:"Inter","Noto Sans JP",system-ui}
-.container{max-width:1100px;margin:0 auto;padding:0 16px}
-header{position:sticky;top:0;z-index:10;background:rgba(247,241,225,.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--stroke)}
-.hwrap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0}
-.logo-img{width:110px;border-radius:14px;box-shadow:0 10px 24px rgba(36,106,115,.18)}
-.main{display:grid;grid-template-columns:1.25fr .75fr;gap:16px;margin:14px 0}
-@media(max-width:960px){ .main{grid-template-columns:1fr} }
-.section{background:#fff;border:1px solid var(--stroke);border-radius:16px;box-shadow:0 10px 24px rgba(49,14,16,.08);padding:14px;margin:12px 0}
-.section h2{margin:0 0 8px;font-size:18px}
-.media{position:relative;background:#000;border-radius:14px;overflow:hidden}
-.carousel{display:flex;overflow-x:hidden;scroll-snap-type:x mandatory}
-.carousel img{height:420px;width:100%;object-fit:cover;flex:0 0 100%;scroll-snap-align:center}
-.nav{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
-.nav button{pointer-events:auto;border:none;background:rgba(0,0,0,.35);width:44px;height:44px;border-radius:999px;color:#fff;font-size:18px;cursor:pointer}
-.thumbs{display:flex;gap:6px;overflow-x:auto;padding:8px}
-.thumbs img{width:96px;height:64px;object-fit:cover;border-radius:6px;opacity:.88;cursor:pointer;border:1px solid #eee}
-.thumbs img.active{opacity:1;outline:2px solid var(--teal)}
-.title{font-size:26px;font-weight:900;margin:8px 0 4px}
-.meta{color:#6b5e55}
-.tags{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
-.tag{padding:6px 10px;border-radius:999px;border:1px solid var(--stroke);font-size:12px;background:#fff}
-.price{font-weight:900;font-size:18px;margin:4px 0 10px}
-.btn{height:40px;border-radius:12px;border:1px solid var(--stroke);background:#fff;padding:0 14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
-.btn.primary{background:var(--teal);border-color:var(--teal);color:#fff}
-.mapwrap iframe{width:100%;height:260px;border:0;border-radius:12px}
-.notice{font-size:12px;color:#a00}
-footer{color:#6b5e55;text-align:center;font-size:12px;margin:16px 0}
+  :root{ --bg:#f5efe6; --card:#fff; --bd:#e9e1d7; --ink:#2b2b2b; --muted:#6b5e55; --brand:#2f776c; --gap:16px; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+  .wrap{max-width:1100px;margin:0 auto;padding:16px}
+  .layout{display:grid;grid-template-columns:2fr 1fr;gap:var(--gap)}
+  @media (max-width:900px){ .layout{grid-template-columns:1fr} }
+  .card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px}
+  .section-title{font-size:18px;font-weight:800;margin:0 0 8px}
+  .muted{color:var(--muted)}
+  .btn{display:inline-block;background:var(--brand);color:#fff;border:none;border-radius:10px;padding:10px 14px;
+       text-decoration:none;font-weight:700;cursor:pointer}
+  .btn.secondary{background:#ddd;color:#333}
+  .space{height:12px}
+
+  /* ギャラリー */
+  .gallery{display:flex;flex-direction:column;gap:10px}
+  .gallery-main{width:100%;aspect-ratio:16/9;background:#f1f1f1;border-radius:12px;overflow:hidden;border:1px solid #eee}
+  .gallery-main img{width:100%;height:100%;object-fit:cover;display:block}
+  .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px}
+  .thumbs img{width:100%;height:70px;object-fit:cover;border-radius:8px;border:1px solid #eee;cursor:pointer}
+
+  /* 情報 */
+  .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .kv{background:#faf7f2;border:1px solid #eee;border-radius:10px;padding:10px}
+  .kv .k{font-size:12px;color:var(--muted)}
+  .kv .v{font-weight:700;margin-top:3px}
+
+  /* リスト（メニュー/クーポン） */
+  .list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+  .chip{display:inline-block;background:#efe5d9;color:#6b5e55;border-radius:999px;padding:4px 10px;margin-right:6px;font-size:12px}
+
+  iframe.map{width:100%;height:300px;border:0;border-radius:12px}
+  .notice{padding:.75em 1em;margin:.5em 0;background:#fff7e6;border:1px solid #ffd18a;border-radius:8px;color:#6b5e55}
 </style>
 </head>
 <body>
-<header>
-<div class="container hwrap">
-<a href="./index.html?nosplash=1"><img alt="BeautyLanka" class="logo-img" src="/assets/img/logo_mark.png"/></a>
-<div>
-<select id="langSelect">
-<option value="auto">Auto</option><option value="ja">日本語</option><option value="en">English</option>
-</select>
-</div>
-</div>
-</header>
-<div class="container">
-<div class="main">
-<div>
-<div class="media">
-<div class="carousel" id="carousel"></div>
-<div class="nav"><button id="prev">‹</button><button id="next">›</button></div>
-</div>
-<div class="thumbs" id="thumbs"></div>
-<div class="section" id="shopInfoSection">
-<h2 data-i18n="shop_info">店舗情報</h2>
-<div class="tags" id="tags"></div>
-<div class="price" id="price"></div>
-<p id="points" style="margin:.4em 0 0"></p>
-</div>
-<div class="section"><h2>メニュー</h2>
-<div class="meta" style="color:#6b5e55">（準備中です。スプレッドシートにメニューを追加したら自動表示できます）</div>
-</div>
-<div class="section"><h2>クーポン</h2>
-<div class="meta" style="color:#6b5e55">（準備中です）</div>
-</div>
-</div>
-<aside>
-<div class="section">
-<h2 id="name">店舗名</h2>
-<div class="meta" id="meta"></div>
-<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-<button class="btn" id="backToList">一覧に戻る</button>
-<button class="btn primary" id="reserve">予約へ進む</button>
-</div>
-</div>
-<div class="section" id="mapSection">
-<h2>地図・道順</h2>
-<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
-<button class="btn" id="route">Googleで道順</button>
-</div>
-<div class="mapwrap"><iframe id="map" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
-</div>
-<div class="section" id="reviewsSection">
-<h2 data-i18n="reviews">口コミ</h2>
-<div class="meta" id="reviewsSummary" style="margin:6px 0 10px"></div>
-<div id="reviewsList" style="display:flex; flex-direction:column; gap:10px; margin-bottom:14px"></div>
-<hr style="border:none;border-top:1px solid var(--stroke);margin:12px 0"/>
-<div id="reviewFormWrap">
-<div class="meta" id="reviewFormTitle" style="margin-bottom:6px"></div>
-<label style="display:block;margin:8px 0 4px">
-<span id="labelName">お名前（仮名OK）</span>
-<input id="revName" maxlength="30" placeholder="例）a さん" style="width:100%;height:38px;border:1px solid var(--stroke);border-radius:10px;padding:0 10px" type="text"/>
-</label>
-<label style="display:block;margin:8px 0 4px">
-<span id="labelAge">年齢層</span>
-<select id="revAge" style="width:100%;height:38px;border:1px solid var(--stroke);border-radius:10px;padding:0 10px">
-<option value="">選択してください</option>
-<option value="teens">10代</option>
-<option value="20s">20代</option>
-<option value="30s">30代</option>
-<option value="40s">40代</option>
-<option value="50s+">50代以上</option>
-</select>
-</label>
-<label style="display:block;margin:8px 0 6px">
-<span id="labelRating">評価</span>
-<div aria-label="5段階評価" id="revStars" role="radiogroup" style="display:flex;gap:6px;font-size:22px;cursor:pointer"></div>
-</label>
-<label style="display:block;margin:6px 0 10px">
-<span id="labelComment">コメント</span>
-<textarea id="revText" placeholder="良かった点や気になった点など" rows="4" style="width:100%;border:1px solid var(--stroke);border-radius:10px;padding:10px;resize:vertical"></textarea>
-</label>
-<button class="btn primary" id="revSubmit">投稿する</button>
-  <!-- 送信ボタンの近くに案内を置くと親切 -->
-<p id="reviewNotice"></p>
-<script>
-  const params = new URLSearchParams(location.search);
-  const rid   = params.get('rid');
-  const token = params.get('token');
-  const exp   = params.get('exp');
-
-  const canPost = !!(rid && token && exp);
-  const btn = document.querySelector('#submitBtn');
-  const note = document.querySelector('#reviewNotice');
-  if (!canPost) {
-    if (btn) btn.disabled = true;
-    if (note) note.textContent = '口コミ投稿は、施術完了後に届く専用リンクからのみ可能です。';
-  }
-
-  async function submitReview() {
-    const payload = {
-      bookingId: rid,
-      token, exp,
-      salonId: window.currentSalonId || '',
-      rating: Number(document.querySelector('#rating').value),
-      comment: document.querySelector('#comment').value,
-      name: document.querySelector('#name')?.value || ''
-    };
-    const res = await fetch('https://script.google.com/macros/s/AKfycbxQHByDLRu-QlfAyRRMdM0-pGskH9Ka7IcFs9NeV2NB3DyDWhaLgvv8Hain_l9nZGvk/exec', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ action:'reviews.addVerified', payload })
-    }).then(r=>r.json());
-    if (res.ok) {
-      alert('ありがとうございました！レビューが投稿されました。');
-      // 必要ならフォームリセットやボタン無効化
-    } else {
-      alert('投稿に失敗しました：' + res.error);
-    }
-  }
-</script>
-
-<div class="meta" id="revNotice" style="margin-top:8px;color:#6b5e55"></div>
-</div>
-</div>
-</aside>
-</div>
-</div>
-<footer>Build v2025-09-18D-catalogOnly</footer>
-<script>
-// --- Lang override by query (?lang=en) and selector ---
-function getLang(){ try{ const q=new URLSearchParams(location.search); const ql=q.get('lang'); if(ql){ localStorage.setItem('bl_lang', ql); }
-  const pref=localStorage.getItem('bl_lang')||'auto'; if(pref==='auto'){ const ja=(navigator.language||'en').toLowerCase().startsWith('ja'); return ja?'ja':'en'; } return pref; }catch(e){ return 'ja'; } }
-(function(){ const sel=document.getElementById('langSelect'); const L=getLang(); sel.value=(localStorage.getItem('bl_lang')||'auto'); sel.onchange=()=>{ localStorage.setItem('bl_lang', sel.value); location.reload(); }; })();
-
-// --- Currency helpers (kept minimal, JPY base) ---
-const RATES = { JPY:1, USD:0.0067, EUR:0.0061, LKR:2.05 };
-function fmtCurrencyFromJPY(jpy, cur){ const n=Math.max(0,Number(jpy)||0); const rate=RATES[cur]||1; const v=Math.round(n*rate); try{ return new Intl.NumberFormat((getLang()==='ja'?'ja-JP':'en-US'),{style:'currency',currency:cur,maximumFractionDigits:0}).format(v); }catch(e){ return '¥'+v.toLocaleString(); } }
-function getCurrency(){ return (localStorage.getItem('bl_currency')||'JPY'); }
-
-// --- Text helpers ---
-function enTag(s){ const map={'マツエク':'Lashes','スパ':'Spa','ハーブ':'Herbs','リラク':'Relaxation','アーユルヴェーダ':'Ayurveda','日本語対応':'Japanese support'}; return map[s]||s; }
-function enType(s){ return enTag(s); }
-function enPoints(s){ if(!s) return ''; let x=String(s); x=x.replace(/。/g,'. ').replace(/\s+/g,' ').trim(); if(x) x=x[0].toUpperCase()+x.slice(1); return x; }
-
-// --- GAS catalog fetch (catalog only) ---
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxQHByDLRu-QlfAyRRMdM0-pGskH9Ka7IcFs9NeV2NB3DyDWhaLgvv8Hain_l9nZGvk/exec';
-const GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
-async function getCatalog(){ const url=GAS_URL+'?kind=catalog&key='+encodeURIComponent(GAS_KEY); const r=await fetch(url); const j=await r.json(); if(!j.ok) throw new Error(j.error||'catalog error'); return j.items||[]; }
-
-// --- Boot ---
-(async function(){
-  const L = getLang();
-  // Localize section headings
-  const hReviews = document.querySelector('[data-i18n="reviews"]');
-  if(hReviews) hReviews.textContent = (L==='en' ? 'Reviews' : '口コミ');
-  const hShop = document.querySelector('[data-i18n="shop_info"]');
-  if(hShop) hShop.textContent = (L==='en' ? 'Shop info' : '店舗情報');
-  const hMap = document.querySelector('#mapSection h2');
-  if(hMap) hMap.textContent = (L==='en' ? 'Map & directions' : '地図・道順');
-  const hMenu = document.querySelector('#menuSection h2, .section > h2:nth-of-type(1)'); // fallback
-  // Extra: localize Menu & Coupon headings safely by text match
-  const allH2 = Array.from(document.querySelectorAll('.section h2'));
-  const hMenu2 = allH2.find(h => /^\s*(メニュー|Menu)\s*$/.test(h.textContent||''));
-  if(hMenu2) hMenu2.textContent = (L==='en' ? 'Menu' : 'メニュー');
-  const hCoupon = allH2.find(h => /^\s*(クーポン|Coupons?)\s*$/.test(h.textContent||''));
-  if(hCoupon) hCoupon.textContent = (L==='en' ? 'Coupons' : 'クーポン');
-
-  if(hMenu && hMenu.textContent.trim().match(/^(メニュー|Menu)$/)) hMenu.textContent = (L==='en' ? 'Menu' : 'メニュー');
-
-  const params = new URLSearchParams(location.search);
-const salonId = params.get('salonId') || '';
-const items = await getCatalog();
-console.log('[catalog items]', items.length, items[0]);
-
-let row = items.find(x => String(x.id) === String(salonId));
-// 店名 or 写真が入ってる行を優先して拾う
-if (!row) row = items.find(x => (x.name_ja || x.name_en || (Array.isArray(x.photos) ? x.photos.length : String(x.photos||'').trim()))) || items[0];
-
-console.log('[use row]', row);
-
-
-    const name  = L==='en' ? (row.name_en||row.name_ja||'') : (row.name_ja||row.name_en||'');
-    const place = L==='en' ? (row.place_en||row.place_ja||'') : (row.place_ja||row.place_en||'');
-    const type  = L==='en' ? (row.type_en ||row.type_ja ||'') : (row.type_ja ||row.type_en ||'');
-    const rating= Number(row.rating||0);
-    const price = Number(row.price_jpy||0);
-    const points= L==='en' ? (row.points_en||'') : (row.points_ja||'');
-    const tags  = (L==='en' ? String(row.tags_en||'').split('|').map(s=>s.trim()) : String(row.tags_ja||'').split('|').map(s=>s.trim())).filter(Boolean);
-
-    document.title = name + ' | BeautyLanka';
-    document.getElementById('name').textContent = name;
-    document.getElementById('meta').textContent = (L==='en' ? `${place} · ${enType(type)} / ★${rating.toFixed(1)}` : `${place}・${type}／★${rating.toFixed(1)}`);
-    const priceEl=document.getElementById('price'); priceEl.dataset.jpy=String(price);
-    priceEl.textContent = (L==='en' ? 'From ' : '料金目安：') + fmtCurrencyFromJPY(price, getCurrency());
-    document.getElementById('points').textContent = (L==='en' ? enPoints(points) : points);
-    document.getElementById('tags').innerHTML = tags.map(tg=>`<span class="tag">${L==='en'?enTag(tg):tg}</span>`).join('');
-
-    // Photos: string "a,b,c" -> array, then unique + fallback to /assets/images
-    let photos = [];
-    if(Array.isArray(row.photos)) photos=row.photos;
-    else if(typeof row.photos==='string') photos = row.photos.split(',').map(s=>s.trim()).filter(Boolean);
-    const alt = photos.flatMap(src => [src, src.replace('/assets/img/','/assets/images/')]);
-    const uniq = [...new Set(alt)];
-    const car=document.getElementById('carousel'); const thumbs=document.getElementById('thumbs');
-    if(uniq.length===0) uniq.push('/assets/img/placeholder.webp');
-    car.innerHTML = uniq.map((src,i)=>`<img loading="lazy" src="${src}" alt="${name} photo ${i+1}" onerror="this.onerror=null; this.src='/assets/img/placeholder.webp';">`).join('');
-    thumbs.innerHTML = uniq.map((src,i)=>`<img data-idx="${i}" src="${src}" alt="thumb ${i+1}">`).join('');
-    let cidx=0; const imgs=car.querySelectorAll('img'); const timgs=thumbs.querySelectorAll('img');
-    function go(i){ cidx=(i+imgs.length)%imgs.length; car.scrollTo({left:car.clientWidth*cidx,behavior:'smooth'}); timgs.forEach(x=>x.classList.remove('active')); if(timgs[cidx]) timgs[cidx].classList.add('active'); }
-    document.getElementById('prev').onclick=()=>go(cidx-1);
-    document.getElementById('next').onclick=()=>go(cidx+1);
-    timgs.forEach(t=>t.onclick=()=>go(parseInt(t.dataset.idx||'0',10)));
-    if(timgs[0]) timgs[0].classList.add('active');
-
-    
-
-    // Map
-    const lat = Number(row.lat||row.latitude||0);
-    const lng = Number(row.lng||row.longitude||0);
-    const LANGCODE = (L==='en'?'en':'ja');
-    document.getElementById('map').src = `https://www.google.com/maps?q=${lat},${lng}&z=15&hl=${LANGCODE}&output=embed`;
-    document.getElementById('route').onclick = ()=>window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving&hl=${LANGCODE}`,'_blank');
-
-    // Buttons
-    document.getElementById('backToList').onclick=()=>{ if(history.length>1){ history.back(); } else { location.href='index.html?nosplash=1'; } };
-    document.getElementById('reserve').onclick = ()=>{ const q=new URLSearchParams({salonId: row.id, salonName: name}); if(L==='en') q.set('lang','en'); location.href='reservation.html?'+q.toString(); };
-
-      await setupMenusAndCoupons(L, row);
-      await setupReviews(L, row, name);
-  }catch(e){
-    console.error(e);
-    document.getElementById('shopInfoSection').insertAdjacentHTML('beforeend','<div class="notice">データの取得に失敗しました。GASの公開設定やURL/KEYをご確認ください。</div>');
-  }
-})();
-</script>
-
-<script>
-// === Reviews UI & API ===
-function starRow(current=0, readonly=false){
-  const max=5;
-  return Array.from({length:max},(_,i)=>{
-    const n=i+1;
-    const filled = n<=current ? "★" : "☆";
-    const ro = readonly ? 'aria-disabled="true"' : '';
-    return `<span data-star="${n}" role="radio" aria-checked="${n===current}" ${ro}>${filled}</span>`;
-  }).join('');
-}
-function i18nReviews(L){
-  return {
-    title: L==='en' ? 'Write a review' : '口コミ投稿',
-    name: L==='en' ? 'Name (nickname OK)' : 'お名前（仮名OK）',
-    age:  L==='en' ? 'Age range' : '年齢層',
-    rating: L==='en' ? 'Rating' : '評価',
-    comment: L==='en' ? 'Comment' : 'コメント',
-    submit: L==='en' ? 'Submit' : '投稿する',
-    thanks: L==='en' ? 'Thanks! Your review has been submitted.' : 'ありがとうございます。口コミを受け付けました。',
-    error:  L==='en' ? 'Submission failed. Please try again.' : '送信に失敗しました。もう一度お試しください。',
-    summary:(avg,cnt)=> (L==='en' ? `Average ★${avg.toFixed(1)} · ${cnt} reviews` : `平均 ★${avg.toFixed(1)}・${cnt}件の口コミ`),
-    anon: L==='en' ? 'Anonymous' : '匿名',
-    ages: L==='en' ? {teens:'Teens', '20s':'20s', '30s':'30s','40s':'40s','50s+':'50s+'}
-                   : {teens:'10代','20s':'20代','30代':'30代','40s':'40代','50s+':'50代以上'}
-  };
-}
-async function listReviews(salonId){
-  const url = GAS_URL + `?kind=reviews.list&key=${encodeURIComponent(GAS_KEY)}&salonId=${encodeURIComponent(salonId)}`;
-  const r = await fetch(url, {method:'GET'});
-  const j = await r.json();
-  if(!j.ok) throw new Error(j.error||'reviews list error');
-  return j.items||[];
-}
-async function addReview(payload){
-  const r = await fetch(GAS_URL, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ key:GAS_KEY, kind:'reviews.add', ...payload })
-  });
-  const j = await r.json();
-  if(!j.ok) throw new Error(j.error||'reviews add error');
-  return j;
-}
-async function setupReviews(L, salonRow, salonName){
-  const salonId = salonRow.id;
-  const T = i18nReviews(L);
-  document.querySelector('#reviewFormTitle').textContent = T.title;
-  document.querySelector('#labelName').textContent = T.name;
-  document.querySelector('#labelAge').textContent = T.age;
-  document.querySelector('#labelRating').textContent = T.rating;
-  document.querySelector('#labelComment').textContent = T.comment;
-  document.querySelector('#revSubmit').textContent = T.submit;
-  const starWrap = document.getElementById('revStars');
-  starWrap.innerHTML = starRow(0,false);
-  let curStar = 0;
-  starWrap.onclick = (e)=>{
-    const s = Number(e.target?.dataset?.star||0);
-    if(!s) return;
-    curStar = s;
-    starWrap.innerHTML = starRow(curStar,false);
-  };
-  async function refreshList(){
-    const items = await listReviews(salonId);
-    const listEl = document.getElementById('reviewsList');
-    const sumEl  = document.getElementById('reviewsSummary');
-    if(items.length===0){
-      listEl.innerHTML = `<div class="meta" style="color:#6b5e55">${L==='en'?'No reviews yet.':'まだ口コミはありません。'}</div>`;
-      sumEl.textContent = '';
-      return;
-    }
-    const avg = items.reduce((a,b)=>a+Number(b.rating||0),0) / items.length;
-    sumEl.textContent = T.summary(avg, items.length);
-    listEl.innerHTML = items.map(r=>{
-      const name = r.name || T.anon;
-      const age  = T.ages?.[r.age_group] || '';
-      const stars = starRow(Number(r.rating||0), true);
-      const when = r.ts ? new Date(r.ts).toLocaleDateString(L==='en'?'en-US':'ja-JP') : '';
-      const comment = (r.text||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      return `
-        <div style="border:1px solid var(--stroke);border-radius:12px;padding:10px">
-          <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
-            <strong>${name}</strong>
-            <span class="meta">${when}</span>
-          </div>
-          <div class="meta" style="margin:2px 0 6px">${age?age+' · ':''}<span style="font-size:18px">${stars}</span></div>
-          <div>${comment||''}</div>
+<div class="wrap">
+  <div class="layout">
+    <!-- 左カラム：写真 / メニュー / クーポン -->
+    <div class="stackL">
+      <!-- 写真 -->
+      <section class="card">
+        <div class="section-title">写真</div>
+        <div class="gallery">
+          <div class="gallery-main" id="gMain"></div>
+          <div class="thumbs" id="gThumbs"></div>
         </div>
-      `;
-    }).join('');
-  }
-  await refreshList();
-  const submitBtn = document.getElementById('revSubmit');
-  const noticeEl  = document.getElementById('revNotice');
-  submitBtn.onclick = async ()=>{
-    const name = (document.getElementById('revName').value||'').trim();
-    const age  = document.getElementById('revAge').value;
-    const text = (document.getElementById('revText').value||'').trim();
-    const rating = curStar;
-    if(!rating){ noticeEl.textContent = L==='en'?'Please select a rating.':'評価を選択してください。'; return; }
-    if(text.length<2){ noticeEl.textContent = L==='en'?'Please enter a short comment.':'一言でもコメントを入力してください。'; return; }
-    const last = Number(localStorage.getItem('bl_last_review_ts')||'0');
-    if(Date.now()-last < 20000){ noticeEl.textContent = L==='en'?'Please wait a moment before posting again.':'続けて投稿する場合は少し時間をおいてください。'; return; }
-    submitBtn.disabled = true;
-    noticeEl.textContent = L==='en'?'Submitting...':'送信中...';
-    try{
-      await addReview({
-        salonId, salonName,
-        name: name || (L==='en'?'Anonymous':'匿名'),
-        age_group: age || '',
-        rating, text,
-        source: 'web'
-      });
-      noticeEl.textContent = T.thanks;
-      localStorage.setItem('bl_last_review_ts', String(Date.now()));
-      document.getElementById('revName').value = '';
-      document.getElementById('revAge').value = '';
-      document.getElementById('revText').value = '';
-      curStar = 0; starWrap.innerHTML = starRow(0,false);
-      await refreshList();
-    }catch(e){
-      console.error(e);
-      noticeEl.textContent = T.error;
-    }finally{
-      submitBtn.disabled = false;
-    }
-  };
-}
-</script>
+      </section>
+
+      <div class="space"></div>
+
+      <!-- メニュー -->
+      <section class="card">
+        <div class="section-title">メニュー</div>
+        <div id="menuList" class="list"></div>
+        <div id="menuEmpty" class="muted">（準備中です。スプレッドシートにメニューを追加したら自動表示されます）</div>
+      </section>
+
+      <div class="space"></div>
+
+      <!-- クーポン -->
+      <section class="card">
+        <div class="section-title">クーポン</div>
+        <div id="couponList" class="list"></div>
+        <div id="couponEmpty" class="muted">（準備中です）</div>
+      </section>
+    </div>
+
+    <!-- 右カラム：店舗情報 / 地図 / レビュー -->
+    <div class="stackR">
+      <!-- 店舗情報 -->
+      <section class="card" id="infoCard">
+        <div class="section-title">店舗情報</div>
+        <div class="notice" id="pickNote" style="display:none">対象が見つからなかったので先頭のサロンを表示しています</div>
+
+        <h2 id="salonTitle" style="margin:6px 0 10px"></h2>
+        <div class="info-grid">
+          <div class="kv"><div class="k">ジャンル</div><div class="v" id="vType"></div></div>
+          <div class="kv"><div class="k">エリア</div><div class="v" id="vPlace"></div></div>
+          <div class="kv"><div class="k">目安価格</div><div class="v" id="vPrice"></div></div>
+          <div class="kv"><div class="k">★評価</div><div class="v" id="vRating"></div></div>
+        </div>
+
+        <div class="space"></div>
+        <div>
+          <a href="#" class="btn secondary" id="btnBack">一覧に戻る</a>
+          <a href="#" class="btn" id="btnBook">予約へ進む</a>
+        </div>
+
+        <div class="space"></div>
+        <div id="points" class="muted"></div>
+      </section>
+
+      <div class="space"></div>
+
+      <!-- 地図 -->
+      <section class="card" id="mapSection">
+        <div class="section-title">地図・道順</div>
+        <button class="btn secondary" id="route" disabled>Googleで道順</button>
+        <div class="space"></div>
+        <iframe id="map" class="map" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </section>
+
+      <div class="space"></div>
+
+      <!-- レビュー（ダイジェスト場所） -->
+      <section class="card">
+        <div class="section-title">レビュー</div>
+        <div id="reviewsDigest" class="muted">（準備中です）</div>
+      </section>
+    </div>
+  </div>
+</div>
+
+      
+<!-- ▼▼ 必ずあなたの /exec とキーに置換してください ▼▼ -->
 <script>
-// ---- 強制デバッグ表示（症状の見える化） ----
-(function(){
-  const LOG = (...a)=>console.log('[details-debug]', ...a);
-
-  // ★ 1) GASからcatalog取得（キャッシュ無効化 & エラー表示）
-  async function fetchCatalogSafe(GAS_EXEC_URL, GAS_KEY){
-    const url = `${GAS_EXEC_URL}?kind=catalog&key=${encodeURIComponent(GAS_KEY)}&t=${Date.now()}`;
-    const res = await fetch(url, {cache:'no-store'});
-    const j = await res.json().catch(()=>({ok:false, error:'json parse'}));
-    LOG('catalog api result', j);
-    if (!j.ok) throw new Error('GAS not ok: ' + (j.error||''));
-    if (!j.items || !j.items.length) {
-      uiNotice('カタログが空です。catalogシートの id / photos / lat / lng を確認してね。');
-      throw new Error('empty items');
-    }
-    return j.items;
-  }
-
-  // ★ 2) 写真欄のゆらぎを吸収（全角カンマ・改行・先頭スラ無し）
-  function parsePhotos(v){
-    if (Array.isArray(v)) return v;
-    const arr = String(v||'')
-      .replace(/[\r\n]+/g, ',')
-      .replace(/，/g, ',')
-      .split(',')
-      .map(s=>s.trim())
-      .filter(Boolean)
-      .map(s=> s.startsWith('/') ? s : '/'+s);
-    // 404救済（/assets/images にも同名があるケース）
-    const alt = [];
-    arr.forEach(p=>{
-      alt.push(p);
-      if (p.startsWith('/assets/img/')) alt.push(p.replace('/assets/img/','/assets/images/'));
-    });
-    return [...new Set(alt)];
-  }
-
-  // ★ 3) idの決め方（?id= または #id、無ければ先頭）
-  function pickItem(items){
-  const params = new URLSearchParams(location.search);
-  // ← ここを修正：id と salonId の両方を見る
-  const targetId = params.get('salonId') || params.get('id') || (location.hash||'').replace(/^#/,'');
-  let item = items.find(x => String(x.id) === String(targetId));
-
-  if (!item) {
-    // 店名や写真が入ってる行を優先して選ぶ
-    item = items.find(x => (x.name_ja || x.name_en || (Array.isArray(x.photos) ? x.photos.length : String(x.photos||'').trim())))
-           || items[0];
-    uiNotice('対象が見つからなかったので先頭のサロンを表示しています');
-  }
-  return item;
-}
-
-
-  // ★ 4) UIへの反映（最低限：写真・地図・店名）
-  function renderItem(item){
-    LOG('render item', item);
-    // タイトル（存在すれば）
-    const ttl = document.querySelector('[data-salon-title]');
-    if (ttl) ttl.textContent = item.name_ja || item.name_en || item.id || 'Salon';
-
-    // 写真
-    const photos = parsePhotos(item.photos);
-    const box = document.querySelector('[data-photos]');
-    if (box) {
-      box.innerHTML = '';
-      photos.forEach(src=>{
-        const img = document.createElement('img');
-        img.loading = 'lazy';
-        img.referrerPolicy = 'no-referrer';
-        img.src = src;
-        img.alt = item.name_en || item.name_ja || 'photo';
-        img.onerror = ()=> img.remove();
-        box.appendChild(img);
-      });
-      if (!box.children.length) box.innerHTML = '<div class="meta">写真が未設定です（catalogシートのphotos列）</div>';
-    }
-
-    // 地図
-    const lat = Number(item.lat), lng = Number(item.lng);
-    const mapEl = document.querySelector('#map');
-    const routeBtn = document.querySelector('#route');
-    const mapSection = document.querySelector('#mapSection') || document.body;
-
-    if (Number.isFinite(lat) && Number.isFinite(lng) && !(lat===0 && lng===0)) {
-      if (mapEl) mapEl.src = `https://www.google.com/maps?q=${lat},${lng}&z=15&hl=ja&output=embed`;
-      if (routeBtn) {
-        routeBtn.disabled = false;
-        routeBtn.onclick = () =>
-          window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving&hl=ja`,'_blank');
-      }
-    } else {
-      if (mapEl) mapEl.remove();
-      if (routeBtn) routeBtn.disabled = true;
-      const note = document.createElement('div');
-      note.className = 'meta';
-      note.style.cssText = 'margin-top:6px;color:#6b5e55';
-      note.textContent = '地図は未設定です。catalogシートの lat / lng に数値を入れると表示されます。';
-      mapSection.appendChild(note);
-    }
-  }
-
-  // ★ 5) 戻るボタンの安定化（リファラが同一オリジンならback、そうでなければindexへ）
-  function setupBack(){
-    const btn = document.querySelector('[data-back], .js-back');
-    if (!btn) return;
-    btn.addEventListener('click', (e)=>{
-      e.preventDefault();
-      try{
-        if (document.referrer && new URL(document.referrer).origin === location.origin) history.back();
-        else location.href = 'index.html';
-      }catch(e){
-        location.href = 'index.html';
-      }
-    });
-  }
-
-  // 画面内に通知
-  function uiNotice(msg){
-    const host = document.querySelector('#shopInfoSection') || document.body;
-    const d = document.createElement('div');
-    d.className = 'notice';
-    d.style.cssText = 'padding:.75em 1em;margin:.75em 0;background:#fff7e6;border:1px solid #ffd18a;border-radius:6px;color:#6b5e55';
-    d.textContent = msg;
-    host.appendChild(d);
-  }
-
-  // ---- 実行（あなたのURLとキーを設定） ----
-  document.addEventListener('DOMContentLoaded', async ()=>{
-    try{
-      // ▼▼ ここの2つをあなたの値に置き換え ▼▼
-      const GAS_EXEC_URL = 'https://script.google.com/macros/s/AKfycbxQHByDLRu-QlfAyRRMdM0-pGskH9Ka7IcFs9NeV2NB3DyDWhaLgvv8Hain_l9nZGvk/exec';
-      const GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
-      // ▲▲ ここまで ▲▲
-
-      setupBack();
-      const items = await fetchCatalogSafe(GAS_EXEC_URL, GAS_KEY);
-      const item = pickItem(items);
-      renderItem(item);
-    }catch(err){
-      console.error(err);
-      uiNotice('読み込みに失敗しました。コンソールのエラーを送ってくれたらすぐ直すよ。');
-    }
-  });
-})();
-</script>
-  <script>
   window.__GAS_URL = 'https://script.google.com/macros/s/AKfycbxQHByDLRu-QlfAyRRMdM0-pGskH9Ka7IcFs9NeV2NB3DyDWhaLgvv8Hain_l9nZGvk/exec';
   window.__GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
 </script>
+<!-- ▲▲ ここまで ▲▲ -->
 
 <script>
-// ====== 強制レンダ（店名＆写真） ======
 (function(){
-  const LOG = (...a)=>console.log('[details-force]', ...a);
+  const GAS = { url: window.__GAS_URL, key: window.__GAS_KEY };
+  const $  = s => document.querySelector(s);
 
-  // 1) items から対象を選ぶ（?salonId / ?id / #id の順）
-  function pickItem(items){
-    const q = new URLSearchParams(location.search);
-    const targetId = q.get('salonId') || q.get('id') || (location.hash||'').replace(/^#/,'');
-    let item = items.find(x => String(x.id) === String(targetId));
-    if (!item) {
-      item = items.find(x => (x.name_ja || x.name_en || String(x.photos||'').trim())) || items[0];
-      console.warn('対象が見つからず先頭を表示');
-    }
-    return item;
-  }
+  const fmtJPY = v => v ? '¥'+Number(v).toLocaleString('ja-JP') : '-';
+  const setText = (sel, v) => { const el=$(sel); if(el) el.textContent = v||''; };
 
-  // 2) photos を頑丈にパース（改行/全角カンマ/先頭スラ無し/フォルダ差も吸収）
-  function normalizePhotos(v){
-    let arr = [];
-    if (Array.isArray(v)) arr = v;
-    else arr = String(v||'').replace(/[\r\n]+/g, ',').replace(/，/g, ',').split(',');
-    arr = arr.map(s => String(s||'').trim()).filter(Boolean)
-             .map(p => p.startsWith('/') ? p : '/'+p);
+  function parsePhotos(v){
+    let a = Array.isArray(v) ? v : String(v||'')
+      .replace(/[\r\n]+/g, ',')   // 改行→カンマ
+      .replace(/，/g, ',')        // 全角カンマ→半角
+      .split(',');
+    a = a.map(s=>String(s||'').trim())
+         .filter(Boolean)
+         .map(p=> p.startsWith('/') ? p : '/'+p);
     // /assets/img と /assets/images の両方を試す
-    const alt = [];
-    arr.forEach(p=>{
+    const alt=[]; 
+    a.forEach(p=>{
       alt.push(p);
-      if (p.startsWith('/assets/img/')) alt.push(p.replace('/assets/img/','/assets/images/'));
+      if (p.startsWith('/assets/img/'))    alt.push(p.replace('/assets/img/','/assets/images/'));
       if (p.startsWith('/assets/images/')) alt.push(p.replace('/assets/images/','/assets/img/'));
     });
     return [...new Set(alt)];
   }
 
-  // 3) 店名＆写真をどこにも出す（既存セクタが無くても自分で作る）
-  function renderHard(item){
-    LOG('item', item);
+  async function fetchJSON(u){
+    const r = await fetch(u,{cache:'no-store'});
+    return r.json();
+  }
 
-    // 店舗情報：既存ターゲット or 生成
-    const host = document.querySelector('#shopInfoSection') || document.body;
-    let info = host.querySelector('.bl-info');
-    if (!info) {
-      info = document.createElement('div');
-      info.className = 'bl-info';
-      info.style.cssText='background:#fff;border:1px solid #eee;border-radius:10px;padding:12px;margin:8px 0';
-      host.prepend(info);
+  async function getCatalog(){
+    const u = `${GAS.url}?kind=catalog&key=${encodeURIComponent(GAS.key)}&t=${Date.now()}`;
+    const j = await fetchJSON(u);
+    if (!j.ok) throw new Error(j.error||'catalog not ok');
+    return j.items||[];
+  }
+  async function getMenus(salonId){
+    const u = `${GAS.url}?kind=menus.list&salonId=${encodeURIComponent(salonId)}&key=${encodeURIComponent(GAS.key)}&t=${Date.now()}`;
+    const j = await fetchJSON(u);
+    return (j.ok && j.items)||[];
+  }
+  async function getCoupons(salonId){
+    const u = `${GAS.url}?kind=coupons.list&salonId=${encodeURIComponent(salonId)}&key=${encodeURIComponent(GAS.key)}&t=${Date.now()}`;
+    const j = await fetchJSON(u);
+    return (j.ok && j.items)||[];
+  }
+
+  function pickItem(items){
+    const q = new URLSearchParams(location.search);
+    const target = q.get('salonId') || q.get('id') || (location.hash||'').replace(/^#/, '');
+    let it = items.find(x=>String(x.id)===String(target));
+    if (!it){
+      $('#pickNote').style.display = '';
+      it = items.find(x => (x.name_ja || x.name_en || String(x.photos||'').trim())) || items[0];
     }
-    info.innerHTML = `
-      <div style="font-size:18px;font-weight:700">${item.name_ja || item.name_en || item.id}</div>
-      <div style="color:#6b5e55;margin-top:4px">${(item.type_ja||item.type_en||'')}${(item.place_ja||item.place_en)?' ・ '+(item.place_ja||item.place_en):''}</div>
-    `;
+    return it;
+  }
 
-    // 写真：既存ターゲット or 生成
-    let photoWrap = document.querySelector('[data-photos]') || document.querySelector('#photoSection');
-    if (!photoWrap) {
-      photoWrap = document.createElement('div');
-      photoWrap.id = 'photoSection';
-      photoWrap.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin:10px 0';
-      host.appendChild(photoWrap);
-    }
+  function renderInfo(it){
+    setText('#salonTitle', it.name_ja || it.name_en || it.id);
+    setText('#vType', it.type_ja || it.type_en || '-');
+    setText('#vPlace', it.place_ja || it.place_en || '-');
+    setText('#vPrice', it.price_jpy ? fmtJPY(it.price_jpy) : '-');
+    setText('#vRating', it.rating ? String(it.rating) : '-');
+    setText('#points', it.points_ja || it.points_en || '');
+    // 予約ボタン（必要ならURL差し替え）
+    $('#btnBook').onclick = (e)=>{e.preventDefault(); /* location.href='reserve.html?salonId='+encodeURIComponent(it.id); */ alert('予約導線は後で差し替え');};
+  }
 
-    const photos = normalizePhotos(item.photos);
-    photoWrap.innerHTML = '';
-    photos.forEach(src=>{
-      const img = document.createElement('img');
-      img.loading='lazy';
-      img.src = src;
-      img.alt = item.name_en || item.name_ja || 'photo';
-      img.style.cssText='width:100%;height:120px;object-fit:cover;border-radius:10px;border:1px solid #eee';
-      img.onerror = ()=> img.remove();
-      photoWrap.appendChild(img);
+  function renderGallery(it){
+    const photos = parsePhotos(it.photos);
+    const main = $('#gMain'); const thumbs = $('#gThumbs');
+    main.innerHTML = ''; thumbs.innerHTML = '';
+    if (!photos.length){ main.innerHTML = '<div class="notice">写真が未登録です（catalog の photos 列）</div>'; return; }
+    const show = (src)=> main.innerHTML = `<img src="${src}" alt="photo" onerror="this.remove()">`;
+    show(photos[0]);
+    photos.forEach((src)=>{
+      const img = new Image(); img.src = src; img.loading='lazy';
+      img.onclick=()=>show(src);
+      thumbs.appendChild(img);
     });
-    if (!photoWrap.children.length) {
-      photoWrap.innerHTML = '<div style="color:#6b5e55">写真が未登録です（catalog の photos 列）</div>';
+  }
+
+  function renderMap(it){
+    const lat = Number(it.lat), lng = Number(it.lng);
+    const map = $('#map'), route = $('#route');
+    if (Number.isFinite(lat)&&Number.isFinite(lng)&&!(lat===0&&lng===0)){
+      map.src = `https://www.google.com/maps?q=${lat},${lng}&z=15&hl=ja&output=embed`;
+      route.disabled = false;
+      route.onclick = ()=> window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving&hl=ja`,'_blank');
+    }else{
+      map.remove(); route.disabled = true;
+      $('#mapSection').insertAdjacentHTML('beforeend','<div class="notice">地図は未設定です。catalog の lat / lng を入れてね。</div>');
     }
   }
 
-  // === 実行（既に fetch 済みなら window.__catalog を利用、無ければ再フェッチ）
+  function renderMenus(items){
+    const box = $('#menuList'); const empty = $('#menuEmpty');
+    box.innerHTML = '';
+    if (!items.length){ empty.style.display=''; return; }
+    empty.style.display='none';
+    items.forEach(m=>{
+      const el = document.createElement('div'); el.className='card';
+      el.innerHTML = `<div class="section-title" style="font-size:16px">${m.name_ja||m.name_en||'-'}</div>
+        <div class="muted">${m.desc_ja||m.desc_en||''}</div>
+        <div class="space"></div>
+        <div><span class="chip">${m.duration_min||'-'}分</span> <span class="chip">${m.price_jpy?fmtJPY(m.price_jpy):'-'}</span></div>`;
+      box.appendChild(el);
+    });
+  }
+
+  function renderCoupons(items){
+    const box = $('#couponList'); const empty = $('#couponEmpty');
+    box.innerHTML = '';
+    if (!items.length){ empty.style.display=''; return; }
+    empty.style.display='none';
+    items.forEach(c=>{
+      const el = document.createElement('div'); el.className='card';
+      el.innerHTML = `<div class="section-title" style="font-size:16px">${c.name_ja||c.name_en||'-'}</div>
+        <div class="muted">${c.desc_ja||c.desc_en||''}</div>`;
+      box.appendChild(el);
+    });
+  }
+
+  function setupBack(){
+    $('#btnBack').addEventListener('click', (e)=>{
+      e.preventDefault();
+      try{
+        if (document.referrer && new URL(document.referrer).origin===location.origin) history.back();
+        else location.href='index.html';
+      }catch(_){ location.href='index.html'; }
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', async ()=>{
+    setupBack();
     try{
-      const have = window.__catalogItems; // 既存スクリプトが格納しているなら使う
-      let items = Array.isArray(have) ? have : null;
-      if (!items) {
-        // 既存の変数がなければ、埋め込み済みのGAS URL/KEYを流用して再取得
-        const GAS_EXEC_URL = window.__GAS_URL || (window.GAS_EXEC_URL ?? '');
-        const GAS_KEY = window.__GAS_KEY || (window.GAS_KEY ?? '');
-        if (!GAS_EXEC_URL || !GAS_KEY) throw new Error('GASのURL/KEYが見つからない');
-        const url = `${GAS_EXEC_URL}?kind=catalog&key=${encodeURIComponent(GAS_KEY)}&t=${Date.now()}`;
-        const j = await fetch(url,{cache:'no-store'}).then(r=>r.json());
-        if (!j.ok || !j.items?.length) throw new Error('catalog空');
-        items = j.items;
-      }
-      const item = pickItem(items);
-      renderHard(item);
+      const items = await getCatalog();
+      if (!items.length){ $('#infoCard').insertAdjacentHTML('afterbegin','<div class="notice">カタログが空です</div>'); return; }
+      const it = pickItem(items);
+      renderInfo(it);
+      renderGallery(it);
+      renderMap(it);
+      // 付随データ
+      Promise.all([getMenus(it.id), getCoupons(it.id)])
+        .then(([ms,cs])=>{ renderMenus(ms); renderCoupons(cs); })
+        .catch(()=>{ /* メニュー/クーポンは無くてもOK */ });
     }catch(e){
-      console.error('[details-force]', e);
+      console.error(e);
+      $('#infoCard').insertAdjacentHTML('afterbegin','<div class="notice">読み込みに失敗しました</div>');
     }
   });
 })();
 </script>
-
 </body>
 </html>

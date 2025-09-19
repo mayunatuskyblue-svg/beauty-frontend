@@ -204,6 +204,12 @@ body{ padding-bottom:60px; } /* avoid overlap */
   <!doctype html>
 <meta charset="utf-8">
 <title>Save card test</title>
+<script>
+// 予約ページ単体で動くように、固定で宣言しておく
+window.GAS_URL = 'https://script.google.com/macros/s/AKfycbxQHByDLRu-QlfAyRRMdM0-pGskH9Ka7IcFs9NeV2NB3DyDWhaLgvv8Hain_l9nZGvk/exec';
+window.GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
+</script>
+
 <script src="https://js.stripe.com/v3/"></script>
 <style>
   body{font:16px/1.6 system-ui; max-width:720px; margin:24px auto; padding:0 16px}
@@ -396,8 +402,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const item      = p.get('item')      || 'Reservation';
     // 既存: const priceUSD = Number(p.get('price') || 0);
     const priceJPY = Number(p.get('price_jpy') || 0);
-    document.getElementById('r_price').textContent =
-    priceJPY ? ('支払い: ¥' + priceJPY.toLocaleString('ja-JP')) : '支払い: 現地支払い';
+    if (!Number.isNaN(priceJPY) && priceJPY > 0) {
+  document.getElementById('r_price').textContent = `支払い: ¥${priceJPY.toLocaleString('ja-JP')}`;
+}
     const dateParam = p.get('date') || ''; // optional ?date=YYYY-MM-DD
 
     const LANG = localStorage.getItem('lang') || 'ja';

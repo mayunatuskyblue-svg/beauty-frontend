@@ -384,7 +384,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const salonId   = p.get('salonId')   || '';
     const salonName = p.get('salonName') || (salonId? ('Salon #' + salonId): '');
     const item      = p.get('item')      || 'Reservation';
-    const priceUSD  = Number(p.get('price') || 0);
+    // 既存: const priceUSD = Number(p.get('price') || 0);
+    const priceJPY = Number(p.get('price_jpy') || 0);
+    document.getElementById('r_price').textContent =
+    priceJPY ? ('支払い: ¥' + priceJPY.toLocaleString('ja-JP')) : '支払い: 現地支払い';
     const dateParam = p.get('date') || ''; // optional ?date=YYYY-MM-DD
 
     const LANG = localStorage.getItem('lang') || 'ja';

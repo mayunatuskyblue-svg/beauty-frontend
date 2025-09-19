@@ -299,5 +299,50 @@ if (!client_secret) {
   });
 })();
 </script>
+  <script>
+/* --- intercept create_setup_intent and retry with common endpoints --- */
+(() => {
+  // Render の URL をクエリ ?pay= または既存の PAY_SERVER から取得
+  const PAY = (new URLSearchParams(location.search).get('pay') || (window.PAY_SERVER || '')).replace(/\/+$/,'');
+  if (!PAY) { console.warn('[card-save] PAY_SERVER not set'); return; }
+
+  const candidates = [
+    `${PAY}/api/create_setup_intent`,
+    `${PAY}/api/create-setup-intent`,
+    `${PAY}/create_setup_intent`,
+    `${PAY}/create-setup-intent`,
+    `${PAY}/api/setup_intent`,
+    `${PAY}/api/setup-intent`,
+    `${PAY}/api/setup_intents/create`,
+    `${PAY}/setup_intent`,
+  ];
+
+  const origFetch = window.fetch.bind(window);
+
+  window.fetch = async function(input, init) {
+    const url = (typeof input === 'string') ? input : (input && input.url);
+    // 既存コードが /api/create_setup_intent を呼んだ時だけ横取り
+    if (typeof url === 'string' && /\/api\/create_setup_intent$/.test(url)) {
+      console.log('[card-save] intercept:', url);
+      let last;
+      for (const u of candidates) {
+        try {
+          console.log('[card-save] try:', u);
+          const r = await origFetch(u, init);
+          last = r;
+          if (r.ok) return r; // 成功したものを返す
+        } catch (e) {
+          console.warn('[card-save] fail:', u, e);
+        }
+      }
+      // すべて失敗したら最後の結果を返す（呼び元でハンドリング）
+      return last ?? origFetch(input, init);
+    }
+    // それ以外は素通し
+    return origFetch(input, init);
+  };
+})();
+</script>
+
 </body>
 </html>

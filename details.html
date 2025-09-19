@@ -205,11 +205,16 @@ async function getCatalog(){ const url=GAS_URL+'?kind=catalog&key='+encodeURICom
   if(hMenu && hMenu.textContent.trim().match(/^(メニュー|Menu)$/)) hMenu.textContent = (L==='en' ? 'Menu' : 'メニュー');
 
   const params = new URLSearchParams(location.search);
-  const salonId = params.get('salonId')||'';
-  try{
-    const items = await getCatalog();
-    let row = items.find(x=>x.id===salonId);
-    if(!row) row = items[0]; // salonIdが無ければ先頭
+const salonId = params.get('salonId') || '';
+const items = await getCatalog();
+console.log('[catalog items]', items.length, items[0]);
+
+let row = items.find(x => String(x.id) === String(salonId));
+// 店名 or 写真が入ってる行を優先して拾う
+if (!row) row = items.find(x => (x.name_ja || x.name_en || (Array.isArray(x.photos) ? x.photos.length : String(x.photos||'').trim()))) || items[0];
+
+console.log('[use row]', row);
+
 
     const name  = L==='en' ? (row.name_en||row.name_ja||'') : (row.name_ja||row.name_en||'');
     const place = L==='en' ? (row.place_en||row.place_ja||'') : (row.place_ja||row.place_en||'');

@@ -190,6 +190,16 @@ body{ padding-bottom:60px; } /* avoid overlap */
 <style id="hpGridCenterFINAL">
 #hpGrid table{ width:auto !important; margin:0 auto; display:table; }
 </style>
+  <style id="hpGridCenterButtons">
+  #hpGrid td { text-align: center; vertical-align: middle; }
+  #hpGrid td button {
+    display: inline-grid;
+    place-items: center;
+    width: 36px;
+    height: 28px;
+  }
+</style>
+
 </head>
   <!doctype html>
 <meta charset="utf-8">
@@ -502,10 +512,15 @@ document.addEventListener('DOMContentLoaded', ()=>{
   <div id="hpGrid" style="overflow:auto;border:1px solid var(--stroke);border-radius:12px"></div>
   <div id="hpLegend" style="margin-top:8px;color:#6b5e55;font-size:12px">◯ Available　× Unavailable</div>
 </section>
-  <section class="section">
+  <section class="section" id="cardSection" style="display:none">
   <h2>カード情報の保存（後払い用）</h2>
   <div id="bl-card-box"></div>
+  <!-- 同意チェックをこのセクションの末尾に1行足す（Saveボタンより上にあればどこでもOK） -->
+  <label style="display:flex;gap:.5rem;align-items:center;margin:.5rem 0">
+    <input type="checkbox" id="agree"> I agree to the Terms
+  </label>
 </section>
+
 
 <script>
 // HPB-like weekly schedule grid (append-only, non-destructive)
@@ -953,6 +968,94 @@ document.addEventListener('DOMContentLoaded', ()=>{
       meta.textContent = [min?(lang==='en'? `${min} min`:`${min}分`):'', prc?('¥'+Number(prc).toLocaleString('ja-JP')):''].filter(Boolean).join(' · ');
     });
   }catch(e){}
+})();
+</script>
+<script>
+/*__RES_MENU_FROM_GAS__*/
+(async () => {
+  try {
+    const GAS_URL = window.GAS_URL || (new URLSearchParams(location.search).get('gas') || ''); // 既に上で定義済ならそれを使う
+    const GAS_KEY = window.GAS_KEY || 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
+    if(!GAS_URL){ console.warn('GAS_URL not set; skip menu fetch'); return; }
+
+    const p = new URLSearchParams(location.search);
+    const salonId = p.get('salonId') || 'S1';
+
+    const res = await fetch(`${GAS_URL}?kind=menus.list&key=${encodeURIComponent(GAS_KEY)}&salonId=${encodeURIComponent(salonId)}`);
+    const j = await res.json().catch(()=>({}));
+    if(!j || !j.ok){ console.warn('menus.list failed', j); return; }
+
+    const sel  = document.getElementById('menuSelect');
+    const help = document.getElementById('menuHelp');
+    if(!sel) return;
+
+    // 空にしてプレースホルダーを置く
+    sel.innerHTML = '';
+    const pref = localStorage.getItem('bl_lang') || 'auto';
+    const isEN = (pref==='en') ? true : (pref==='ja' ? false : !((navigator.language||'').toLowerCase().startsWith('ja')));
+    const ph   = document.createElement('option');
+    ph.value = ''; ph.disabled = true; ph.selected = true;
+    ph.textContent = isEN ? 'Select a menu' : 'メニューを選択';
+    sel.appendChild(ph);
+
+    // 反映
+    (j.items||[]).forEach(m => {
+      const opt = document.createElement('option');
+      const name = isEN ? (m.name_en || m.name_ja || '-') : (m.name_ja || m.name_en || '-');
+      const dur  = m.duration_min ? ` (${m.duration_min}${isEN ? ' min' : '分'})` : '';
+      opt.value = m.name_en || m.name_ja || '-';
+      opt.textContent = name + dur;
+      opt.dataset.min = m.duration_min || '';
+      opt.dataset.jpy = m.price_jpy || '';
+      sel.appendChild(opt);
+    });
+
+    if(help && (j.items||[]).length === 0){
+      help.textContent = isEN ? 'No menu yet.' : 'メニューが未登録です。';
+    }
+
+    // 選択で価格/時間の表示を書き換え
+    sel.addEventListener('change', () => {
+      const o = sel.selectedOptions[0];
+      const mins = Number(o?.dataset?.min || 0);
+      const jpy  = Number(o?.dataset?.jpy || 0);
+      const elDur = document.getElementById('r_dur');
+      const elJPY = document.getElementById('r_price');
+      if(elDur) elDur.textContent = mins ? (isEN ? `Duration: ${mins} min` : `所要時間: ${mins}分`) : '';
+      if(elJPY) elJPY.textContent = jpy ? `支払い: ¥${jpy.toLocaleString('ja-JP')}` : (isEN ? 'Payment: Pay at shop' : '支払い: 現地支払い');
+    });
+  } catch(e){ console.error(e); }
+})();
+</script>
+<script>
+/*__RES_STAFFS_FROM_GAS__*/
+// ----- スタッフ一覧の読み込み -----
+(async () => {
+  try {
+    // A-2 と同じく、ここでも URL/KEY をローカルに定義（または window.GAS_URL/GAS_KEY を参照）
+    const GAS_URL = window.GAS_URL || (new URLSearchParams(location.search).get('gas') || '');
+    const GAS_KEY = window.GAS_KEY || 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
+    if (!GAS_URL) { console.warn('GAS_URL not set; skip staffs fetch'); return; }
+
+    const p = new URLSearchParams(location.search);
+    const salonId = p.get('salonId') || 'S1';
+
+    const r = await fetch(`${GAS_URL}?kind=staffs.list&key=${encodeURIComponent(GAS_KEY)}&salonId=${encodeURIComponent(salonId)}`);
+    const j = await r.json().catch(()=>({}));
+
+    const sel = document.getElementById('staffSelect');
+    if (!sel) return; // セレクトが無ければ何もしない
+
+    // 既定「指名なし」はそのまま残して、後ろに追加
+    (j.items || []).forEach(st => {
+      const o = document.createElement('option');
+      o.value = st.staff_id || (st.name_en || '');
+      o.textContent = st.name_en || 'Staff';
+      sel.appendChild(o);
+    });
+  } catch (e) {
+    console.error(e);
+  }
 })();
 </script>
 
@@ -1419,6 +1522,47 @@ sessionStorage.setItem('bl_pending_booking', JSON.stringify({
       note: ''
     });
   });
+})();
+</script>
+<script>
+/*__RES_CARD_SECTION_GATE__*/
+(function(){
+  const sec   = document.getElementById('cardSection');
+  const save  = document.getElementById('sp_save'); // 既存の保存ボタン（後で生成される場合もあるのでnullでもOK）
+  const agree = document.getElementById('agree');
+
+  // 選択済みフラグで Save 活性/非活性
+  function refresh(){
+    const picked = !!sessionStorage.getItem('pending_slot_iso') || !!sessionStorage.getItem('reserve_selected');
+    if(sec) sec.style.display = picked ? '' : 'none';
+    if(agree && save){
+      save.disabled = !(agree.checked && picked);
+    }
+  }
+
+  // 週グリッドのボタンクリックで「選ばれた時刻」を保存（他のコードでも set 済み）
+  const grid = document.getElementById('hpGrid');
+  if(grid){
+    grid.addEventListener('click', (ev)=>{
+      const btn = ev.target.closest('button');
+      if(!btn) return;
+      const iso = btn.dataset.iso || '';
+      if(iso){ sessionStorage.setItem('pending_slot_iso', iso); refresh(); }
+    });
+  }
+  if(agree){
+    agree.addEventListener('change', refresh);
+  }
+
+  // DOM 構築後・初期化
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', refresh);
+  }else{
+    refresh();
+  }
+
+  // 生成タイミングの違いに備えて少し監視
+  new MutationObserver(refresh).observe(document.body, {childList:true, subtree:true});
 })();
 </script>
 

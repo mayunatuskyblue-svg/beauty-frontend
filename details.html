@@ -180,22 +180,30 @@
   const setText = (sel, v) => { const el=$(sel); if(el) el.textContent = v||''; };
 
   function parsePhotos(v){
-    let a = Array.isArray(v) ? v : String(v||'')
-      .replace(/[\r\n]+/g, ',')   // 改行→カンマ
-      .replace(/，/g, ',')        // 全角カンマ→半角
-      .split(',');
-    a = a.map(s=>String(s||'').trim())
-         .filter(Boolean)
-         .map(p=> p.startsWith('/') ? p : '/'+p);
-    // /assets/img と /assets/images の両方を試す
-    const alt=[]; 
-    a.forEach(p=>{
-      alt.push(p);
-      if (p.startsWith('/assets/img/'))    alt.push(p.replace('/assets/img/','/assets/images/'));
-      if (p.startsWith('/assets/images/')) alt.push(p.replace('/assets/images/','/assets/img/'));
-    });
-    return [...new Set(alt)];
-  }
+  let a = Array.isArray(v) ? v : String(v||'')
+    .replace(/[\r\n]+/g, ',')
+    .replace(/，/g, ',')
+    .split(',');
+
+  a = a.map(s=>{
+    let p = String(s||'').trim();
+    if (!p) return '';
+    // ★ フォルダなしの裸ファイル名なら /assets/img/ を付ける
+    if (!p.includes('/')) p = '/assets/img/' + p;
+    // 先頭スラ無しを救済
+    if (!p.startsWith('/')) p = '/' + p;
+    return p;
+  }).filter(Boolean);
+
+  // /assets/img と /assets/images の両方を試す
+  const alt = [];
+  a.forEach(p=>{
+    alt.push(p);
+    if (p.startsWith('/assets/img/'))    alt.push(p.replace('/assets/img/','/assets/images/'));
+    if (p.startsWith('/assets/images/')) alt.push(p.replace('/assets/images/','/assets/img/'));
+  });
+  return [...new Set(alt)];
+}
 
   async function fetchJSON(u){
     const r = await fetch(u,{cache:'no-store'});

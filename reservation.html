@@ -102,6 +102,16 @@
 .brand-left{display:flex;align-items:center;gap:10px;text-decoration:none}
 .nav-right{display:flex;gap:8px;align-items:center}
 </style>
+  
+<style>
+#hpGrid td { text-align:center !important; vertical-align:middle !important; }
+#hpGrid td button {
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:36px; height:28px; line-height:28px;
+}
+</style>
 
 
 <style id="hide-old-slots">
@@ -218,7 +228,7 @@ window.GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
   button{padding:.6rem 1rem;border-radius:10px;border:1px solid #ddd;cursor:pointer}
   pre{background:#f7f7f7;border:1px solid #eee;padding:10px;border-radius:8px;white-space:pre-wrap}
 </style>
-
+<section id="devCardTest" style="display:none">
 <h1>Save card (SetupIntent) – test</h1>
 
 <div class="row">
@@ -238,7 +248,7 @@ window.GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
   <button id="save">Save card</button>
 </div>
 <pre id="out">Waiting…</pre>
-
+</section>
 <script>
   // ① 自分の値に置き換える
   const STRIPE_PK = 'pk_test_51S59dhHFHLP5RXi1qkW9cuPEJAlJPuSaFeWFb5GuYhsXs9vkX6RJYfVYwQEdK8TwN3eKF7wEctQftyhYxb2rRIZN00146bOW8U';               // 例: pk_test_51...
@@ -1065,6 +1075,34 @@ document.addEventListener('DOMContentLoaded', ()=>{
   }
 })();
 </script>
+<script>
+/*__RES_STAFFS_FROM_GAS__*/
+// ----- スタッフ一覧の読み込み -----
+(async () => {
+  try {
+    const GAS_URL = window.GAS_URL || (new URLSearchParams(location.search).get('gas') || '');
+    const GAS_KEY = window.GAS_KEY || 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
+    if (!GAS_URL) { console.warn('GAS_URL not set; skip staffs fetch'); return; }
+
+    const salonId = new URLSearchParams(location.search).get('salonId') || 'S1';
+    const r = await fetch(`${GAS_URL}?kind=staffs.list&key=${encodeURIComponent(GAS_KEY)}&salonId=${encodeURIComponent(salonId)}`);
+    const j = await r.json().catch(()=>({}));
+
+    const sel = document.getElementById('staffSelect');
+    if (!sel) return; // セレクトが無ければ何もしない
+
+    // 既定「指名なし」は残したまま追記
+    (j.items || []).forEach(st => {
+      const o = document.createElement('option');
+      o.value = st.staff_id || (st.name_en || '');
+      o.textContent = st.name_en || 'Staff';
+      sel.appendChild(o);
+    });
+  } catch (e) {
+    console.error(e);
+  }
+})();
+</script>
 
 
 <script>
@@ -1570,6 +1608,47 @@ sessionStorage.setItem('bl_pending_booking', JSON.stringify({
 
   // 生成タイミングの違いに備えて少し監視
   new MutationObserver(refresh).observe(document.body, {childList:true, subtree:true});
+})();
+</script>
+<script>
+// 1) 時間が選ばれたら #cardSection を出す
+(function(){
+  const sec = document.getElementById('cardSection');
+  if(!sec) return;
+  sec.style.display = 'none'; // 初期は隠す
+
+  // timetable で選択したISO文字列は adapter が sessionStorage に保存します
+  const KEY = 'pending_slot_iso';
+  // ページロード時に既に選択済みなら表示
+  if(sessionStorage.getItem(KEY)) sec.style.display = '';
+  // 以降のクリックでも表示
+  window.addEventListener('storage', (e)=>{
+    if(e.key === KEY && e.newValue){ sec.style.display = ''; sec.scrollIntoView({behavior:'smooth'}); }
+  });
+  // timetable の click フック（同一タブ内の変更に対応）
+  document.addEventListener('click', (ev)=>{
+    if((ev.target.tagName === 'BUTTON') && ev.target.dataset.iso){
+      sec.style.display = ''; sec.scrollIntoView({behavior:'smooth'});
+    }
+  });
+})();
+
+// 2) 「同意」で保存ボタンを有効化（mountFormで作る sp_save にも対応）
+(function(){
+  function wire(){
+    const agree = document.getElementById('agree');
+    const btn   = document.getElementById('sp_save');
+    if(!agree || !btn) return false;
+    const update = ()=> { btn.disabled = !agree.checked; };
+    agree.addEventListener('change', update);
+    update();
+    return true;
+  }
+  // mountForm 実行のタイミング対策
+  if(!wire()){
+    const mo = new MutationObserver(()=>{ wire() && mo.disconnect(); });
+    mo.observe(document.body, {childList:true, subtree:true});
+  }
 })();
 </script>
 

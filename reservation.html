@@ -102,16 +102,6 @@
 .brand-left{display:flex;align-items:center;gap:10px;text-decoration:none}
 .nav-right{display:flex;gap:8px;align-items:center}
 </style>
-  
-<style>
-#hpGrid td { text-align:center !important; vertical-align:middle !important; }
-#hpGrid td button {
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  width:36px; height:28px; line-height:28px;
-}
-</style>
 
 
 <style id="hide-old-slots">
@@ -210,16 +200,23 @@ body{ padding-bottom:60px; } /* avoid overlap */
   }
 </style>
 
+
+<script>
+window.SUPPORTED_CURRENCIES = ['JPY','USD','EUR','LKR'];
+function fmtMoney(amount, cur){
+  try { return new Intl.NumberFormat(undefined, {style:'currency', currency:cur}).format(amount); }
+  catch(_){ return (cur==='JPY'?'¥':cur+' ') + Math.round(amount).toLocaleString(); }
+}
+window.FX_FROM_JPY = { JPY:1, USD:0.0067, EUR:0.0061, LKR:19.5 };
+function jpyTo(amountJPY, cur){
+  const f = window.FX_FROM_JPY[cur] ?? 1;
+  return amountJPY * f;
+}
+</script>
 </head>
   <!doctype html>
 <meta charset="utf-8">
 <title>Save card test</title>
-<script>
-// 予約ページ単体で動くように、固定で宣言しておく
-window.GAS_URL = 'https://script.google.com/macros/s/AKfycbxQHByDLRu-QlfAyRRMdM0-pGskH9Ka7IcFs9NeV2NB3DyDWhaLgvv8Hain_l9nZGvk/exec';
-window.GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
-</script>
-
 <script src="https://js.stripe.com/v3/"></script>
 <style>
   body{font:16px/1.6 system-ui; max-width:720px; margin:24px auto; padding:0 16px}
@@ -228,8 +225,8 @@ window.GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
   button{padding:.6rem 1rem;border-radius:10px;border:1px solid #ddd;cursor:pointer}
   pre{background:#f7f7f7;border:1px solid #eee;padding:10px;border-radius:8px;white-space:pre-wrap}
 </style>
-<section id="devCardTest" style="display:none">
-<h1>Save card (SetupIntent) – test</h1>
+
+<section id="devCardTest" style="display:none"><h1>Save card (SetupIntent) – test</h1>
 
 <div class="row">
   <label>Email<br><input id="email" placeholder="you@example.com" style="width:360px"></label>
@@ -248,7 +245,7 @@ window.GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
   <button id="save">Save card</button>
 </div>
 <pre id="out">Waiting…</pre>
-</section>
+
 <script>
   // ① 自分の値に置き換える
   const STRIPE_PK = 'pk_test_51S59dhHFHLP5RXi1qkW9cuPEJAlJPuSaFeWFb5GuYhsXs9vkX6RJYfVYwQEdK8TwN3eKF7wEctQftyhYxb2rRIZN00146bOW8U';               // 例: pk_test_51...
@@ -314,39 +311,26 @@ window.GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
   const GAS_URL = 'https://script.google.com/macros/s/AKfycbwJz67fvPpB1tJ7IWggPFWJ-2tBydVOHikzFvviS36_8LOD8YW7jn3vWjWF9f3ngomH/exec'; // ②で控えたURL
   const GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';         // ②の GAS_KEY と同じ
 
-  async function recordToSheet({ email, name, customerId, paymentMethodId }) {
-    const payload = { key: GAS_KEY, email, name, customerId, paymentMethodId };
-    // CORSが厳しい環境では Content-Type を text/plain に
-    const res = await fetch(GAS_URL, {
+  
+async function recordToSheet({ email, name, customerId, paymentMethodId }) {
+  try{
+    const payload = { key: window.GAS_KEY || GAS_KEY, kind: 'customer', data: { email, name, customerId, paymentMethodId } };
+    const res = await fetch(window.GAS_URL || GAS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload),
-      type: 'booking',
-      bookingId,           // BL-20250917-001 みたいなID
-      email, name,
-      amountJPY,           // 整数
-      customerId           // 保存済みの顧客ID（あれば）
-    })
-  });
-
-    // 必要なら結果を見る
-    try {
-      const json = await res.json();
-      if (!json.ok) throw new Error(json.error || 'GAS error');
-      console.log('Sheet saved:', json);
-    } catch (e) {
-      console.warn('Sheet save (parse) error:', e);
-    }
+      body: JSON.stringify(payload)
+    });
+    const j = await res.json().catch(()=>({}));
+    if(!j.ok) console.warn('save to customers failed', j);
+    else console.log('customers saved', j);
+  }catch(e){
+    console.warn('recordToSheet error', e);
   }
-
-  // ★ save-card 成功時の既存コードの最後に足すだけ
-  // 例: save-card-test.htmlの成功表示の直後など
-  async function onCardSavedSuccess({ email, name, customerId, paymentMethodId }) {
-    await recordToSheet({ email, name, customerId, paymentMethodId });
-  }
+}
 </script>
 
 
+</section>
 <body>
   <div class="container">
     <a id="back" class="back-link" href="./index.html">← サイトへ戻る</a>
@@ -412,28 +396,24 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const item      = p.get('item')      || 'Reservation';
     // 既存: const priceUSD = Number(p.get('price') || 0);
     const priceJPY = Number(p.get('price_jpy') || 0);
-    if (!Number.isNaN(priceJPY) && priceJPY > 0) {
-  document.getElementById('r_price').textContent = `支払い: ¥${priceJPY.toLocaleString('ja-JP')}`;
-}
+    document.getElementById('r_price').textContent =
+    priceJPY ? ('支払い: ¥' + priceJPY.toLocaleString('ja-JP')) : '支払い: 現地支払い';
     const dateParam = p.get('date') || ''; // optional ?date=YYYY-MM-DD
 
-    const LANG = localStorage.getItem('lang') || 'ja';
-    const USD_TO_JPY = Number(localStorage.getItem('usd_to_jpy')) || 170;
-    const usd=n=> '$'+Number(n).toFixed(2);
-    const jpy=n=> '¥'+Math.round(Number(n)*USD_TO_JPY).toLocaleString('ja-JP');
-    const money = n => LANG==='ja'? jpy(n): usd(n);
+    
+    // ===== Currency-aware initial display =====
+    const cur = (p.get('cur')||sessionStorage.getItem('bl_currency')||'JPY').toUpperCase();
+    const priceParam = Number(p.get('price')||0);
+    const priceJ = Number(p.get('price_jpy')||0);
+    const priceInView = priceParam>0 ? priceParam : (priceJ>0 ? jpyTo(priceJ, cur) : 0);
 
     document.getElementById('r_item').textContent=item;
     document.getElementById('r_salon').textContent= salonName || 'Salon #-';
-    document.getElementById('r_price').textContent = priceUSD ? ('支払い: ' + money(priceUSD)) : '支払い: 現地支払い';
-
-    const warn = document.getElementById('r_warn');
-    if(!salonId || !item){
-      warn.style.display = 'block';
-      warn.textContent = '予約メニューの情報が不足しています。サロンの「詳細」→「予約へ」から入り直してください。';
-    }
-
-    const slotsEl = document.getElementById('slots');
+    const priceEl = document.getElementById('r_price');
+    priceEl.dataset.cur = cur;
+    priceEl.textContent = priceInView ? ('支払い: ' + fmtMoney(priceInView, cur)) : '支払い: 現地支払い';
+    sessionStorage.setItem('bl_currency', cur);
+const slotsEl = document.getElementById('slots');
     const genBtn = document.getElementById('gen');
     const dateEl = document.getElementById('date');
     const noSlots = document.getElementById('noSlots');
@@ -1039,7 +1019,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
       const elDur = document.getElementById('r_dur');
       const elJPY = document.getElementById('r_price');
       if(elDur) elDur.textContent = mins ? (isEN ? `Duration: ${mins} min` : `所要時間: ${mins}分`) : '';
-      if(elJPY) elJPY.textContent = jpy ? `支払い: ¥${jpy.toLocaleString('ja-JP')}` : (isEN ? 'Payment: Pay at shop' : '支払い: 現地支払い');
+      const curNow = (document.getElementById('r_price').dataset.cur || sessionStorage.getItem('bl_currency') || 'JPY').toUpperCase();
+      if(elJPY) elJPY.textContent = jpy ? `支払い: ${fmtMoney(jpyTo(jpy, curNow), curNow)}` : (isEN ? 'Payment: Pay at shop' : '支払い: 現地支払い');
     });
   } catch(e){ console.error(e); }
 })();
@@ -1064,34 +1045,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if (!sel) return; // セレクトが無ければ何もしない
 
     // 既定「指名なし」はそのまま残して、後ろに追加
-    (j.items || []).forEach(st => {
-      const o = document.createElement('option');
-      o.value = st.staff_id || (st.name_en || '');
-      o.textContent = st.name_en || 'Staff';
-      sel.appendChild(o);
-    });
-  } catch (e) {
-    console.error(e);
-  }
-})();
-</script>
-<script>
-/*__RES_STAFFS_FROM_GAS__*/
-// ----- スタッフ一覧の読み込み -----
-(async () => {
-  try {
-    const GAS_URL = window.GAS_URL || (new URLSearchParams(location.search).get('gas') || '');
-    const GAS_KEY = window.GAS_KEY || 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
-    if (!GAS_URL) { console.warn('GAS_URL not set; skip staffs fetch'); return; }
-
-    const salonId = new URLSearchParams(location.search).get('salonId') || 'S1';
-    const r = await fetch(`${GAS_URL}?kind=staffs.list&key=${encodeURIComponent(GAS_KEY)}&salonId=${encodeURIComponent(salonId)}`);
-    const j = await r.json().catch(()=>({}));
-
-    const sel = document.getElementById('staffSelect');
-    if (!sel) return; // セレクトが無ければ何もしない
-
-    // 既定「指名なし」は残したまま追記
     (j.items || []).forEach(st => {
       const o = document.createElement('option');
       o.value = st.staff_id || (st.name_en || '');
@@ -1610,48 +1563,85 @@ sessionStorage.setItem('bl_pending_booking', JSON.stringify({
   new MutationObserver(refresh).observe(document.body, {childList:true, subtree:true});
 })();
 </script>
+
+
+
 <script>
-// 1) 時間が選ばれたら #cardSection を出す
+// (disabled) Show card section only after a slot is chosen
 (function(){
   const sec = document.getElementById('cardSection');
   if(!sec) return;
-  sec.style.display = 'none'; // 初期は隠す
-
-  // timetable で選択したISO文字列は adapter が sessionStorage に保存します
+  // Ensure hidden initially
+  sec.style.display = 'none';
   const KEY = 'pending_slot_iso';
-  // ページロード時に既に選択済みなら表示
-  if(sessionStorage.getItem(KEY)) sec.style.display = '';
-  // 以降のクリックでも表示
-  window.addEventListener('storage', (e)=>{
-    if(e.key === KEY && e.newValue){ sec.style.display = ''; sec.scrollIntoView({behavior:'smooth'}); }
-  });
-  // timetable の click フック（同一タブ内の変更に対応）
-  document.addEventListener('click', (ev)=>{
-    if((ev.target.tagName === 'BUTTON') && ev.target.dataset.iso){
-      sec.style.display = ''; sec.scrollIntoView({behavior:'smooth'});
+  const showIfReady = () => {
+    if (sessionStorage.getItem(KEY)) {
+      sec.style.display = '';
+    }
+  };
+  document.addEventListener('click', (ev) => {
+    const b = ev.target.closest('button');
+    if (b && b.dataset && b.dataset.iso) {
+      // Slot chosen
+      sessionStorage.setItem(KEY, b.dataset.iso);
+      showIfReady();
+      sec.scrollIntoView({behavior:'smooth'});
     }
   });
+  // On load, in case we came back from another step
+  showIfReady();
 })();
-
-// 2) 「同意」で保存ボタンを有効化（mountFormで作る sp_save にも対応）
+// Require "I agree" before enabling save
 (function(){
-  function wire(){
-    const agree = document.getElementById('agree');
-    const btn   = document.getElementById('sp_save');
-    if(!agree || !btn) return false;
-    const update = ()=> { btn.disabled = !agree.checked; };
-    agree.addEventListener('change', update);
-    update();
-    return true;
-  }
-  // mountForm 実行のタイミング対策
-  if(!wire()){
-    const mo = new MutationObserver(()=>{ wire() && mo.disconnect(); });
-    mo.observe(document.body, {childList:true, subtree:true});
-  }
+  const agree = document.getElementById('agree');
+  const save  = document.getElementById('sp_save');
+  if(!agree || !save) return;
+  const update = () => { save.disabled = !agree.checked; };
+  agree.addEventListener('change', update);
+  update();
 })();
 </script>
 
+
+<script>
+// ---- Redirect to card_save.html after selecting a time slot ----
+(function(){
+  document.addEventListener('click', (ev) => {
+    const btn = ev.target.closest('button');
+    if (!btn || !btn.dataset || !btn.dataset.iso) return;
+    const iso = btn.dataset.iso;
+
+    // collect context
+    const p = new URLSearchParams(location.search);
+    const salonId   = p.get('salonId')   || 'S1';
+    const salonName = p.get('salonName') || (document.getElementById('r_salon')?.textContent || '');
+    const cur       = (sessionStorage.getItem('bl_currency') || p.get('cur') || 'JPY').toUpperCase();
+
+    const menuSel = document.getElementById('menuSelect');
+    const opt = menuSel?.selectedOptions?.[0];
+    const menu = opt?.textContent || p.get('item') || '-';
+    const priceJPY = Number(opt?.dataset?.jpy || 0);
+    const minutes  = Number(opt?.dataset?.min || 0);
+
+    const staffSel = document.getElementById('staffSelect');
+    const staff = staffSel?.selectedOptions?.[0]?.textContent || '';
+
+    const q = new URLSearchParams({
+      salonId, salonName,
+      menu,
+      staff,
+      iso,
+      cur,
+      price_jpy: String(priceJPY || ''),
+      minutes: String(minutes || '')
+      // you can also pass gas/pk here if needed:
+      // gas: (window.GAS_URL || ''),
+      // pk:  (window.__STRIPE_PK__ || '')
+    });
+    location.href = 'card_save.html?' + q.toString();
+  });
+})();
+</script>
 
 </body>
 

@@ -219,10 +219,16 @@ for (const u of setupIntentUrls) {
     lastStatus = r.status;
     const txt = await r.text();
     let j={}; try { j = JSON.parse(txt); } catch(_){}
-    if (r.ok && (j.client_secret || (j.data && j.data.client_secret))) {
-      client_secret = j.client_secret || j.data.client_secret;
-      break;
-    }
+    // client_secret / clientSecret の両方に対応
+const gotSecret =
+  j.client_secret || j.clientSecret ||
+  (j.data && (j.data.client_secret || j.data.clientSecret));
+
+if (r.ok && gotSecret) {
+  client_secret = gotSecret;
+  break;
+}
+
   } catch (e) { lastText = String(e); }
 }
 if (!client_secret) {

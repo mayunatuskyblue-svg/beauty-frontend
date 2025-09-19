@@ -395,6 +395,150 @@ async function setupReviews(L, salonRow, salonName){
   };
 }
 </script>
+<script>
+// ---- 強制デバッグ表示（症状の見える化） ----
+(function(){
+  const LOG = (...a)=>console.log('[details-debug]', ...a);
+
+  // ★ 1) GASからcatalog取得（キャッシュ無効化 & エラー表示）
+  async function fetchCatalogSafe(GAS_EXEC_URL, GAS_KEY){
+    const url = `${GAS_EXEC_URL}?kind=catalog&key=${encodeURIComponent(GAS_KEY)}&t=${Date.now()}`;
+    const res = await fetch(url, {cache:'no-store'});
+    const j = await res.json().catch(()=>({ok:false, error:'json parse'}));
+    LOG('catalog api result', j);
+    if (!j.ok) throw new Error('GAS not ok: ' + (j.error||''));
+    if (!j.items || !j.items.length) {
+      uiNotice('カタログが空です。catalogシートの id / photos / lat / lng を確認してね。');
+      throw new Error('empty items');
+    }
+    return j.items;
+  }
+
+  // ★ 2) 写真欄のゆらぎを吸収（全角カンマ・改行・先頭スラ無し）
+  function parsePhotos(v){
+    if (Array.isArray(v)) return v;
+    const arr = String(v||'')
+      .replace(/[\r\n]+/g, ',')
+      .replace(/，/g, ',')
+      .split(',')
+      .map(s=>s.trim())
+      .filter(Boolean)
+      .map(s=> s.startsWith('/') ? s : '/'+s);
+    // 404救済（/assets/images にも同名があるケース）
+    const alt = [];
+    arr.forEach(p=>{
+      alt.push(p);
+      if (p.startsWith('/assets/img/')) alt.push(p.replace('/assets/img/','/assets/images/'));
+    });
+    return [...new Set(alt)];
+  }
+
+  // ★ 3) idの決め方（?id= または #id、無ければ先頭）
+  function pickItem(items){
+    const params = new URLSearchParams(location.search);
+    const fromQS = params.get('id') || '';
+    const fromHash = location.hash ? location.hash.replace(/^#/, '') : '';
+    const targetId = fromQS || fromHash;
+    let item = items.find(x => String(x.id)===String(targetId));
+    if (!item) {
+      item = items[0];
+      uiNotice('対象が見つからなかったので先頭のサロンを表示しています');
+    }
+    return item;
+  }
+
+  // ★ 4) UIへの反映（最低限：写真・地図・店名）
+  function renderItem(item){
+    LOG('render item', item);
+    // タイトル（存在すれば）
+    const ttl = document.querySelector('[data-salon-title]');
+    if (ttl) ttl.textContent = item.name_ja || item.name_en || item.id || 'Salon';
+
+    // 写真
+    const photos = parsePhotos(item.photos);
+    const box = document.querySelector('[data-photos]');
+    if (box) {
+      box.innerHTML = '';
+      photos.forEach(src=>{
+        const img = document.createElement('img');
+        img.loading = 'lazy';
+        img.referrerPolicy = 'no-referrer';
+        img.src = src;
+        img.alt = item.name_en || item.name_ja || 'photo';
+        img.onerror = ()=> img.remove();
+        box.appendChild(img);
+      });
+      if (!box.children.length) box.innerHTML = '<div class="meta">写真が未設定です（catalogシートのphotos列）</div>';
+    }
+
+    // 地図
+    const lat = Number(item.lat), lng = Number(item.lng);
+    const mapEl = document.querySelector('#map');
+    const routeBtn = document.querySelector('#route');
+    const mapSection = document.querySelector('#mapSection') || document.body;
+
+    if (Number.isFinite(lat) && Number.isFinite(lng) && !(lat===0 && lng===0)) {
+      if (mapEl) mapEl.src = `https://www.google.com/maps?q=${lat},${lng}&z=15&hl=ja&output=embed`;
+      if (routeBtn) {
+        routeBtn.disabled = false;
+        routeBtn.onclick = () =>
+          window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving&hl=ja`,'_blank');
+      }
+    } else {
+      if (mapEl) mapEl.remove();
+      if (routeBtn) routeBtn.disabled = true;
+      const note = document.createElement('div');
+      note.className = 'meta';
+      note.style.cssText = 'margin-top:6px;color:#6b5e55';
+      note.textContent = '地図は未設定です。catalogシートの lat / lng に数値を入れると表示されます。';
+      mapSection.appendChild(note);
+    }
+  }
+
+  // ★ 5) 戻るボタンの安定化（リファラが同一オリジンならback、そうでなければindexへ）
+  function setupBack(){
+    const btn = document.querySelector('[data-back], .js-back');
+    if (!btn) return;
+    btn.addEventListener('click', (e)=>{
+      e.preventDefault();
+      try{
+        if (document.referrer && new URL(document.referrer).origin === location.origin) history.back();
+        else location.href = 'index.html';
+      }catch(_){
+        location.href = 'index.html';
+      }
+    });
+  }
+
+  // 画面内に通知
+  function uiNotice(msg){
+    const host = document.querySelector('#shopInfoSection') || document.body;
+    const d = document.createElement('div');
+    d.className = 'notice';
+    d.style.cssText = 'padding:.75em 1em;margin:.75em 0;background:#fff7e6;border:1px solid #ffd18a;border-radius:6px;color:#6b5e55';
+    d.textContent = msg;
+    host.appendChild(d);
+  }
+
+  // ---- 実行（あなたのURLとキーを設定） ----
+  document.addEventListener('DOMContentLoaded', async ()=>{
+    try{
+      // ▼▼ ここの2つをあなたの値に置き換え ▼▼
+      const GAS_EXEC_URL = 'https://script.google.com/macros/s/AKfycbxQHByDLRu-QlfAyRRMdM0-pGskH9Ka7IcFs9NeV2NB3DyDWhaLgvv8Hain_l9nZGvk/exec';
+      const GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
+      // ▲▲ ここまで ▲▲
+
+      setupBack();
+      const items = await fetchCatalogSafe(GAS_EXEC_URL, GAS_KEY);
+      const item = pickItem(items);
+      renderItem(item);
+    }catch(err){
+      console.error(err);
+      uiNotice('読み込みに失敗しました。コンソールのエラーを送ってくれたらすぐ直すよ。');
+    }
+  });
+})();
+</script>
 
 </body>
 </html>

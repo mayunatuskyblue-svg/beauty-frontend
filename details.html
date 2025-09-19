@@ -512,7 +512,7 @@ async function setupReviews(L, salonRow, salonName){
       try{
         if (document.referrer && new URL(document.referrer).origin === location.origin) history.back();
         else location.href = 'index.html';
-      }catch(_){
+      }catch(e){
         location.href = 'index.html';
       }
     });
@@ -532,7 +532,7 @@ async function setupReviews(L, salonRow, salonName){
   document.addEventListener('DOMContentLoaded', async ()=>{
     try{
       // ▼▼ ここの2つをあなたの値に置き換え ▼▼
-      const GAS_EXEC_URL = 'https://script.google.com/macros/s/AKfycbwJz67fvPpB1tJ7IWggPFWJ-2tBydVOHikzFvviS36_8LOD8YW7jn3vWjWF9f3ngomH/exec';
+      const GAS_EXEC_URL = 'https://script.google.com/macros/s/AKfycbxQHByDLRu-QlfAyRRMdM0-pGskH9Ka7IcFs9NeV2NB3DyDWhaLgvv8Hain_l9nZGvk/exec';
       const GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
       // ▲▲ ここまで ▲▲
 

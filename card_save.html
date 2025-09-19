@@ -73,7 +73,7 @@ function makeBookingId({salonId, iso, email}){
     
 <section class="section" id="confirmStep">
   <p class="small muted">以下の内容でよろしければ、利用規約に同意して「カード情報の入力へ」を押してください。</p>
-  <label class="agree"><input type="checkbox" id="agree"> I agree to the Terms</label>
+  <label class="agree"><input type="checkbox" id="agree2"> I agree to the Terms</label>
   <div class="actions">
     <button id="goCard" class="btn" disabled>カード情報の入力へ</button>
     <a href="javascript:history.back()" class="back muted small">← 戻る</a>
@@ -112,7 +112,7 @@ function makeBookingId({salonId, iso, email}){
   const salonId   = p.get('salonId') || 'S1';
   const salonName = p.get('salonName') || ('Salon #' + salonId);
   const menu      = p.get('menu') || p.get('item') || '-';
-  const staff     = p.get('staff') || '-';
+  const staff     = p.get('staff') || p.get('staffName') || '-';
   const iso       = p.get('iso') || '';
   const cur       = (p.get('cur') || sessionStorage.getItem('bl_currency') || 'JPY').toUpperCase();
   const jpy       = Number(p.get('price_jpy')||0);

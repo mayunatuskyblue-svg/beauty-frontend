@@ -264,18 +264,65 @@
   }
 
   function renderGallery(it){
-    const photos = parsePhotos(it.photos);
-    const main = $('#gMain'); const thumbs = $('#gThumbs');
-    main.innerHTML = ''; thumbs.innerHTML = '';
-    if (!photos.length){ main.innerHTML = '<div class="notice">写真が未登録です（catalog の photos 列）</div>'; return; }
-    const show = (src)=> main.innerHTML = `<img src="${src}" alt="photo" onerror="this.remove()">`;
-    show(photos[0]);
-    photos.forEach((src)=>{
-      const img = new Image(); img.src = src; img.loading='lazy';
-      img.onclick=()=>show(src);
-      thumbs.appendChild(img);
-    });
+  const main = document.querySelector('#gMain');
+  const thumbs = document.querySelector('#gThumbs');
+  main.innerHTML = ''; thumbs.innerHTML = '';
+
+  // 1) 値のゆらぎ吸収 + 代替候補を作る
+  let raw = Array.isArray(it.photos) ? it.photos : String(it.photos||'')
+    .replace(/[\r\n]+/g, ',').replace(/，/g, ',').split(',');
+  raw = raw.map(s => String(s||'').trim()).filter(Boolean);
+
+  // 裸ファイル名は /assets/images/ を補完（実ファイルが images にある前提）
+  raw = raw.map(p => {
+    if (!p.includes('/')) p = '/assets/images/' + p;
+    if (!p.startsWith('/')) p = '/' + p;
+    return p;
+  });
+
+  // 各エントリに img / images の両方の候補を用意
+  const pairs = raw.map(p => {
+    const a = p.replace('/assets/images/','/assets/img/');
+    const b = p.replace('/assets/img/','/assets/images/');
+    // どちらが元でも [images版, img版] の順にしておく（images優先）
+    return p.includes('/assets/images/') ? [p, a] : [b, p];
+  });
+
+  if (!pairs.length){
+    main.innerHTML = '<div class="notice">写真が未登録です（catalog の photos 列）</div>';
+    return;
   }
+
+  // 2) 最初の1枚は“ロード成功するまで”順番に試す
+  (function showFirstAvailable(list){
+    const img = new Image();
+    let i = 0;
+    img.onload = () => { main.innerHTML = ''; main.appendChild(img); };
+    img.onerror = () => { if (++i < list.length) img.src = list[i]; else main.innerHTML = '<div class="notice">画像が見つかりません</div>'; };
+    img.src = list[i];
+  })(pairs[0]);
+
+  // 3) サムネは“成功したものだけ”並べる
+  pairs.forEach(alts => {
+    const t = new Image();
+    t.loading = 'lazy';
+    let i = 0;
+    t.onerror = () => { if (++i < alts.length) t.src = alts[i]; else t.remove(); };
+    t.onload  = () => { t.onclick = () => {
+      // クリックでメインも同じ候補順で再試行
+      (function show(list){
+        const big = new Image();
+        let j = 0;
+        big.onload = () => { main.innerHTML=''; main.appendChild(big); };
+        big.onerror= () => { if (++j < list.length) big.src = list[j]; else main.innerHTML='<div class="notice">画像が見つかりません</div>'; };
+        big.src = list[j];
+      })(alts);
+    }; };
+    t.src = alts[i];
+    thumbs.appendChild(t);
+  });
+}
+
 
   function renderMap(it){
     const lat = Number(it.lat), lng = Number(it.lng);

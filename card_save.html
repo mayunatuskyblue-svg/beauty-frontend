@@ -11,7 +11,7 @@
 <script>
   /* ここはそのままでOK（URLの ?pk=... でも上書き可能） */
   window.STRIPE_PK = window.STRIPE_PK || 'pk_test_51S59dhHFHLP5RXi1qkW9cuPEJAlJPuSaFeWFb5GuYhsXs9vkX6RJYfVYwQEdK8TwN3eKF7wEctQftyhYxb2rRIZN00146bOW8U';
-  const PAY_SERVER = 'https://pay-server-uis7.onrender.com';
+  const PAY_SERVER = 'https://pay-server-uis7.onrender.com'; /* ←あなたの Render URL */
 </script>
 
 <style>
@@ -188,10 +188,7 @@ function makeBookingId({salonId, iso, email}){
 
     try{
       // ==== SetupIntent を作成（Render の pay-server を順番トライ） ====
-      // ?pay= で Render のURLを上書きできるようにもしておく
       const PAY = (new URLSearchParams(location.search).get('pay') || PAY_SERVER || '').replace(/\/+$/,'');
-
-      // サーバによってエンドポイント表記が違うことがあるので候補を総当り
       const setupIntentUrls = [
         `${PAY}/api/create_setup_intent`,
         `${PAY}/api/create-setup-intent`,
@@ -203,37 +200,27 @@ function makeBookingId({salonId, iso, email}){
         `${PAY}/setup_intent`
       ];
 
-      let client_secret = '';
-      let lastStatus = 0, lastText = '';
-
+      let client_secret = '', tried = [], lastStatus = 0, lastText = '';
       for (const u of setupIntentUrls) {
         try {
-          console.log('[card-save] try:', u);
+          tried.push(u);
           const r = await fetch(u, {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({ email, name })
           });
           lastStatus = r.status;
-          const txt = await r.text();               // HTMLが返っても落ちないようにいったん text で受ける
-          let j = {};
-          try { j = JSON.parse(txt); } catch (_){}
-          console.log('[card-save] resp', r.status, txt.slice(0,180));
+          const txt = await r.text();      // HTMLが返っても落ちないように text 受け
+          let j={}; try { j = JSON.parse(txt); } catch(_){}
           if (r.ok && (j.client_secret || (j.data && j.data.client_secret))) {
             client_secret = j.client_secret || j.data.client_secret;
             break;
           }
-        } catch (e) {
-          lastText = String(e);
-          console.warn('[card-save] err:', e);
-        }
+        } catch (e) { lastText = String(e); }
       }
-
       if (!client_secret) {
-        throw new Error(
-          `SetupIntent API not found.\nPAY=${PAY}\nlastStatus=${lastStatus}\nbody=${lastText || '(no body)'}\n` +
-          `サーバのエンドポイント名を確認してください（/api/create-setup-intent 等）。`
-        );
+        console.error('[card-save] endpoints tried:', tried);
+        throw new Error(`SetupIntent API not found (last=${lastStatus}).\nPAY=${PAY}\n${lastText || ''}`);
       }
 
       // Stripe にカード保存を依頼
@@ -285,64 +272,5 @@ function makeBookingId({salonId, iso, email}){
   });
 })();
 </script>
-
-<!-- ここから下は、最小削除で足したフェイルセーフ（既存fetchを横取りして候補を総当り） -->
-<script>
-(() => {
-  const PAY = (new URLSearchParams(location.search).get('pay') || (window.PAY_SERVER || '')).replace(/\/+$/,'');
-  if (!PAY) { console.warn('[card-save] PAY_SERVER not set'); return; }
-
-  const candidates = [
-    `${PAY}/api/create_setup_intent`,
-    `${PAY}/api/create-setup-intent`,
-    `${PAY}/create_setup_intent`,
-    `${PAY}/create-setup-intent`,
-    `${PAY}/api/setup_intent`,
-    `${PAY}/api/setup-intent`,
-    `${PAY}/api/setup_intents/create`,
-    `${PAY}/setup_intent`,
-  ];
-
-  const origFetch = window.fetch.bind(window);
-
-  window.fetch = async function(input, init) {
-    const url = (typeof input === 'string') ? input : (input && input.url);
-    if (typeof url === 'string' && /\/api\/create_setup_intent$/.test(url)) {
-      console.log('[card-save] intercept:', url);
-      let last;
-      for (const u of candidates) {
-        try {
-          console.log('[card-save] try:', u);
-          const r = await origFetch(u, init);
-          last = r;
-          if (r.ok) return r;
-        } catch (e) {
-          console.warn('[card-save] fail:', u, e);
-        }
-      }
-      return last ?? origFetch(input, init);
-    }
-    return origFetch(input, init);
-  };
-})();
-</script>
-
-<script>
-/* 相対パスで /api/create_setup_intent が呼ばれた場合を、強制的に絶対URLへ補正 */
-(() => {
-  const FULL = 'https://pay-server-uis7.onrender.com/api/create_setup_intent';
-  const origFetch = window.fetch.bind(window);
-
-  window.fetch = function(input, init) {
-    const url = (typeof input === 'string') ? input : (input && input.url);
-    if (typeof url === 'string' && /\/api\/create_setup_intent$/.test(url)) {
-      console.log('[card-save] force:', FULL);
-      return origFetch(FULL, init);
-    }
-    return origFetch(input, init);
-  };
-})();
-</script>
-
 </body>
 </html>

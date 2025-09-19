@@ -343,6 +343,23 @@ if (!client_secret) {
   };
 })();
 </script>
+<script>
+/* /api/create_setup_intent 以外へ行ってしまうのを強制的に矯正するパッチ */
+(() => {
+  const FULL = 'https://pay-server-uis7.onrender.com/api/create_setup_intent'; // ←あなたのRender
+  const origFetch = window.fetch.bind(window);
+
+  window.fetch = function(input, init) {
+    const url = (typeof input === 'string') ? input : (input && input.url);
+    // 既存コードが /api/create_setup_intent を相対パスで呼んだら、絶対URLへ付け替える
+    if (typeof url === 'string' && /\/api\/create_setup_intent$/.test(url)) {
+      console.log('[card-save] force:', FULL);
+      return origFetch(FULL, init);
+    }
+    return origFetch(input, init);
+  };
+})();
+</script>
 
 </body>
 </html>

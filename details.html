@@ -440,17 +440,20 @@ async function setupReviews(L, salonRow, salonName){
 
   // ★ 3) idの決め方（?id= または #id、無ければ先頭）
   function pickItem(items){
-    const params = new URLSearchParams(location.search);
-    const fromQS = params.get('id') || '';
-    const fromHash = location.hash ? location.hash.replace(/^#/, '') : '';
-    const targetId = fromQS || fromHash;
-    let item = items.find(x => String(x.id)===String(targetId));
-    if (!item) {
-      item = items[0];
-      uiNotice('対象が見つからなかったので先頭のサロンを表示しています');
-    }
-    return item;
+  const params = new URLSearchParams(location.search);
+  // ← ここを修正：id と salonId の両方を見る
+  const targetId = params.get('salonId') || params.get('id') || (location.hash||'').replace(/^#/,'');
+  let item = items.find(x => String(x.id) === String(targetId));
+
+  if (!item) {
+    // 店名や写真が入ってる行を優先して選ぶ
+    item = items.find(x => (x.name_ja || x.name_en || (Array.isArray(x.photos) ? x.photos.length : String(x.photos||'').trim())))
+           || items[0];
+    uiNotice('対象が見つからなかったので先頭のサロンを表示しています');
   }
+  return item;
+}
+
 
   // ★ 4) UIへの反映（最低限：写真・地図・店名）
   function renderItem(item){

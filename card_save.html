@@ -188,12 +188,50 @@ function makeBookingId({salonId, iso, email}){
 
     try{
       // SetupIntent 作成（Render の pay-server）
-      const res = await fetch(`${PAY_SERVER}/api/create_setup_intent`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email, name })
-      });
-      const { client_secret } = await res.json();
+     // ---- SetupIntent を作成（Render の pay-server）----
+// クエリ ?pay= で PAY_SERVER を上書きできるように
+const PAY = (new URLSearchParams(location.search).get('pay') || PAY_SERVER || '').replace(/\/+$/,'');
+
+// 404 対策で候補 URL を順に試す（アンダースコア／ハイフン揺れも吸収）
+const setupIntentUrls = [
+  `${PAY}/api/create_setup_intent`,
+  `${PAY}/api/create-setup-intent`,
+  `${PAY}/create_setup_intent`
+];
+
+let client_secret = '';
+let lastStatus = 0, lastText = '';
+for (const u of setupIntentUrls) {
+  try {
+    const resSI = await fetch(u, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email, name })
+    });
+    lastStatus = resSI.status;
+    const text = await resSI.text();  // まず text で受ける（404 HTMLでも落ちないように）
+    lastText = text.slice(0, 200);
+    // JSONならパース
+    let j = {};
+    try { j = JSON.parse(text); } catch (_){}
+    if (resSI.ok && (j.client_secret || (j.data && j.data.client_secret))) {
+      client_secret = j.client_secret || j.data.client_secret;
+      break;
+    }
+  } catch (e) {
+    lastText = String(e);
+  }
+}
+
+if (!client_secret) {
+  throw new Error(
+    `SetupIntent API 失敗（HTTP ${lastStatus}）。` +
+    `\nPAY_SERVER: ${PAY}\n` +
+    `返答: ${lastText || '(no body)'}\n` +
+    `※ Render の pay-server URL とエンドポイント名を確認してください。`
+  );
+}
+
 
       // Stripe にカード保存を依頼
       const { setupIntent, error } = await stripe.confirmCardSetup(client_secret, {

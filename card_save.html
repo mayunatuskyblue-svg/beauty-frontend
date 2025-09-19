@@ -189,39 +189,56 @@ function makeBookingId({salonId, iso, email}){
     try{
       // SetupIntent 作成（Render の pay-server）
      // ---- SetupIntent を作成（Render の pay-server）----
-// クエリ ?pay= で PAY_SERVER を上書きできるように
+// ==== SetupIntent を作成（Render の pay-server を順番トライ） ====
+// ?pay= で Render のURLを上書きできるようにもしておく
 const PAY = (new URLSearchParams(location.search).get('pay') || PAY_SERVER || '').replace(/\/+$/,'');
 
-// 404 対策で候補 URL を順に試す（アンダースコア／ハイフン揺れも吸収）
+// サーバによってエンドポイント表記が違うことがあるので候補を総当り
 const setupIntentUrls = [
   `${PAY}/api/create_setup_intent`,
   `${PAY}/api/create-setup-intent`,
-  `${PAY}/create_setup_intent`
+  `${PAY}/create_setup_intent`,
+  `${PAY}/create-setup-intent`,
+  `${PAY}/api/setup_intent`,
+  `${PAY}/api/setup-intent`,
+  `${PAY}/api/setup_intents/create`,
+  `${PAY}/setup_intent`
 ];
 
 let client_secret = '';
 let lastStatus = 0, lastText = '';
+
 for (const u of setupIntentUrls) {
   try {
-    const resSI = await fetch(u, {
+    console.log('[card-save] try:', u);
+    const r = await fetch(u, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ email, name })
     });
-    lastStatus = resSI.status;
-    const text = await resSI.text();  // まず text で受ける（404 HTMLでも落ちないように）
-    lastText = text.slice(0, 200);
-    // JSONならパース
+    lastStatus = r.status;
+    const txt = await r.text();               // HTMLが返っても落ちないようにいったん text で受ける
     let j = {};
-    try { j = JSON.parse(text); } catch (_){}
-    if (resSI.ok && (j.client_secret || (j.data && j.data.client_secret))) {
+    try { j = JSON.parse(txt); } catch (_){}
+    console.log('[card-save] resp', r.status, txt.slice(0,180));
+    if (r.ok && (j.client_secret || (j.data && j.data.client_secret))) {
       client_secret = j.client_secret || j.data.client_secret;
       break;
     }
   } catch (e) {
     lastText = String(e);
+    console.warn('[card-save] err:', e);
   }
 }
+
+if (!client_secret) {
+  throw new Error(
+    `SetupIntent API not found.\nPAY=${PAY}\nlastStatus=${lastStatus}\nbody=${lastText || '(no body)'}\n` +
+    `サーバのエンドポイント名を確認してください（/api/create-setup-intent 等）。`
+  );
+}
+
+// （この下の stripe.confirmCardSetup(client_secret, …) はそのままでOK）
 
 if (!client_secret) {
   throw new Error(

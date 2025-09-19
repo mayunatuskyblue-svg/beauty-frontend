@@ -286,5 +286,44 @@ if (!client_secret) {
   });
 })();
 </script>
+  <script>
+/* clientSecret ↔ client_secret のズレを吸収する fetch フィルタ（追記だけでOK） */
+(() => {
+  const origFetch = window.fetch;
+  const qs = new URLSearchParams(location.search);
+  const PAY = qs.get('pay') || 'https://pay-server-uis7.onrender.com';
+  const siParam = (qs.get('si') || '/api/setup-intent').replace(/\/+$/, '');
+
+  function matchesSetupIntent(url) {
+    // 両方の表記を面倒みる（setup-intent / setup_intent）
+    return (url.includes('setup-intent') || url.includes('setup_intent'));
+  }
+
+  window.fetch = async function(input, init) {
+    const res = await origFetch(input, init);
+    try {
+      const url = (typeof input === 'string' ? input : input.url) || '';
+      if (url.startsWith(PAY) && matchesSetupIntent(url)) {
+        // サーバーのレスポンスを読み直して client_secret を補完して返す
+        const text = await res.text();
+        let j = {};
+        try { j = JSON.parse(text); } catch(_) {}
+
+        // 可能性のある場所を全部埋める
+        if (j && typeof j === 'object') {
+          if (!j.client_secret && j.clientSecret) j.client_secret = j.clientSecret;
+          if (j.data && !j.data.client_secret && j.data.clientSecret) {
+            j.data.client_secret = j.data.clientSecret;
+          }
+        }
+        const blob = new Blob([JSON.stringify(j)], { type: 'application/json' });
+        return new Response(blob, { status: res.status, statusText: res.statusText, headers: res.headers });
+      }
+    } catch (_) {}
+    return res;
+  };
+})();
+</script>
+
 </body>
 </html>

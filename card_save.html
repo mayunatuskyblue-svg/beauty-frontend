@@ -9,7 +9,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap" rel="stylesheet">
   <script>
-  window.STRIPE_PK = 'pk_test_51S59dhHFHLP5RXi1qkW9cuPEJAlJPuSaFeWFb5GuYhsXs9vkX6RJYfVYwQEdK8TwN3eKF7wEctQftyhYxb2rRIZN00146bOW8U';  // ← ここに Publishable key
+  window.STRIPE_PK = 'pk_test_51S59dhHFHLP5RXi1qkW9cuPEJAlJPuSaFeWFb5GuYhsXs9vkX6RJYfVYwQEdK8TwN3eKF7wEctQftyhYxb2rRIZN00146bOW8U';
+    const PAY_SERVER = 'https://pay-server-uis7.onrender.com';// ← ここに Publishable key
 </script>
 
 <style>
@@ -168,7 +169,11 @@ function makeBookingId({salonId, iso, email}){
     const name  = document.getElementById('name').value.trim();
     if(!email){ alert('メールを入力してください'); return; }
     try{
-      const res = await fetch('/api/create_setup_intent', { method:'POST' });
+      const res = await fetch(`${PAY_SERVER}/api/create_setup_intent`, {
++   method: 'POST',
++   headers: { 'content-type': 'application/json' },
++   body: JSON.stringify({ email, name })
++ });
       const { client_secret } = await res.json();
       const { setupIntent, error } = await stripe.confirmCardSetup(client_secret, {
         payment_method: { card, billing_details: { email, name } }

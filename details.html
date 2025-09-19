@@ -180,29 +180,37 @@
   const setText = (sel, v) => { const el=$(sel); if(el) el.textContent = v||''; };
 
   function parsePhotos(v){
-  let a = Array.isArray(v) ? v : String(v||'')
-    .replace(/[\r\n]+/g, ',')
-    .replace(/，/g, ',')
-    .split(',');
+  const IS_FILE = location.protocol === 'file:';
+  const IMG_BASE     = IS_FILE ? './assets/img/'     : '/assets/img/';
+  const IMAGES_BASE  = IS_FILE ? './assets/images/'  : '/assets/images/';
 
-  a = a.map(s=>{
-    let p = String(s||'').trim();
-    if (!p) return '';
-    // ★ フォルダなしの裸ファイル名なら /assets/img/ を付ける
-    if (!p.includes('/')) p = '/assets/img/' + p;
-    // 先頭スラ無しを救済
-    if (!p.startsWith('/')) p = '/' + p;
+  // 1) 文字列→配列、改行/全角カンマにも対応
+  let arr = Array.isArray(v) ? v : String(v||'')
+    .replace(/[\r\n]+/g, ',').replace(/，/g, ',').split(',');
+  arr = arr.map(s => String(s||'').trim()).filter(Boolean);
+
+  // 2) 裸ファイル名 → images を優先で補完
+  arr = arr.map(p => {
+    // 先頭にスラッシュが付いてたら、file:// の場合は './' に変換
+    if (IS_FILE && p.startsWith('/')) p = '.' + p;
+    // パス区切りが無い＝ファイル名だけ → images で補完
+    if (!p.includes('/')) p = IMAGES_BASE + p;
     return p;
-  }).filter(Boolean);
-
-  // /assets/img と /assets/images の両方を試す
-  const alt = [];
-  a.forEach(p=>{
-    alt.push(p);
-    if (p.startsWith('/assets/img/'))    alt.push(p.replace('/assets/img/','/assets/images/'));
-    if (p.startsWith('/assets/images/')) alt.push(p.replace('/assets/images/','/assets/img/'));
   });
-  return [...new Set(alt)];
+
+  // 3) img / images の両候補を用意（images優先）
+  const out = [];
+  arr.forEach(p => {
+    const pImg    = p.replace(/\/assets\/images\//, IMG_BASE).replace(/(^|[^.])\.\//, './');      // images → img
+    const pImages = p.replace(/\/assets\/img\//,    IMAGES_BASE).replace(/(^|[^.])\.\//, './');    // img → images
+    // 既に相対ならそのまま、絶対なら file:// では './' に
+    const a = IS_FILE && pImages.startsWith('/assets/') ? '.'+pImages : pImages;
+    const b = IS_FILE && pImg.startsWith('/assets/')    ? '.'+pImg    : pImg;
+    out.push(a, b);
+  });
+
+  // 重複除去
+  return [...new Set(out)];
 }
 
   async function fetchJSON(u){

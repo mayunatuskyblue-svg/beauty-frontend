@@ -283,19 +283,54 @@
   }
 
   function renderMenus(items){
-    const box = $('#menuList'); const empty = $('#menuEmpty');
-    box.innerHTML = '';
-    if (!items.length){ empty.style.display=''; return; }
-    empty.style.display='none';
-    items.forEach(m=>{
-      const el = document.createElement('div'); el.className='card';
-      el.innerHTML = `<div class="section-title" style="font-size:16px">${m.name_ja||m.name_en||'-'}</div>
-        <div class="muted">${m.desc_ja||m.desc_en||''}</div>
-        <div class="space"></div>
-        <div><span class="chip">${m.duration_min||'-'}分</span> <span class="chip">${m.price_jpy?fmtJPY(m.price_jpy):'-'}</span></div>`;
-      box.appendChild(el);
-    });
-  }
+  const box = document.querySelector('#menuList');
+  const empty = document.querySelector('#menuEmpty');
+  box.innerHTML = '';
+
+  if (!items.length){ empty.style.display=''; return; }
+  empty.style.display='none';
+
+  // サロン情報（予約に渡す）
+  const salonId   = (window.__currentSalon && window.__currentSalon.id) || '';
+  const salonName = (window.__currentSalon && (window.__currentSalon.name_ja || window.__currentSalon.name_en)) || salonId;
+
+  items.forEach(m=>{
+    const name = m.name_ja || m.name_en || '-';
+    const desc = m.desc_ja || m.desc_en || '';
+    const dur  = m.duration_min || '';
+    const price= m.price_jpy ? '¥' + Number(m.price_jpy).toLocaleString('ja-JP') : '';
+
+    const el = document.createElement('div');
+    el.className='card';
+    el.innerHTML = `
+      <div style="display:flex;gap:12px;align-items:flex-start;justify-content:space-between">
+        <div style="flex:1 1 auto;min-width:0">
+          <div class="section-title" style="font-size:16px;margin:0 0 6px">${name}</div>
+          <div class="muted" style="white-space:pre-wrap">${desc||''}</div>
+          <div class="space"></div>
+          <div>
+            ${dur?`<span class="chip">${dur}分</span>`:''}
+            ${price?`<span class="chip">${price}</span>`:''}
+          </div>
+        </div>
+        <div style="flex:0 0 auto;display:flex;align-items:center">
+          <a class="btn" style="white-space:nowrap"
+             href="reservation.html?${new URLSearchParams({
+               salonId,
+               salonName,
+               item: name,
+               price: String(m.price_jpy||0)
+             }).toString()}">
+             予約へ
+          </a>
+        </div>
+      </div>`;
+    box.appendChild(el);
+  });
+
+  // 予約導線でも使えるように現在のサロンを覚えておく（上で利用）
+}
+
 
   function renderCoupons(items){
     const box = $('#couponList'); const empty = $('#couponEmpty');

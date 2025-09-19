@@ -1,0 +1,220 @@
+
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>カード情報の保存 | BeautyLanka</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#f7efd9; --fg:#2a2a2a; --acc:#0f766e; --card:#fff; --muted:#6b7280; }
+  body{font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Hiragino Kaku Gothic ProN","Yu Gothic UI","Meiryo",sans-serif;background:var(--bg);color:var(--fg);margin:0;}
+  .wrap{max-width:960px;margin:24px auto;padding:0 16px;}
+  h1{font-size:28px;margin:24px 0 8px;}
+  .summary{background:var(--card);border-radius:14px;box-shadow:0 6px 18px rgba(0,0,0,.06);padding:16px 20px;margin:14px 0;}
+  .grid{display:grid;grid-template-columns:140px 1fr;gap:8px 16px;font-size:14px}
+  .muted{color:var(--muted);}
+  .section{background:var(--card);border-radius:14px;box-shadow:0 6px 18px rgba(0,0,0,.06);padding:18px 20px;margin:18px 0;}
+  label{display:block;font-weight:600;margin:.4rem 0 .2rem}
+  input[type="text"],input[type="email"],input[type="tel"]{width:100%;box-sizing:border-box;padding:.6rem .7rem;border:1px solid #e5e7eb;border-radius:10px;font-size:16px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .actions{display:flex;gap:12px;align-items:center;margin-top:14px}
+  .btn{appearance:none;border:none;border-radius:999px;background:var(--acc);color:#fff;padding:.8rem 1.2rem;font-weight:700;cursor:pointer;box-shadow:0 10px 25px rgba(15,118,110,.22)}
+  .btn[disabled]{opacity:.4;cursor:not-allowed;box-shadow:none}
+  .agree{display:flex;align-items:center;gap:.6rem;margin-top:.5rem}
+  .small{font-size:12px}
+  footer{color:var(--muted);font-size:13px;margin:20px 0 40px;text-align:center}
+  .back{display:inline-block;margin-top:8px;text-decoration:none}
+  .price{font-weight:700}
+</style>
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+// ===== Config picked up from opener (same as reservation.html) =====
+window.GAS_URL = window.GAS_URL || new URLSearchParams(location.search).get('gas') || '';
+window.GAS_KEY = window.GAS_KEY || 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
+window.STRIPE_PK = window.STRIPE_PK || new URLSearchParams(location.search).get('pk') || (window.__STRIPE_PK__ || '');
+
+// Currency helpers (keep in sync with reservation)
+window.SUPPORTED_CURRENCIES = ['JPY','USD','EUR','LKR'];
+function fmtMoney(amount, cur){
+  try { return new Intl.NumberFormat(undefined, {style:'currency', currency:cur}).format(amount); }
+  catch(_){ return (cur==='JPY'?'¥':cur+' ') + Math.round(amount).toLocaleString(); }
+}
+window.FX_FROM_JPY = { JPY:1, USD:0.0067, EUR:0.0061, LKR:19.5 };
+function jpyTo(amountJPY, cur){ const f = window.FX_FROM_JPY[cur] ?? 1; return amountJPY * f; }
+
+// Build a simple booking id
+function makeBookingId({salonId, iso, email}){
+  const base = (salonId||'S').replace(/[^A-Za-z0-9]/g,'') + '-' + (iso||'').replace(/[^0-9TZ:-]/g,'') + '-' + (email||'').replace(/[^A-Za-z0-9]/g,'').slice(0,8);
+  return base || ('BK-' + Date.now());
+}
+</script>
+</head>
+<body>
+  <div class="wrap">
+    <h1>カード情報の保存（後払い用）</h1>
+    <div class="summary">
+      <div class="grid">
+        <div class="muted">サロン</div><div id="s_salon">-</div>
+        <div class="muted">メニュー</div><div id="s_menu">-</div>
+        <div class="muted">施術者</div><div id="s_staff">-</div>
+        <div class="muted">日時</div><div id="s_when">-</div>
+        <div class="muted">お支払い目安</div><div id="s_price" class="price">-</div>
+      </div>
+    </div>
+
+    
+<section class="section" id="confirmStep">
+  <p class="small muted">以下の内容でよろしければ、利用規約に同意して「カード情報の入力へ」を押してください。</p>
+  <label class="agree"><input type="checkbox" id="agree"> I agree to the Terms</label>
+  <div class="actions">
+    <button id="goCard" class="btn" disabled>カード情報の入力へ</button>
+    <a href="javascript:history.back()" class="back muted small">← 戻る</a>
+  </div>
+</section>
+
+<section class="section" id="cardStep" style="display:none">
+
+      <div class="row">
+        <div>
+          <label>メール</label>
+          <input type="email" id="email" placeholder="you@example.com">
+        </div>
+        <div>
+          <label>お名前</label>
+          <input type="text" id="name" placeholder="Your name">
+        </div>
+      </div>
+      <label>カード番号</label>
+      <div id="card"></div>
+
+      <label class="agree"><input type="checkbox" id="agree"> I agree to the Terms</label>
+      <div class="actions">
+        <button id="save" class="btn" disabled>カードを保存する</button>
+        <a href="javascript:history.back()" class="back muted small">← 戻る</a>
+      </div>
+      <p id="msg" class="small muted"></p>
+    </section>
+
+    <footer>Terms ・ Privacy ・ Cancel Policy ・ Contact</footer>
+  </div>
+
+<script>
+(function initSummary(){
+  const p = new URLSearchParams(location.search);
+  const salonId   = p.get('salonId') || 'S1';
+  const salonName = p.get('salonName') || ('Salon #' + salonId);
+  const menu      = p.get('menu') || p.get('item') || '-';
+  const staff     = p.get('staff') || '-';
+  const iso       = p.get('iso') || '';
+  const cur       = (p.get('cur') || sessionStorage.getItem('bl_currency') || 'JPY').toUpperCase();
+  const jpy       = Number(p.get('price_jpy')||0);
+  const price     = Number(p.get('price')||0) || (jpy ? jpyTo(jpy, cur) : 0);
+
+  document.getElementById('s_salon').textContent = salonName;
+  document.getElementById('s_menu').textContent  = menu;
+  document.getElementById('s_staff').textContent = staff;
+  document.getElementById('s_when').textContent  = iso.replace('T',' ').slice(0,16);
+  document.getElementById('s_price').textContent = price ? fmtMoney(price, cur) : '現地支払い';
+
+  // Keep for submission
+  window.__BL_CTX__ = { salonId, salonName, menu, staff, iso, cur, price, price_jpy:jpy };
+})();
+
+
+(async function stripeSetup(){
+  const pk = window.STRIPE_PK || (window.__STRIPE_PK__ || '');
+  const msg = document.getElementById('msg');
+  const go  = document.getElementById('goCard');
+  const agree = document.getElementById('agree');
+  const cardStep = document.getElementById('cardStep');
+  const confirmStep = document.getElementById('confirmStep');
+
+  if(!pk){ msg.textContent='Stripe publishable key が設定されていません。'; return; }
+
+  // enable button only when agreed
+  agree.addEventListener('change', ()=>{ go.disabled = !agree.checked; });
+  go.disabled = !agree.checked;
+
+  // Prepare Stripe elements lazily when entering card step
+  let stripe, elements, card;
+  async function ensureStripe(){
+    if (!stripe){
+      stripe = Stripe(pk);
+      elements = stripe.elements();
+      card = elements.create('card');
+      card.mount('#card');
+    }
+  }
+
+  // Step change
+  go.addEventListener('click', async ()=>{
+    if (!agree.checked) return;
+    confirmStep.style.display = 'none';
+    cardStep.style.display = '';
+    await ensureStripe();
+  });
+
+  // Save button handler
+  const saveBtn = document.getElementById('save');
+  saveBtn.addEventListener('click', async ()=>{
+    const email = document.getElementById('email').value.trim();
+    const name  = document.getElementById('name').value.trim();
+    if(!email){ alert('メールを入力してください'); return; }
+    try{
+      const res = await fetch('/api/create_setup_intent', { method:'POST' });
+      const { client_secret } = await res.json();
+      const { setupIntent, error } = await stripe.confirmCardSetup(client_secret, {
+        payment_method: { card, billing_details: { email, name } }
+      });
+      if(error){ alert(error.message || 'カード保存に失敗しました'); return; }
+
+      const saved = { email, name, customerId: setupIntent.customer, paymentMethodId: setupIntent.payment_method };
+      localStorage.setItem('bl_saved_card', JSON.stringify(saved));
+
+      if (window.GAS_URL && window.GAS_KEY){
+        await fetch(window.GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ key: window.GAS_KEY, kind:'customer', data: saved })
+        }).then(r=>r.json()).catch(()=>({}));
+      }
+
+      const ctx = window.__BL_CTX__ || {};
+      const bookingId = (function makeBookingId({salonId, iso, email}){
+        const base = (salonId||'S').replace(/[^A-Za-z0-9]/g,'') + '-' + (iso||'').replace(/[^0-9TZ:-]/g,'') + '-' + (email||'').replace(/[^A-Za-z0-9]/g,'').slice(0,8);
+        return base || ('BK-' + Date.now());
+      })({ salonId: ctx.salonId, iso: ctx.iso, email });
+
+      const data = {
+        bookingId,
+        date: ctx.iso,
+        menu: ctx.menu,
+        minutes: (Number(new URLSearchParams(location.search).get('minutes')||0) || ''),
+        amountJPY: Number(ctx.price_jpy||0) || '',
+        email, name,
+        customerId: saved.customerId,
+        status: 'reserved',
+        chargedAt: '',
+        createdAt: new Date().toISOString()
+      };
+      if (window.GAS_URL && window.GAS_KEY){
+        await fetch(window.GAS_URL, {
+          method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+          body: JSON.stringify({ key: window.GAS_KEY, kind:'booking', data })
+        }).then(r=>r.json()).catch(()=>({}));
+      }
+
+      msg.textContent = 'カード保存と予約登録が完了しました。';
+      alert('カード保存が完了しました。');
+    }catch(e){
+      console.error(e);
+      alert('エラーが発生しました。');
+    }
+  });
+})();
+</script>
+</body>
+</html>

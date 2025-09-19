@@ -547,6 +547,106 @@ async function setupReviews(L, salonRow, salonName){
   });
 })();
 </script>
+<script>
+// ====== 強制レンダ（店名＆写真） ======
+(function(){
+  const LOG = (...a)=>console.log('[details-force]', ...a);
+
+  // 1) items から対象を選ぶ（?salonId / ?id / #id の順）
+  function pickItem(items){
+    const q = new URLSearchParams(location.search);
+    const targetId = q.get('salonId') || q.get('id') || (location.hash||'').replace(/^#/,'');
+    let item = items.find(x => String(x.id) === String(targetId));
+    if (!item) {
+      item = items.find(x => (x.name_ja || x.name_en || String(x.photos||'').trim())) || items[0];
+      console.warn('対象が見つからず先頭を表示');
+    }
+    return item;
+  }
+
+  // 2) photos を頑丈にパース（改行/全角カンマ/先頭スラ無し/フォルダ差も吸収）
+  function normalizePhotos(v){
+    let arr = [];
+    if (Array.isArray(v)) arr = v;
+    else arr = String(v||'').replace(/[\r\n]+/g, ',').replace(/，/g, ',').split(',');
+    arr = arr.map(s => String(s||'').trim()).filter(Boolean)
+             .map(p => p.startsWith('/') ? p : '/'+p);
+    // /assets/img と /assets/images の両方を試す
+    const alt = [];
+    arr.forEach(p=>{
+      alt.push(p);
+      if (p.startsWith('/assets/img/')) alt.push(p.replace('/assets/img/','/assets/images/'));
+      if (p.startsWith('/assets/images/')) alt.push(p.replace('/assets/images/','/assets/img/'));
+    });
+    return [...new Set(alt)];
+  }
+
+  // 3) 店名＆写真をどこにも出す（既存セクタが無くても自分で作る）
+  function renderHard(item){
+    LOG('item', item);
+
+    // 店舗情報：既存ターゲット or 生成
+    const host = document.querySelector('#shopInfoSection') || document.body;
+    let info = host.querySelector('.bl-info');
+    if (!info) {
+      info = document.createElement('div');
+      info.className = 'bl-info';
+      info.style.cssText='background:#fff;border:1px solid #eee;border-radius:10px;padding:12px;margin:8px 0';
+      host.prepend(info);
+    }
+    info.innerHTML = `
+      <div style="font-size:18px;font-weight:700">${item.name_ja || item.name_en || item.id}</div>
+      <div style="color:#6b5e55;margin-top:4px">${(item.type_ja||item.type_en||'')}${(item.place_ja||item.place_en)?' ・ '+(item.place_ja||item.place_en):''}</div>
+    `;
+
+    // 写真：既存ターゲット or 生成
+    let photoWrap = document.querySelector('[data-photos]') || document.querySelector('#photoSection');
+    if (!photoWrap) {
+      photoWrap = document.createElement('div');
+      photoWrap.id = 'photoSection';
+      photoWrap.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin:10px 0';
+      host.appendChild(photoWrap);
+    }
+
+    const photos = normalizePhotos(item.photos);
+    photoWrap.innerHTML = '';
+    photos.forEach(src=>{
+      const img = document.createElement('img');
+      img.loading='lazy';
+      img.src = src;
+      img.alt = item.name_en || item.name_ja || 'photo';
+      img.style.cssText='width:100%;height:120px;object-fit:cover;border-radius:10px;border:1px solid #eee';
+      img.onerror = ()=> img.remove();
+      photoWrap.appendChild(img);
+    });
+    if (!photoWrap.children.length) {
+      photoWrap.innerHTML = '<div style="color:#6b5e55">写真が未登録です（catalog の photos 列）</div>';
+    }
+  }
+
+  // === 実行（既に fetch 済みなら window.__catalog を利用、無ければ再フェッチ）
+  document.addEventListener('DOMContentLoaded', async ()=>{
+    try{
+      const have = window.__catalogItems; // 既存スクリプトが格納しているなら使う
+      let items = Array.isArray(have) ? have : null;
+      if (!items) {
+        // 既存の変数がなければ、埋め込み済みのGAS URL/KEYを流用して再取得
+        const GAS_EXEC_URL = window.__GAS_URL || (window.GAS_EXEC_URL ?? '');
+        const GAS_KEY = window.__GAS_KEY || (window.GAS_KEY ?? '');
+        if (!GAS_EXEC_URL || !GAS_KEY) throw new Error('GASのURL/KEYが見つからない');
+        const url = `${GAS_EXEC_URL}?kind=catalog&key=${encodeURIComponent(GAS_KEY)}&t=${Date.now()}`;
+        const j = await fetch(url,{cache:'no-store'}).then(r=>r.json());
+        if (!j.ok || !j.items?.length) throw new Error('catalog空');
+        items = j.items;
+      }
+      const item = pickItem(items);
+      renderHard(item);
+    }catch(e){
+      console.error('[details-force]', e);
+    }
+  });
+})();
+</script>
 
 </body>
 </html>

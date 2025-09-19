@@ -180,7 +180,7 @@ function enType(s){ return enTag(s); }
 function enPoints(s){ if(!s) return ''; let x=String(s); x=x.replace(/。/g,'. ').replace(/\s+/g,' ').trim(); if(x) x=x[0].toUpperCase()+x.slice(1); return x; }
 
 // --- GAS catalog fetch (catalog only) ---
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwJz67fvPpB1tJ7IWggPFWJ-2tBydVOHikzFvviS36_8LOD8YW7jn3vWjWF9f3ngomH/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxQHByDLRu-QlfAyRRMdM0-pGskH9Ka7IcFs9NeV2NB3DyDWhaLgvv8Hain_l9nZGvk/exec';
 const GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
 async function getCatalog(){ const url=GAS_URL+'?kind=catalog&key='+encodeURIComponent(GAS_KEY); const r=await fetch(url); const j=await r.json(); if(!j.ok) throw new Error(j.error||'catalog error'); return j.items||[]; }
 
@@ -547,6 +547,11 @@ async function setupReviews(L, salonRow, salonName){
   });
 })();
 </script>
+  <script>
+  window.__GAS_URL = 'https://script.google.com/macros/s/AKfycbxQHByDLRu-QlfAyRRMdM0-pGskH9Ka7IcFs9NeV2NB3DyDWhaLgvv8Hain_l9nZGvk/exec';
+  window.__GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
+</script>
+
 <script>
 // ====== 強制レンダ（店名＆写真） ======
 (function(){

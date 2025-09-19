@@ -137,12 +137,14 @@ function makeBookingId({salonId, iso, email}){
   const cardStep = document.getElementById('cardStep');
   const confirmStep = document.getElementById('confirmStep');
 
-  if(!pk){ msg.textContent='Stripe publishable key が設定されていません。'; return; }
-
-  // enable button only when agreed
-  agree.addEventListener('change', ()=>{ go.disabled = !agree.checked; });
-  go.disabled = !agree.checked;
-
+  // 先に「同意 → ボタン有効化」は必ず張る
++ agree.addEventListener('change', ()=>{ go.disabled = !agree.checked; });
++ go.disabled = !agree.checked;
++
++ // PKがない場合は警告だけ出して続行（カード入力ステップに入る時点で弾く）
++ if(!pk){
++   msg.textContent = 'Stripe publishable key が設定されていません。URLの pk=... か、上部スクリプトで window.STRIPE_PK を指定してください。';
++ }
   // Prepare Stripe elements lazily when entering card step
   let stripe, elements, card;
   async function ensureStripe(){

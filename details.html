@@ -38,6 +38,21 @@
 
   iframe.map{width:100%;height:300px;border:0;border-radius:12px}
   .notice{padding:.75em 1em;margin:.5em 0;background:#fff7e6;border:1px solid #ffd18a;border-radius:8px;color:#6b5e55}
+
+  /* レビュー表示 */
+  .stars { position:relative; display:inline-block; font-size:16px; line-height:1; }
+  .stars .bg{ color:#ddd; }
+  .stars .fg{ position:absolute; top:0; left:0; white-space:nowrap; overflow:hidden; color:#f2b01e; }
+  .rv-item{border-top:1px dashed #e1d7cb; padding:10px 0}
+  .rv-head{display:flex;gap:8px;align-items:center}
+  .rv-name{font-weight:700}
+  .rv-ts{color:#8a7f75; font-size:12px}
+
+  /* Verified 投稿フォーム */
+  .rv-form .row{margin:8px 0}
+  .rv-form input[type="text"], .rv-form textarea {width:100%; padding:10px; border:1px solid #ddd; border-radius:8px}
+  .rv-form .stars-input {display:flex; gap:8px; align-items:center}
+  .rv-form .stars-input input {accent-color:#f2b01e}
 </style>
 </head>
 <body>
@@ -110,16 +125,45 @@
 
       <div class="space"></div>
 
-      <!-- レビュー（ダイジェスト場所） -->
-      <section class="card">
+      <!-- レビュー -->
+      <section class="card" id="reviewsSection">
         <div class="section-title">レビュー</div>
-        <div id="reviewsDigest" class="muted">（準備中です）</div>
+        <div id="reviewsSummary" class="muted">（読み込み中…）</div>
+        <div id="reviewsList"></div>
+
+        <!-- Verifiedレビュー投稿：rid/token/exp がURLにある時だけ表示 -->
+        <div id="verifiedBox" style="display:none;margin-top:12px">
+          <div class="notice">施術後に配布される専用リンクからの投稿フォームです。</div>
+          <form class="rv-form" id="verifiedForm">
+            <div class="row">
+              <label class="muted">お名前（任意）</label>
+              <input type="text" id="rvName" placeholder="例：M*** さん">
+            </div>
+            <div class="row">
+              <label class="muted">評価</label>
+              <div class="stars-input">
+                <label><input type="radio" name="rvStar" value="5" checked> 5</label>
+                <label><input type="radio" name="rvStar" value="4"> 4</label>
+                <label><input type="radio" name="rvStar" value="3"> 3</label>
+                <label><input type="radio" name="rvStar" value="2"> 2</label>
+                <label><input type="radio" name="rvStar" value="1"> 1</label>
+              </div>
+            </div>
+            <div class="row">
+              <label class="muted">コメント</label>
+              <textarea id="rvText" rows="4" placeholder="施術の感想を書いてください"></textarea>
+            </div>
+            <div class="row">
+              <button class="btn" id="rvSubmit">この内容で投稿</button>
+            </div>
+            <div class="row muted" id="rvMsg"></div>
+          </form>
+        </div>
       </section>
     </div>
   </div>
 </div>
 
-      
 <!-- ▼▼ 必ずあなたの /exec とキーに置換してください ▼▼ -->
 <script>
   window.__GAS_URL = 'https://script.google.com/macros/s/AKfycbxQHByDLRu-QlfAyRRMdM0-pGskH9Ka7IcFs9NeV2NB3DyDWhaLgvv8Hain_l9nZGvk/exec';
@@ -158,6 +202,7 @@
     return r.json();
   }
 
+  // ---- Data fetchers ----
   async function getCatalog(){
     const u = `${GAS.url}?kind=catalog&key=${encodeURIComponent(GAS.key)}&t=${Date.now()}`;
     const j = await fetchJSON(u);
@@ -174,7 +219,13 @@
     const j = await fetchJSON(u);
     return (j.ok && j.items)||[];
   }
+  async function getReviews(salonId){
+    const u = `${GAS.url}?kind=reviews&salonId=${encodeURIComponent(salonId)}&key=${encodeURIComponent(GAS.key)}&t=${Date.now()}`;
+    const j = await fetchJSON(u);
+    return (j.ok && j.items) ? j : {ok:false, items:[], summary:{}};
+  }
 
+  // ---- helpers ----
   function pickItem(items){
     const q = new URLSearchParams(location.search);
     const target = q.get('salonId') || q.get('id') || (location.hash||'').replace(/^#/, '');
@@ -185,7 +236,15 @@
     }
     return it;
   }
+  function starsEl(score){
+    const pct = Math.max(0, Math.min(5, Number(score||0))) / 5 * 100;
+    const root = document.createElement('span');
+    root.className = 'stars';
+    root.innerHTML = `<span class="bg">★★★★★</span><span class="fg" style="width:${pct}%">★★★★★</span>`;
+    return root;
+  }
 
+  // ---- renderers ----
   function renderInfo(it){
     setText('#salonTitle', it.name_ja || it.name_en || it.id);
     setText('#vType', it.type_ja || it.type_en || '-');
@@ -193,8 +252,7 @@
     setText('#vPrice', it.price_jpy ? fmtJPY(it.price_jpy) : '-');
     setText('#vRating', it.rating ? String(it.rating) : '-');
     setText('#points', it.points_ja || it.points_en || '');
-    // 予約ボタン（必要ならURL差し替え）
-    $('#btnBook').onclick = (e)=>{e.preventDefault(); /* location.href='reserve.html?salonId='+encodeURIComponent(it.id); */ alert('予約導線は後で差し替え');};
+    $('#btnBook').onclick = (e)=>{e.preventDefault(); /* 予約導線は後で差し替え */ alert('予約導線は後で差し替え');};
   }
 
   function renderGallery(it){
@@ -252,13 +310,90 @@
     });
   }
 
+  function renderReviews(it, res){
+    const box = $('#reviewsList');
+    const sum = (res.summary && res.summary[it.id]) || {avg:0, count:0};
+    // Summary line
+    const sumLine = document.createElement('div');
+    sumLine.innerHTML = '';
+    const s = starsEl(sum.avg);
+    const meta = document.createElement('span');
+    meta.className='muted';
+    meta.style.marginLeft = '8px';
+    meta.textContent = `平均 ${sum.avg||0} / 5（${sum.count||0}件）`;
+    sumLine.appendChild(s); sumLine.appendChild(meta);
+    $('#reviewsSummary').innerHTML = '';
+    $('#reviewsSummary').appendChild(sumLine);
+
+    // Items (最新5件)
+    box.innerHTML = '';
+    const items = (res.items||[]).filter(x=>String(x.salonId)===String(it.id))
+                                  .sort((a,b)=>String(b.ts).localeCompare(String(a.ts)))
+                                  .slice(0,5);
+    if (!items.length){
+      box.innerHTML = '<div class="muted">まだレビューはありません。施術完了後に届く専用リンクから投稿できます。</div>';
+      return;
+    }
+    items.forEach(o=>{
+      const el = document.createElement('div'); el.className='rv-item';
+      const head = document.createElement('div'); head.className='rv-head';
+      const nm = document.createElement('div'); nm.className='rv-name'; nm.textContent = o.name || '匿名';
+      const ts = document.createElement('div'); ts.className='rv-ts'; ts.textContent = (o.ts||'').slice(0,10);
+      head.appendChild(starsEl(o.rating)); head.appendChild(nm); head.appendChild(ts);
+      const body = document.createElement('div'); body.textContent = o.text || '';
+      el.appendChild(head); el.appendChild(body);
+      box.appendChild(el);
+    });
+  }
+
   function setupBack(){
     $('#btnBack').addEventListener('click', (e)=>{
       e.preventDefault();
       try{
         if (document.referrer && new URL(document.referrer).origin===location.origin) history.back();
         else location.href='index.html';
-      }catch(_){ location.href='index.html'; }
+      }catch(e){ location.href='index.html'; }
+    });
+  }
+
+  function setupVerifiedForm(it){
+    const q = new URLSearchParams(location.search);
+    const rid = q.get('rid');        // bookingId
+    const token = q.get('token');
+    const exp = q.get('exp');
+    if (!rid || !token || !exp) return; // 表示しない
+
+    $('#verifiedBox').style.display = '';
+
+    const form = $('#verifiedForm');
+    const msg  = $('#rvMsg');
+    form.addEventListener('submit', async (ev)=>{
+      ev.preventDefault();
+      msg.textContent = '送信中…';
+      const rating = Number((new FormData(form).get('rvStar'))||5);
+      const payload = {
+        bookingId: rid,
+        token, exp,
+        rating,
+        comment: $('#rvText').value || '',
+        salonId: it.id,
+        name: $('#rvName').value || ''
+      };
+      try{
+        const res = await fetch(GAS.url, {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ key:GAS.key, kind:'reviews.addVerified', data: payload })
+        }).then(r=>r.json());
+        if (res && res.ok){
+          msg.textContent = 'ありがとうございました。レビューを受け付けました。';
+          form.querySelectorAll('input,textarea,button').forEach(x=>x.disabled=true);
+        }else{
+          msg.textContent = '投稿に失敗しました（リンク期限切れ/無効の可能性）。';
+        }
+      }catch(e){
+        msg.textContent = '通信に失敗しました。時間をおいて再度お試しください。';
+      }
     });
   }
 
@@ -271,10 +406,14 @@
       renderInfo(it);
       renderGallery(it);
       renderMap(it);
-      // 付随データ
+      // メニュー / クーポン
       Promise.all([getMenus(it.id), getCoupons(it.id)])
         .then(([ms,cs])=>{ renderMenus(ms); renderCoupons(cs); })
-        .catch(()=>{ /* メニュー/クーポンは無くてもOK */ });
+        .catch(()=>{});
+      // レビュー表示
+      getReviews(it.id).then(res=>renderReviews(it,res)).catch(()=>{ $('#reviewsSummary').textContent='（読み込みに失敗しました）'; });
+      // Verifiedフォーム
+      setupVerifiedForm(it);
     }catch(e){
       console.error(e);
       $('#infoCard').insertAdjacentHTML('afterbegin','<div class="notice">読み込みに失敗しました</div>');

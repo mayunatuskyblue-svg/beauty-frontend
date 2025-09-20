@@ -1,628 +1,232 @@
 <!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="bl-sheet-hook" content="https://script.google.com/macros/s/AKfycbwlpW6ZQ-sOMfWCr_DWbNf27ezZb1ul6Cia9M7kMX4CSL-rRecpIWvh1qCbkVjA2xk/exec">
-  <title>Reserve time (font unified + timetable fix)</title>
-  <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Shippori+Mincho:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="manifest" href="./manifest.json">
-  <link rel="stylesheet" href="assets/css/theme.css"/>
-  <style>
-    :root{ --base:#F7F1E1; --bean:#310E10; --stroke:#eadfca; --teal:#246A73; }
-    html,body{font-family:"Inter","Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#111}
-    h1,h2{font-family:'Shippori Mincho', serif;letter-spacing:.02em}
-    body{background:var(--base);margin:0}
-    .container{max-width:1080px;margin:24px auto;padding:0 20px}
-    .back-link{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;border:1px solid var(--stroke);background:#fff;color:#513;text-decoration:none;margin-bottom:8px;box-shadow:0 6px 16px rgba(49,14,16,.06)}
-    .card{background:#fff;border:1px solid var(--stroke);border-radius:16px;padding:18px 20px;box-shadow:0 10px 24px rgba(49,14,16,.08);margin:10px 0 18px}
-    .title{font-size:26px;font-weight:800;color:var(--bean);margin:0 0 6px}
-    .meta{color:#5c4d44;opacity:.9}
-    .price{margin-top:8px;font-weight:800;color:var(--bean)}
-    .toolbar{display:flex;gap:10px;align-items:center;margin:10px 0 16px;flex-wrap:wrap}
-    .date{height:44px;border-radius:12px;border:1px solid var(--stroke);padding:0 10px;background:#fff}
-    .btn{height:44px;border-radius:999px;padding:0 16px;font-weight:700;cursor:pointer;border:1px solid transparent}
-    .btn.primary{background:var(--teal);color:#fff;border-color:var(--teal);box-shadow:0 6px 16px rgba(36,106,115,.18)}
-    .small{font-size:12px;opacity:.75;margin-left:6px}
-    .grid{display:grid;gap:14px;grid-template-columns:repeat(3,minmax(180px,1fr))}
-    @media (max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
-    @media (max-width:560px){.grid{grid-template-columns:1fr}}
-    .slot{background:#fff;border:1px solid var(--stroke);border-radius:12px;padding:14px 18px;text-align:center;box-shadow:0 6px 16px rgba(49,14,16,.06);cursor:pointer;transition:.2s;font-weight:800}
-    .slot:hover{transform:translateY(-1px);box-shadow:0 10px 26px rgba(49,14,16,.1)}
-    .slot.full{opacity:.35;text-decoration:line-through;pointer-events:none}
-    .slot.active{outline:3px solid color-mix(in oklab, var(--teal) 45%, white);border-color:color-mix(in oklab, var(--teal) 35%, white);background:#fff}
-    .warn{background:#fff3cd;border:1px solid #ffe69c;color:#664d03;border-radius:12px;padding:10px 12px;margin:8px 0}
-    .empty{color:#5b4d44;opacity:.9;margin:8px 0 0 0}
-  
-.brand-right{display:flex;align-items:center;gap:10px;text-decoration:none}
-.logo-badge{width:64px;height:64px;border-radius:16px;background:linear-gradient(145deg,#246A73,#39a8b6);display:grid;place-items:center;box-shadow:0 10px 24px rgba(36,106,115,.28)}
-.logo-badge svg{width:34px;height:34px;fill:#fff}
-.brand-sub{display:none}
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>予約の確認</title>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:wght@500;600&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
 
-.brand-right{display:flex;align-items:center;gap:10px;text-decoration:none}
-.logo-img{width:88px;height:auto;border-radius:14px;box-shadow:0 10px 24px rgba(36,106,115,.18)}
-.brand-sub{display:none}
-.hwrap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0}
-
-.nav-left{display:flex;gap:8px;align-items:center}
-.brand-left{display:flex;align-items:center;gap:10px;text-decoration:none}
-.nav-right{display:flex;gap:8px;align-items:center}
-
-/* Microinteractions */
-.tag, .chip { transition: transform .06s ease, background-color .2s ease, box-shadow .2s ease; }
-.tag.pressed, .chip.pressed { transform: translateY(1px) scale(0.98); box-shadow: inset 0 2px 6px rgba(0,0,0,.08); }
-
-.fade-on-scroll { opacity:0; transform: translateY(8px); transition: opacity .6s ease, transform .6s ease; }
-.fade-on-scroll.in { opacity:1; transform:none; }
-
-/* Breadcrumbs */
-.breadcrumbs { display:flex; gap:.5rem; align-items:center; font-size:.9rem; color: var(--muted, #6f5a54); margin: .5rem 0 1rem; }
-.breadcrumbs a { color: inherit; text-decoration: none; }
-.breadcrumbs a[aria-current="page"] { color: var(--ink, #2E1A16); font-weight: 600; }
-.breadcrumbs .sep { opacity:.6; }
-
-/* Bigger CTA */
-.btn-primary, .reserve-btn { font-size:1.05rem; padding:.9rem 1.25rem; border-radius:14px; }
-
-/* Header controls */
-.header-controls { display:flex; gap:.5rem; align-items:center; }
-.header-controls select { border:1px solid var(--stroke,#eadfca); background:white; padding:.4rem .6rem; border-radius:10px; font-size:.95rem; }
-
-</style>
-<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
-
+<!-- Google Apps Script WebApp URL をここに（なければ URL 引数 ?gas=...&key=... を使用） -->
+<meta name="bl-sheet-hook" content="">
 <style>
-/* Elegant Didone-style numerals on timetable */
-.slot{
-  font-family: 'Bodoni Moda', 'Playfair Display', serif !important;
-  font-variant-numeric: lining-nums tabular-nums; /* lining for classic look; tabular if supported */
-  letter-spacing: .01em;
-  font-weight: 600;
-}
-/* Also apply to any time readouts in meta/summary, if present */
-.meta time, .time-num{
-  font-family: 'Bodoni Moda', 'Playfair Display', serif !important;
-  font-variant-numeric: lining-nums tabular-nums;
-}
-@media (max-width: 560px){
-  .slot{ font-weight: 700; letter-spacing: 0; } /* keep legibility on small screens */
-}
+/* Elegant timetable typography */
+#hpWeekTitle{font-family:'Playfair Display','Shippori Mincho',serif;font-weight:600;letter-spacing:.02em}
+#hpGrid th{font-family:'Playfair Display','Bodoni Moda',serif;font-weight:600;letter-spacing:.02em}
+#hpGrid th:first-child{font-weight:600}
+#hpGrid td .timebtn{font-family:'Bodoni Moda','Playfair Display',serif;font-weight:600;letter-spacing:.01em}
 
-.brand-right{display:flex;align-items:center;gap:10px;text-decoration:none}
-.logo-badge{width:64px;height:64px;border-radius:16px;background:linear-gradient(145deg,#246A73,#39a8b6);display:grid;place-items:center;box-shadow:0 10px 24px rgba(36,106,115,.28)}
-.logo-badge svg{width:34px;height:34px;fill:#fff}
-.brand-sub{display:none}
-
-.brand-right{display:flex;align-items:center;gap:10px;text-decoration:none}
-.logo-img{width:88px;height:auto;border-radius:14px;box-shadow:0 10px 24px rgba(36,106,115,.18)}
-.brand-sub{display:none}
-.hwrap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0}
-
-.nav-left{display:flex;gap:8px;align-items:center}
-.brand-left{display:flex;align-items:center;gap:10px;text-decoration:none}
-.nav-right{display:flex;gap:8px;align-items:center}
-</style>
-  
-<style>
-#hpGrid td { text-align:center !important; vertical-align:middle !important; }
-#hpGrid td button {
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  width:36px; height:28px; line-height:28px;
-}
-</style>
-
-
-<style id="hide-old-slots">
-/* Hide single-day time slots UI (kept in DOM but invisible) */
-.container .toolbar,
-#slots,
-#noSlots { display:none !important; }
-</style>
-
-<style id="fixed-footer-style">
-#ft{
-  position:fixed;
-  bottom:0;
-  left:0;
-  right:0;
-  background:#faf6ef;
-  padding:10px 0;
-  text-align:center;
-  color:#6b5e55;
-  font-size:13px;
-  border-top:1px solid #eadfca;
-  z-index:999;
-}
-#ft a{ color:#6b5e55; text-decoration:none; margin:0 10px; }
-#ft a:hover{ text-decoration:underline; }
-body{ padding-bottom:60px; } /* avoid overlap */
-</style>
-
-<style id="hpGridTweak">
-/* Tweak weekly grid: reduce visual width, add breathing space */
-#hpGridWrap{ max-width: 1000px; margin: 20px auto; }
-#hpGrid table{ width: 100%; }
-#hpGrid th{ font-size: 12px; padding: 6px 8px; }
-#hpGrid td{ padding: 4px; }
-#hpGrid button{ width: 32px; height: 24px; border-radius: 8px; }
-#hpWeekTitle{ font-size: 16px; }
-@media (max-width: 1200px){
-  #hpGridWrap{ max-width: 920px; }
-}
-@media (max-width: 980px){
-  #hpGridWrap{ max-width: 100%; }
-}
-</style>
-
-<style id="hpGridCenter">
-#hpGridWrap{ max-width: 1000px; margin: 20px auto; text-align:center; }
-#hpGrid{ display:inline-block; text-align:left; }
-</style>
-
-<style id="hpGridAlign">
-/* Align schedule box with menu box and center */
-#hpGridWrap{
-  max-width: 90%;
-  margin: 20px auto;
-  background:#fff;
-  border:1px solid var(--stroke);
-  border-radius:14px;
-  padding:16px;
-  box-sizing:border-box;
-}
-#hpGridWrap h2{ text-align:center; }
-</style>
-
-<style id="hpGridCardFit">
-/* Align weekly schedule card with other white cards and center it */
-#hpGridWrap{
-  max-width: 860px;          /* card width to match typical form card */
-  margin: 24px auto;         /* center */
-  background:#fff;
-  border:1px solid var(--stroke);
-  border-radius:14px;
-  box-shadow:0 10px 24px rgba(49,14,16,.08);
-  padding:14px 16px;
-}
-#hpWeekTitle{ text-align:center; }
-#hpGrid{ overflow:auto; }
-</style>
-
-<style id="hpGridCenterFix">
-#hpGrid table {
-  margin: 0 auto;       /* Center horizontally */
-  display: table;
-}
-</style>
-
-<style id="hpGridCenterFINAL">
-#hpGrid table{ width:auto !important; margin:0 auto; display:table; }
-</style>
-  <style id="hpGridCenterButtons">
-  #hpGrid td { text-align: center; vertical-align: middle; }
-  #hpGrid td button {
-    display: inline-grid;
-    place-items: center;
-    width: 36px;
-    height: 28px;
-  }
-</style>
-
-<style id="hide-all-forms">
-  #devCardTest, #cardSection, #reserveForm { display: none !important; }
+:root{--base:#F7F1E1;--ink:#2E1A16;--stroke:#eadfca;--teal:#246A73;--muted:#6f5a54}
+*{box-sizing:border-box}
+body{margin:0;background:var(--base);color:var(--ink);font-family:"Inter","Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+.container{max-width:980px;margin:20px auto;padding:0 16px}
+.card{background:#fff;border:1px solid var(--stroke);border-radius:16px;box-shadow:0 10px 24px rgba(36,106,115,.08);padding:16px;margin:10px 0}
+h1{font-size:26px;margin:6px 0 10px}
+.row{display:grid;grid-template-columns:160px 1fr;gap:6px 14px}
+dt{color:var(--muted);font-size:13px}
+dd{margin:0 0 6px 0}
+input[type="email"]{height:40px;border-radius:12px;border:1px solid var(--stroke);padding:0 12px;width:100%}
+.btn{height:44px;border-radius:999px;padding:0 18px;font-weight:800;cursor:pointer;border:1px solid transparent}
+.btn.primary{background:var(--teal);color:#fff;border-color:var(--teal);box-shadow:0 6px 16px rgba(36,106,115,.18)}
+.btn.ghost{background:#fff;border-color:var(--stroke)}
+.toolbar{display:flex;gap:10px;align-items:center;margin:12px 0;flex-wrap:wrap}
+#msg{white-space:pre-line}
+footer{margin:12px 0 30px;color:var(--muted);font-size:12px}
+/* weekly timetable */
+#hpGridWrap{max-width:860px;margin:16px auto;background:#fff;border:1px solid var(--stroke);border-radius:14px;box-shadow:0 10px 24px rgba(49,14,16,.08);padding:14px 16px}
+#hpGrid{overflow:auto}
+#hpGrid table{width:auto;border-collapse:separate;border-spacing:0;display:table;margin:0 auto}
+#hpGrid th,#hpGrid td{border-bottom:1px solid var(--stroke);border-right:1px solid var(--stroke)}
+#hpGrid th{background:#fff;font-weight:700}
+#hpGrid td{padding:6px 4px;text-align:center;vertical-align:middle}
+.timebtn{display:inline-grid;place-items:center;width:36px;height:28px;border-radius:8px;border:1px solid var(--stroke);background:#fff;cursor:pointer}
+.timebtn:hover{box-shadow:0 6px 14px rgba(0,0,0,.08)}
+.headerbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.headerbar .btn{height:36px;padding:0 12px;font-weight:700}
+.small{font-size:12px;color:var(--muted)}
 </style>
 </head>
-  <!doctype html>
-<meta charset="utf-8">
-<title>Save card test</title>
+<body>
+<div class="container">
+  <a href="index.html" class="btn ghost">← 戻る</a>
+  <h1>予約の確認</h1>
+
+  <div class="card">
+    <dl class="row">
+      <dt>サロン</dt><dd id="v_salon">-</dd>
+      <dt>メニュー</dt><dd id="v_menu">-</dd>
+      <dt>施術者</dt><dd id="v_staff">-</dd>
+      <dt>日時</dt><dd id="v_date">-</dd>
+      <dt>目安金額</dt><dd id="v_price">-</dd>
+    </dl>
+  </div>
+
+  <div class="card">
+    <label>予約連絡用メール</label>
+    <input id="email" type="email" placeholder="you@example.com"/>
+    <p class="small">※空でも予約はできます。メールを入れると <code>bookings</code> シートに反映されます。</p>
+  </div>
+
+  <div class="card" id="hpGridWrap">
+    <h2 style="margin:0 0 8px;font-size:18px">Select date &amp; time</h2>
+    <div class="headerbar">
+      <button id="hpPrev" class="btn ghost" type="button">‹ Prev</button>
+      <div id="hpWeekTitle" style="font-weight:800"></div>
+      <button id="hpNext" class="btn ghost" type="button">Next ›</button>
+    </div>
+    <div id="hpGrid"></div>
+    <div class="small">◯ Available　× Unavailable</div>
+  </div>
+
+  <div class="toolbar">
+    <button id="btnConfirm" class="btn primary">この内容で予約する</button>
+    <button id="btnCancel" class="btn ghost" onclick="history.back()">一度戻る</button>
+    <span id="spin" style="display:none">処理中…</span>
+  </div>
+
+  <div id="msg"></div>
+
+  <footer>
+    <a href="terms.html">Terms</a> ・ <a href="privacy.html">Privacy</a> ・ <a href="cancel_policy.html">Cancel Policy</a> ・ <a href="contact.html">Contact</a>
+  </footer>
+</div>
+
 <script>
-// 予約ページ単体で動くように、固定で宣言しておく
-window.GAS_URL = 'https://script.google.com/macros/s/AKfycbxQHByDLRu-QlfAyRRMdM0-pGskH9Ka7IcFs9NeV2NB3DyDWhaLgvv8Hain_l9nZGvk/exec';
-window.GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
-</script>
+// ===== 通貨ユーティリティ（price_jpy を元に表示） =====
+const RATES = { JPY:1, USD:0.0067, EUR:0.0061, LKR:2.05 }; // 必要に応じて更新
+function getLang(){ try{ return (localStorage.getItem('bl_lang')||'auto')==='ja' ? 'ja' : 'en'; }catch(e){ return 'en'; } }
+function getCurrency(){ try{ return localStorage.getItem('bl_currency') || 'JPY'; }catch(e){ return 'JPY'; } }
+function fmtCurrencyFromJPY(jpy, cur){
+  const n = Math.max(0, Number(jpy)||0);
+  const converted = Math.round(n * (RATES[cur] || 1));
+  try{
+    return new Intl.NumberFormat(getLang()==='ja'?'ja-JP':'en-US',
+      { style:'currency', currency: cur, maximumFractionDigits:0 }).format(converted);
+  }catch(e){
+    const symbols = {JPY:'¥', USD:'$', EUR:'€', LKR:'Rs '};
+    return (symbols[cur]||'') + converted.toLocaleString();
+  }
+}
 
-<script src="https://js.stripe.com/v3/"></script>
-<style>
-  body{font:16px/1.6 system-ui; max-width:720px; margin:24px auto; padding:0 16px}
-  .row{margin:8px 0}
-  #card-element{padding:.75rem;border:1px solid #ddd;border-radius:8px;background:#fff}
-  button{padding:.6rem 1rem;border-radius:10px;border:1px solid #ddd;cursor:pointer}
-  pre{background:#f7f7f7;border:1px solid #eee;padding:10px;border-radius:8px;white-space:pre-wrap}
-</style>
-<section id="devCardTest" style="display:none">
-<h1>Save card (SetupIntent) – test</h1>
+// ===== URL パラメータから表示を構成 =====
+const p = new URLSearchParams(location.search);
+const salonId   = p.get('salonId') || p.get('salon') || '';
+const salonName = p.get('salonName') || p.get('salon_name') || 'Salon';
+const itemName  = p.get('item') || p.get('menu') || 'Menu';
+const staffName = p.get('staffName') || p.get('staff') || '指名なし';
+const dateTextParam  = p.get('date') || p.get('dt') || '';
+const priceJPY  = Number(p.get('price_jpy') || 0);
 
-<div class="row">
-  <label>Email<br><input id="email" placeholder="you@example.com" style="width:360px"></label>
-  <!-- メール入力の直後に入れる（無理なら省略可。Cで自動生成されます） -->
-<small id="cardStatus" class="meta" style="margin-left:8px;opacity:.8"></small>
+document.getElementById('v_salon').textContent = salonName || salonId || '-';
+document.getElementById('v_menu').textContent  = itemName;
+document.getElementById('v_staff').textContent = staffName || '指名なし';
+document.getElementById('v_date').textContent  = dateTextParam || '-';
+document.getElementById('v_price').textContent = priceJPY ? fmtCurrencyFromJPY(priceJPY, getCurrency()) : '-';
 
-</div>
-<div class="row">
-  <label>Name<br><input id="name" placeholder="Your name" style="width:360px"></label>
-</div>
-<div class="row">
-  <label>Card<br><div id="card-element"></div></label>
-  <div style="font-size:12px;opacity:.7">テストカード: 4242 4242 4242 4242 / 任意の有効期限 / 任意のCVC</div>
-</div>
-<div class="row">
-  <button id="save">Save card</button>
-</div>
-<pre id="out">Waiting…</pre>
-</section>
-<script>
-  // ① 自分の値に置き換える
-  const STRIPE_PK = 'pk_test_51S59dhHFHLP5RXi1qkW9cuPEJAlJPuSaFeWFb5GuYhsXs9vkX6RJYfVYwQEdK8TwN3eKF7wEctQftyhYxb2rRIZN00146bOW8U';               // 例: pk_test_51...
-  const BASE_URL  = 'https://pay-server-uis7.onrender.com'.replace(/\/$/,''); // 例: https://pay-server-xxxx.onrender.com
+// ===== GAS 設定（meta / localStorage / URL の順で解決） =====
+const GAS_URL = document.querySelector('meta[name=bl-sheet-hook]')?.content || p.get('gas') || '';
+const GAS_KEY = p.get('key') || localStorage.getItem('bl_gas_key') || '';
 
-  // ② Stripe.js 初期化 & Elements
-  const stripe = Stripe(STRIPE_PK);
-  const elements = stripe.elements();
-  const card = elements.create('card');
-  card.mount('#card-element');
-
-  const $ = id => document.getElementById(id);
-  const out = $('out');
-
-  // ③ Save card ボタン
-  $('save').onclick = async () => {
-    try{
-      out.textContent = 'Creating SetupIntent…';
-      const email = $('email').value.trim();
-      const name  = $('name').value.trim();
-      if(!email){ alert('Email を入れてね'); return; }
-
-      // 1) 自前サーバーで SetupIntent を作成（clientSecret と customerId をもらう）
-      const r1 = await fetch(BASE_URL + '/api/setup-intent', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ email, name })
-      });
-      const j1 = await r1.json();
-      if(!j1.ok) throw new Error('setup-intent error: '+JSON.stringify(j1));
-
-      out.textContent = 'Confirming card setup…';
-
-      // 2) フロントでカード入力を確定（confirmCardSetup）
-      const {setupIntent, error} = await stripe.confirmCardSetup(j1.clientSecret, {
-        payment_method: {
-          card,
-          billing_details: { email, name }
-        }
-      });
-      if(error) throw error;
-
-      // 3) 保存結果（customerId + payment_method）をローカルに保存＆表示
-      const saved = {
-        email, name,
-        customerId: j1.customerId,
-        paymentMethodId: setupIntent.payment_method,
-        ts: Date.now()
-      };
-      localStorage.setItem('bl_saved_card', JSON.stringify(saved));
-      out.textContent = 'Saved! You can charge later with:\n' + JSON.stringify(saved, null, 2);
-
-      // おまけ：Stripeの顧客画面のヒント
-      console.log('Go check in Stripe: Customers ->', email);
-    }catch(e){
-      console.error(e);
-      out.textContent = 'Error: ' + (e.message || String(e));
-      alert('Error: ' + (e.message || String(e)));
-    }
-  };
-</script>
-<script>
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbwJz67fvPpB1tJ7IWggPFWJ-2tBydVOHikzFvviS36_8LOD8YW7jn3vWjWF9f3ngomH/exec'; // ②で控えたURL
-  const GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';         // ②の GAS_KEY と同じ
-
-  async function recordToSheet({ email, name, customerId, paymentMethodId }) {
-    const payload = { key: GAS_KEY, email, name, customerId, paymentMethodId };
-    // CORSが厳しい環境では Content-Type を text/plain に
-    const res = await fetch(GAS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload),
-      type: 'booking',
-      bookingId,           // BL-20250917-001 みたいなID
-      email, name,
-      amountJPY,           // 整数
-      customerId           // 保存済みの顧客ID（あれば）
+// ===== シート反映（bookings 追記） =====
+async function recordBookingToSheet({ bookingId, email }){
+  if(!GAS_URL){ console.warn('GAS_URL not set'); return; }
+  const res = await fetch(GAS_URL, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      key: GAS_KEY,
+      kind: 'booking_create',
+      bookingId,
+      email
     })
   });
+  const j = await res.json().catch(()=>({}));
+  if(!j || !j.ok) throw new Error((j&&j.error)||'booking_create failed');
+}
 
-    // 必要なら結果を見る
-    try {
-      const json = await res.json();
-      if (!json.ok) throw new Error(json.error || 'GAS error');
-      console.log('Sheet saved:', json);
-    } catch (e) {
-      console.warn('Sheet save (parse) error:', e);
-    }
-  }
+// ===== UI 操作 =====
+function setMsg(t, isErr=false){ const el=document.getElementById('msg'); el.textContent=t||''; el.style.color=isErr?'#74070E':'#2E1A16'; }
+function uid(n=8){ const s='23456789ABCDEFGHJKLMNPQRSTUVWXYZ'; return Array.from(crypto.getRandomValues(new Uint8Array(n))).map(b=>s[b%s.length]).join(''); }
 
-  // ★ save-card 成功時の既存コードの最後に足すだけ
-  // 例: save-card-test.htmlの成功表示の直後など
-  async function onCardSavedSuccess({ email, name, customerId, paymentMethodId }) {
-    await recordToSheet({ email, name, customerId, paymentMethodId });
-  }
-</script>
+document.getElementById('btnConfirm').addEventListener('click', async ()=>{
+  const email = (document.getElementById('email').value||'').trim();
+  const dtIso = localStorage.getItem('reserve_selected') || '';
+  const dateText = dtIso ? new Date(dtIso).toLocaleString() : (dateTextParam || '');
+  if(dateText) document.getElementById('v_date').textContent = dateText;
 
+  const bid = [salonId||'S', (dateText||'').replace(/[^0-9]/g,''), uid(4)].filter(Boolean).join('-');
 
-<body>
-  <div class="container">
-    <a id="back" class="back-link" href="./index.html">← サイトへ戻る</a>
+  document.getElementById('btnConfirm').disabled = true;
+  document.getElementById('spin').style.display = 'inline';
+  setMsg('');
 
-    <div class="card">
-      <h1 id="r_item" class="title">Reservation</h1>
-      <div id="r_salon" class="meta">Salon #-</div>
-      <div id="r_price" class="price">支払い: 現地支払い</div>
-      <div class="meta"><span id="r_dur">所要時間: 60分</span></div>
-      <div id="r_warn" class="warn" style="display:none"></div>
-    </div>
-
-    <div class="card" id="menuCard">
-  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-    <label style="font-weight:800">メニュー</label>
-    <select id="menuSelect"></select>
-    <span id="menuHelp" class="muted"></span>
-    <div class="staff-row" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
-      <label for="staffSelect" style="font-weight:800">施術者</label>
-      <select id="staffSelect" name="staff" class="date" style="min-width:240px">
-        <option value="">指名なし</option>
-      </select>
-      <span class="small" style="opacity:.7">/ Staff (No preference available)</span>
-    </div>
-  </div>
-</div>
-
-    <div class="toolbar">
-      <input id="date" class="date" type="date" />
-      <button id="gen" class="btn primary reserve-btn">候補を表示</button>
-      <span class="small">※ 営業時間 10:00 - 20:00（30分刻み）</span>
-    </div>
-
-    <div id="slots" class="grid"></div>
-    <div id="noSlots" class="empty" style="display:none">候補が見つかりません。別の日付をお試しください。</div>
-  </div>
-
-  <script>
-
-// i18n helper
-function getLang(){ try{ const pref=localStorage.getItem('bl_lang')||'auto'; if(pref==='auto'){ const ja=(navigator.language||'en').toLowerCase().startsWith('ja'); return ja?'ja':'en'; } return pref; }catch(e){ return 'ja'; } }
-
-
-document.addEventListener('DOMContentLoaded', ()=>{
-  if(getLang()==='en'){
-    const dict = {
-      '候補を表示':'Show time slots',
-      '所要時間:':'Duration:',
-      'メニュー':'Menu'
-    };
-    document.querySelectorAll('button, .title, .meta, label, .small').forEach(el=>{
-      let t=el.textContent.trim();
-      if(dict[t]) el.textContent = dict[t];
-      if(el.id==='back'){ el.textContent='← Back to site'; }
-    });
+  try{
+    await recordBookingToSheet({ bookingId: bid, email });
+    if(email) try{ localStorage.setItem('bl_email', email); }catch(e){}
+    setMsg('予約を受け付けました。ご来店をお待ちしています！\\n予約ID: '+bid);
+  }catch(e){
+    setMsg('予約は完了しましたが、シート反映に失敗しました。後で自動再送します。\\n'+(e.message||e), true);
+  }finally{
+    document.getElementById('btnConfirm').disabled = false;
+    document.getElementById('spin').style.display = 'none';
   }
 });
 
-  (function(){
-    const p = new URLSearchParams(location.search);
-    const salonId   = p.get('salonId')   || '';
-    const salonName = p.get('salonName') || (salonId? ('Salon #' + salonId): '');
-    const item      = p.get('item')      || 'Reservation';
-    // 既存: const priceUSD = Number(p.get('price') || 0);
-    const priceJPY = Number(p.get('price_jpy') || 0);
-    if (!Number.isNaN(priceJPY) && priceJPY > 0) {
-  document.getElementById('r_price').textContent = `支払い: ¥${priceJPY.toLocaleString('ja-JP')}`;
-}
-    const dateParam = p.get('date') || ''; // optional ?date=YYYY-MM-DD
-
-    const LANG = localStorage.getItem('lang') || 'ja';
-    const USD_TO_JPY = Number(localStorage.getItem('usd_to_jpy')) || 170;
-    const usd=n=> '$'+Number(n).toFixed(2);
-    const jpy=n=> '¥'+Math.round(Number(n)*USD_TO_JPY).toLocaleString('ja-JP');
-    const money = n => LANG==='ja'? jpy(n): usd(n);
-
-    document.getElementById('r_item').textContent=item;
-    document.getElementById('r_salon').textContent= salonName || 'Salon #-';
-    document.getElementById('r_price').textContent = priceUSD ? ('支払い: ' + money(priceUSD)) : '支払い: 現地支払い';
-
-    const warn = document.getElementById('r_warn');
-    if(!salonId || !item){
-      warn.style.display = 'block';
-      warn.textContent = '予約メニューの情報が不足しています。サロンの「詳細」→「予約へ」から入り直してください。';
-    }
-
-    const slotsEl = document.getElementById('slots');
-    const genBtn = document.getElementById('gen');
-    const dateEl = document.getElementById('date');
-    const noSlots = document.getElementById('noSlots');
-
-    function buildSlots(dateStr){
-      slotsEl.innerHTML='';
-      noSlots.style.display='none';
-      if(!dateStr){ return; }
-
-      const [y,m,d] = dateStr.split('-').map(Number);
-      if(!y || !m || !d){ noSlots.style.display = 'block'; noSlots.textContent='日付の形式が正しくありません。'; return; }
-
-      const base = new Date(y, m-1, d, 10, 0, 0, 0);
-      const end  = new Date(y, m-1, d, 20, 0, 0, 0);
-
-      let t = base.getTime();
-      const endMs = end.getTime();
-      const step = 30*60*1000;
-      let count = 0;
-
-      while(t<=endMs){
-        const dt = new Date(t);
-        const h = String(dt.getHours()).padStart(2,'0');
-        const mm = String(dt.getMinutes()).padStart(2,'0');
-        const btn = document.createElement('button');
-        btn.className = "time-slot";
-        btn.setAttribute("data-time", dt.toISOString());
-        btn.className='slot time-slot';
-        btn.setAttribute('data-time', dt.toISOString());
-        btn.textContent = `${h}:${mm}`;
-        btn.onclick = ()=>{
-          document.querySelectorAll('.slot.active').forEach(x=>x.classList.remove('active'));
-          btn.classList.add('active');
-          const sp = new URLSearchParams({ salonId, salonName, item, price:String(priceUSD), time: dt.toISOString() });
-          location.href = './confirm.html?' + sp.toString();
-        };
-        slotsEl.appendChild(btn);
-        count++; t += step;
-      }
-
-      if(count===0){ noSlots.style.display='block'; }
-    }
-
-    genBtn.addEventListener('click', ()=>{
-      const val = dateEl.value;
-      if(!val){ dateEl.focus(); dateEl.reportValidity?.(); return; }
-      buildSlots(val);
-      slotsEl.scrollIntoView({behavior:'smooth',block:'start'});
-    });
-
-    // Prefill a date and render immediately (so timetable always visible on load)
-    try{
-      const today = new Date();
-      const f = (n)=> String(n).padStart(2,'0');
-      const defaultDate = dateParam || `${today.getFullYear()}-${f(today.getMonth()+1)}-${f(today.getDate())}`;
-      dateEl.value = defaultDate;
-      buildSlots(defaultDate);
-    }catch(e){}
-  })();
-  </script>
-
-
-<footer id="ft" style="margin:18px 0 40px;text-align:center;color:#6b5e55;font-size:12px">
-  <a href="terms.html" class="ft-link" data-ft="terms" style="margin:0 10px">Terms</a>·
-  <a href="privacy.html" class="ft-link" data-ft="privacy" style="margin:0 10px">Privacy</a>·
-  <a href="cancel.html" class="ft-link" data-ft="cancel" style="margin:0 10px">Cancel Policy</a>·
-  <a href="contact.html" class="ft-link" data-ft="contact" style="margin:0 10px">Contact</a>
-</footer>
-<div id="ftModal" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:9999">
-  <div id="ftBackdrop" style="position:absolute;inset:0;background:rgba(0,0,0,.4)"></div>
-  <div role="dialog" aria-modal="true" aria-labelledby="ftTitle"
-       style="position:relative;background:#fff;border:1px solid #eadfca;border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,.18);
-              width:min(92vw,720px);max-height:80vh;overflow:auto;padding:18px">
-    <div style="display:flex;align-items:center;gap:8px;justify-content:space-between;margin-bottom:8px">
-      <div id="ftTitle" style="font-weight:900">Terms</div>
-      <button id="ftClose" style="border:none;background:#fff;border:1px solid #eadfca;border-radius:10px;padding:6px 10px;cursor:pointer">Close</button>
-    </div>
-    <div id="ftBody" style="line-height:1.7;color:#2E1A16;font-size:14px">
-      <p>Loading…</p>
-    </div>
-  </div>
-</div>
-
-
-
-<section class="section" id="hpGridWrap" style="background:#fff;border:1px solid var(--stroke);border-radius:14px;margin:16px 0;padding:14px">
-  <h2 style="margin:0 0 8px;font-size:18px">Select date & time</h2>
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-    <button id="hpPrev" class="btn reserve-btn" type="button" style="padding:6px 10px;border:1px solid var(--stroke);border-radius:10px;background:#fff;cursor:pointer">‹ Prev</button>
-    <div id="hpWeekTitle" style="font-weight:700"></div>
-    <button id="hpNext" class="btn reserve-btn" type="button" style="padding:6px 10px;border:1px solid var(--stroke);border-radius:10px;background:#fff;cursor:pointer">Next ›</button>
-  </div>
-  <div id="hpGrid" style="overflow:auto;border:1px solid var(--stroke);border-radius:12px"></div>
-  <div id="hpLegend" style="margin-top:8px;color:#6b5e55;font-size:12px">◯ Available　× Unavailable</div>
-</section>
-  <section class="section" id="cardSection" style="display:none">
-  <h2>カード情報の保存（後払い用）</h2>
-  <div id="bl-card-box"></div>
-  <!-- 同意チェックをこのセクションの末尾に1行足す（Saveボタンより上にあればどこでもOK） -->
-  <label style="display:flex;gap:.5rem;align-items:center;margin:.5rem 0">
-    <input type="checkbox" id="agree"> I agree to the Terms
-  </label>
-</section>
-
-
-<script>
-// HPB-like weekly schedule grid (append-only, non-destructive)
+// ===== 週次タイムテーブル =====
 (function(){
-  if(window.__hpGridInstalled) return; window.__hpGridInstalled = true;
-  const baseColor = getComputedStyle(document.documentElement).getPropertyValue('--teal') || '#246A73';
   const grid = document.getElementById('hpGrid');
   const title = document.getElementById('hpWeekTitle');
   const btnPrev = document.getElementById('hpPrev');
   const btnNext = document.getElementById('hpNext');
-  // Settings
   const startHour = 9, endHour = 18, stepMin = 30;
-  let weekOffset = 0; // 0 = current week
+  let weekOffset = 0;
 
-  function getWeekStart(d){
-    const dt = new Date(d); const day=(dt.getDay()+6)%7; // Monday=0
-    dt.setDate(dt.getDate()-day); dt.setHours(0,0,0,0); return dt;
-  }
   function addDays(d, n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
-  function fmtDate(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  function getWeekStart(d){ const dt = new Date(d); const day=(dt.getDay()+6)%7; dt.setDate(dt.getDate()-day); dt.setHours(0,0,0,0); return dt; }
   function fmtHm(h,m){ return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); }
 
   function buildWeek(offset){
     const today = new Date();
     const ws = getWeekStart(addDays(today, offset*7));
     const we = addDays(ws, 6);
-    title.textContent = ws.toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'}) + ' – ' + we.toLocaleDateString(undefined,{month:'long',day:'numeric'});
+    title.textContent = ws.toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'}) + ' — ' + we.toLocaleDateString(undefined,{month:'long',day:'numeric'});
 
-    // Build table
     const times=[];
-    for(let h=startHour; h<endHour; h++){
-      for(let m=0; m<60; m+=stepMin) times.push([h,m]);
+    for(let h=startHour; h<=endHour; h++){
+      for(let m=0; m<60; m+=stepMin){
+        if(h===endHour && m>0) break;
+        times.push([h,m]);
+      }
     }
     const days = Array.from({length:7},(_,i)=>addDays(ws,i));
 
-    // style
     const table = document.createElement('table');
-    table.style.width='100%'; table.style.borderCollapse='separate'; table.style.borderSpacing='0';
     const thead=document.createElement('thead'), tbody=document.createElement('tbody');
 
-    // header row
     const hr=document.createElement('tr');
-    const corner=document.createElement('th'); corner.style.position='sticky'; corner.style.left='0'; corner.style.background='#fff'; corner.style.borderBottom='1px solid var(--stroke)'; corner.style.zIndex='2'; hr.appendChild(corner);
+    const corner=document.createElement('th'); corner.style.width='70px'; hr.appendChild(corner);
     days.forEach(d=>{
       const th=document.createElement('th');
-      th.style.position='sticky'; th.style.top='0'; th.style.background='#fff'; th.style.borderBottom='1px solid var(--stroke)';
-      th.style.padding='8px'; th.style.fontWeight='700';
-      th.textContent = d.toLocaleDateString(undefined,{month:'short',day:'numeric',weekday:'short'});
+      th.style.padding='8px'; th.textContent = d.toLocaleDateString(undefined,{month:'short',day:'numeric',weekday:'short'});
       hr.appendChild(th);
     });
     thead.appendChild(hr);
 
-    // rows
     times.forEach(([h,m])=>{
       const tr=document.createElement('tr');
-      const th=document.createElement('th');
-      th.textContent = fmtHm(h,m);
-      th.style.position='sticky'; th.style.left='0'; th.style.background='#fff'; th.style.borderRight='1px solid var(--stroke)';
-      th.style.padding='6px 8px'; th.style.fontWeight='600';
-      tr.appendChild(th);
+      const th=document.createElement('th'); th.textContent = fmtHm(h,m); th.style.padding='6px 8px'; tr.appendChild(th);
       days.forEach(d=>{
         const td=document.createElement('td');
-        td.style.textAlign='center'; td.style.padding='6px 4px'; td.style.borderBottom='1px solid var(--stroke)'; td.style.borderRight='1px solid var(--stroke)';
-        // Default availability: show ◯ by default; availability adapter will set × for booked slots.
-        let mark='◯', color=baseColor.trim()||'#246A73';
         const btn=document.createElement('button');
-        btn.textContent=mark;
-        btn.style.border='1px solid var(--stroke)'; btn.style.borderRadius='8px'; btn.style.background='#fff';
-        btn.style.width='36px'; btn.style.height='28px'; btn.style.cursor='pointer';
-        btn.style.color=color;
-        btn.disabled = false;
+        btn.className='timebtn';
+        btn.textContent='◯';
         btn.addEventListener('click', ()=>{
           const dt = new Date(d); dt.setHours(h,m,0,0);
           const iso = dt.toISOString();
-          // If page has an input for datetime, set it; else store in localStorage and alert
-          const input = document.querySelector('input[type="datetime-local"], input[data-reserve-dt]');
-          if(input){
-            const tzOffset = dt.getTimezoneOffset()*60000;
-            input.value = new Date(dt - tzOffset).toISOString().slice(0,16);
-          }
           localStorage.setItem('reserve_selected', iso);
-          alert('Selected: ' + dt.toLocaleString());
+          document.getElementById('v_date').textContent = dt.toLocaleString();
+          // 軽いフィードバック
+          btn.textContent='✓';
+          setTimeout(()=>btn.textContent='◯',600);
         });
         td.appendChild(btn);
         tr.appendChild(td);
@@ -631,1022 +235,13 @@ document.addEventListener('DOMContentLoaded', ()=>{
     });
 
     table.appendChild(thead); table.appendChild(tbody);
-    grid.innerHTML = ''; grid.appendChild(table);
+    grid.innerHTML=''; grid.appendChild(table);
   }
 
   buildWeek(weekOffset);
-  btnPrev && btnPrev.addEventListener('click', ()=>{ weekOffset--; buildWeek(weekOffset); });
-  btnNext && btnNext.addEventListener('click', ()=>{ weekOffset++; buildWeek(weekOffset); });
-})();
-</script>
-
-<script>
-// Footer modal (inline content, no fetch). Ensures single instance and prevents navigation.
-(function(){
-  if(window.__ftModalInstalledInline) return; window.__ftModalInstalledInline = true;
-  const modal = document.getElementById('ftModal');
-  const body  = document.getElementById('ftBody');
-  const title = document.getElementById('ftTitle');
-  const closeBtn = document.getElementById('ftClose');
-  const backdrop = document.getElementById('ftBackdrop');
-
-  const CONTENT = {
-    terms: {title:'Terms', html:'<p>Use of this site is subject to local laws and our booking guidelines. Users agree to provide accurate information and to comply with shop policies.</p>'},
-    privacy: {title:'Privacy', html:'<p>We store minimal data (e.g., favorites, reservations, language) in your browser. We do not sell personal data.</p>'},
-    cancel: {title:'Cancel Policy', html:'<p>Free cancellation until 24 hours before your appointment. Within 24 hours, please contact the shop directly.</p>'},
-    contact: {title:'Contact', html:'<p>Email: support@beautylanka.example<br>Phone: +94 11 000 0000</p>'}
-  };
-
-  function open(kind){
-    const c = CONTENT[kind] || CONTENT.terms;
-    title.textContent = c.title;
-    body.innerHTML = c.html;
-    modal.style.display = 'flex';
-  }
-  function close(){ modal.style.display='none'; }
-
-  document.addEventListener('click', (e)=>{
-    const a = e.target.closest && e.target.closest('a.ft-link');
-    if(a){ e.preventDefault(); open(a.getAttribute('data-ft')); }
-  });
-  closeBtn && closeBtn.addEventListener('click', close);
-  backdrop && backdrop.addEventListener('click', close);
-})();
-</script>
-
-<script id="hide-dup-footer">
-(function(){
-  if(window.__hideDupFooter) return; window.__hideDupFooter = true;
-  function hideDup(){
-    const matcher = /Terms\s*[・·\.]?\s*Privacy\s*[・·\.]?\s*Cancel Policy\s*[・·\.]?\s*Contact/i;
-    document.querySelectorAll('body :not(#ft):not(#ft *)').forEach(el=>{
-      try{
-        if(el instanceof HTMLElement){
-          const txt = (el.textContent||'').trim();
-          if(txt && matcher.test(txt)){
-            el.style.display = 'none';
-          }
-        }
-      }catch(e){}
-    });
-  }
-  if(document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', hideDup); } else { hideDup(); }
-  new MutationObserver(hideDup).observe(document.body, {childList:true, subtree:true});
-})();
-</script>
-
-<script id="ft-dedupe-hard">
-(function(){
-  if(window.__ftDedupeHard) return; window.__ftDedupeHard = true;
-  function hideDup(){
-    // find containers that have all four links but are not #ft
-    const terms = Array.from(document.querySelectorAll('a[href*="terms"], a.ft-link[data-ft="terms"]'));
-    terms.forEach(a=>{
-      const root = a.closest('#ft') ? null : a.closest('footer, div, section, p');
-      if(!root) return;
-      const hasPrivacy = root.querySelector('a[href*="privacy"], a.ft-link[data-ft="privacy"]');
-      const hasCancel  = root.querySelector('a[href*="cancel"], a.ft-link[data-ft="cancel"]');
-      const hasContact = root.querySelector('a[href*="contact"], a.ft-link[data-ft="contact"]');
-      if(hasPrivacy && hasCancel && hasContact){
-        root.style.display = 'none';
-      }
-    });
-  }
-  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', hideDup); } else { hideDup(); }
-  new MutationObserver(hideDup).observe(document.body, {childList:true, subtree:true});
-})();
-</script>
-
-<script id="hpGridAutoAlign">
-(function(){
-  if(window.__hpGridAutoAlign) return; window.__hpGridAutoAlign = true;
-  function getWhiteCard(el){
-    // climb up to the nearest white-background block (the "card" above)
-    while(el && el !== document.body){
-      const cs = getComputedStyle(el);
-      const bg = cs.backgroundColor.replace(/\s+/g,'');
-      const isWhite = bg === 'rgb(255,255,255)' || bg === '#fff' || bg === 'white';
-      const hasShadow = cs.boxShadow && cs.boxShadow !== 'none';
-      if(isWhite && (hasShadow || cs.borderRadius !== '0px')) return el;
-      el = el.parentElement;
-    }
-    return null;
-  }
-  function align(){
-    const wrap = document.getElementById('hpGridWrap');
-    if(!wrap) return;
-    // Anchor: try the Menu select box or its card
-    let anchor = document.getElementById('menuSelect');
-    if(anchor) anchor = getWhiteCard(anchor) || anchor.closest('.section, .card') || anchor.parentElement;
-    if(!anchor){
-      // fallback: the first white card above the schedule
-      let prev = wrap.previousElementSibling;
-      while(prev && !getWhiteCard(prev)) prev = prev.previousElementSibling;
-      anchor = prev || wrap.parentElement;
-    }
-    const aCard = getWhiteCard(anchor) || anchor;
-    const targetW = aCard ? aCard.clientWidth : wrap.clientWidth;
-    if(targetW && Math.abs(wrap.clientWidth - targetW) > 2){
-      wrap.style.maxWidth = targetW + 'px';
-      wrap.style.width = targetW + 'px';
-    }
-    // center it
-    wrap.style.marginLeft = 'auto';
-    wrap.style.marginRight = 'auto';
-    // ensure inner table is centered
-    const tbl = document.querySelector('#hpGrid table');
-    if(tbl){
-      tbl.style.width = 'auto';
-      tbl.style.margin = '0 auto';
-      tbl.style.display = 'table';
-    }
-  }
-  if(document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', align); } else { align(); }
-  window.addEventListener('resize', align);
-  new MutationObserver(align).observe(document.body, {childList:true, subtree:true});
-})();
-</script>
-
-<script id="hpGridAutoAlignFix2">
-(function(){
-  if(window.__hpGridAutoAlignFix2) return; window.__hpGridAutoAlignFix2 = true;
-  function findCard(el){
-    while(el && el !== document.body){
-      const cs = getComputedStyle(el);
-      const isWhite = /rgb\(255,\s*255,\s*255\)|#fff|white/i.test(cs.backgroundColor||'');
-      const hasFrame = (cs.borderRadius && cs.borderRadius !== '0px') || (cs.boxShadow && cs.boxShadow !== 'none') || (cs.border && cs.border !== '0px none');
-      if(isWhite && hasFrame) return el;
-      el = el.parentElement;
-    }
-    return null;
-  }
-  function align(){
-    const wrap = document.getElementById('hpGridWrap');
-    if(!wrap) return;
-    // Menu select's parent card
-    let anchorSel = document.getElementById('menuSelect') || document.querySelector('[id*="menu"] select');
-    let card = anchorSel ? findCard(anchorSel) : null;
-    // Fallback: previous white card before the schedule
-    if(!card){
-      let prev = wrap.previousElementSibling;
-      while(prev && !findCard(prev)) prev = prev.previousElementSibling;
-      card = prev || wrap.parentElement;
-    }
-    const w = (card && card.getBoundingClientRect ? card.getBoundingClientRect().width : wrap.getBoundingClientRect().width) || 860;
-    const clamp = Math.max(820, Math.min(1024, Math.round(w))); // keep reasonable width
-    // Apply
-    wrap.style.width = 'auto';
-    wrap.style.maxWidth = clamp + 'px';
-    wrap.style.marginLeft = 'auto';
-    wrap.style.marginRight = 'auto';
-    // Ensure inner table well centered
-    const tbl = document.querySelector('#hpGrid table');
-    if(tbl){
-      tbl.style.width = 'auto';
-      tbl.style.margin = '0 auto';
-      tbl.style.display = 'table';
-    }
-  }
-  if(document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', align); } else { align(); }
-  window.addEventListener('resize', align);
-  new MutationObserver(align).observe(document.body, {childList:true, subtree:true});
-})();
-</script>
-
-<script id="availability-adapter">
-// Server-ready availability adapter with localStorage fallback.
-// Server API (if BEATY_API_BASE is set):
-//   GET  {API}/availability?start=YYYY-MM-DD&days=7&shopId=... -> {slots:[{iso:'...', status:'booked'|'available'|'few'}]}
-//   POST {API}/book  {shopId, iso} -> {ok:true}
-(function(){
-  if(window.__BLAvailability) return;
-  const API = window.BEAUTY_API_BASE || document.body.getAttribute('data-api-base') || null;
-  const SHOP = window.BEAUTY_SHOP_ID || document.body.getAttribute('data-shop-id') || 'default-shop';
-  const KEY = 'bookedSlots:'+SHOP;
-  async function fetchWeek(startISO){
-    if(API){
-      try{
-        const url = API.replace(/\/$/,'') + `/availability?start=${encodeURIComponent(startISO)}&days=7&shopId=${encodeURIComponent(SHOP)}`;
-        const res = await fetch(url, {credentials:'include'});
-        if(!res.ok) throw new Error('HTTP '+res.status);
-        const data = await res.json();
-        const map = new Map();
-        (data.slots||[]).forEach(s=>{ map.set(s.iso, s.status||'booked'); });
-        return map;
-      }catch(e){ console.warn('Availability API failed, fallback to local', e); }
-    }
-    // Fallback: localStorage set of ISO strings
-    const arr = JSON.parse(localStorage.getItem(KEY) || '[]');
-    const map = new Map(arr.map(iso=>[iso,'booked']));
-    return map;
-  }
-  async function book(iso){
-    if(API){
-      try{
-        const url = API.replace(/\/$/,'') + `/book`;
-        const res = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({shopId: SHOP, iso})});
-        if(!res.ok) throw new Error('HTTP '+res.status);
-        return true;
-      }catch(e){ console.warn('Book API failed, fallback to local', e); }
-    }
-    const arr = JSON.parse(localStorage.getItem(KEY) || '[]');
-    if(!arr.includes(iso)){ arr.push(iso); localStorage.setItem(KEY, JSON.stringify(arr)); }
-    return true;
-  }
-  window.__BLAvailability = { fetchWeek, book, shopId: SHOP };
-})();
-</script>
-
-<script id="availability-reservation-hook">
-// Hook the weekly grid to show real availability and save selected slot for server booking.
-(function(){
-  if(window.__BLResHook) return; window.__BLResHook = true;
-  function parseHeaderDates(table){
-    const headers = Array.from(table.querySelectorAll('thead tr th')).slice(1);
-    const out = headers.map(th => {
-      // try to parse "9月15日(月)" or "Sep 15 (Mon)" generically using Date
-      const txt = th.textContent.trim();
-      // Try using dataset from title if present
-      let d = new Date(txt);
-      if(isNaN(d)) {
-        // Extract month/day numbers fallback
-        const m = txt.match(/(\d{1,2})\D+(\d{1,2})/);
-        if(m){
-          const now = new Date();
-          d = new Date(now.getFullYear(), Number(m[1])-1, Number(m[2]));
-        }else{
-          d = new Date(); // fallback
-        }
-      }
-      d.setHours(0,0,0,0);
-      return d;
-    });
-    return out;
-  }
-  function parseTimes(table){
-    return Array.from(table.querySelectorAll('tbody tr')).map(tr=>{
-      const t = (tr.querySelector('th')||{}).textContent||'';
-      const m = t.match(/(\d{1,2}):(\d{2})/);
-      return m ? {h:Number(m[1]), m:Number(m[2]), tr} : null;
-    }).filter(Boolean);
-  }
-  async function applyAvailability(){
-    const tbl = document.querySelector('#hpGrid table');
-    if(!tbl || !window.__BLAvailability) return;
-    const days = parseHeaderDates(tbl); if(!days.length) return;
-    const weekStart = new Date(days[0]); weekStart.setHours(0,0,0,0);
-    const startISO = weekStart.toISOString().slice(0,10);
-    const amap = await window.__BLAvailability.fetchWeek(startISO);
-    const rows = parseTimes(tbl);
-    rows.forEach((row, rIdx)=>{
-      const cells = row.tr.querySelectorAll('td');
-      days.forEach((d, cIdx)=>{
-        const dt = new Date(d); dt.setHours(row.h, row.m, 0, 0);
-        const iso = dt.toISOString();
-        const td = cells[cIdx];
-        const btn = td && td.querySelector('button');
-        if(!btn) return;
-        btn.dataset.iso = iso;
-        const status = amap.get(iso);
-        if(status === 'booked'){ btn.textContent='×'; btn.disabled=true; btn.style.color='#bbb'; }
-        else { btn.textContent='◯'; btn.disabled=false; btn.style.color=''; }
-        // click -> save pending
-        btn.addEventListener('click', ()=>{
-          sessionStorage.setItem('pending_slot_iso', iso);
-        }, {once:false});
-      });
-    });
-  }
-  // Run initially and whenever the grid is rebuilt
-  const run = ()=> setTimeout(applyAvailability, 50);
-  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', run); } else { run(); }
-  new MutationObserver(run).observe(document.getElementById('hpGrid')||document.body, {childList:true, subtree:true});
-})();
-</script>
-
-<script>
-/*__RES_I18N_SUPPLEMENT__*/
-document.addEventListener('DOMContentLoaded', ()=>{
-  try{
-    const pref = localStorage.getItem('bl_lang') || 'auto';
-    const lang = (pref==='en' ? 'en' : (pref==='ja' ? 'ja' : ((navigator.language||'en').toLowerCase().startsWith('ja')?'ja':'en')));
-    if(lang!=='en') return;
-    const map = {
-      '← サイトへ戻る':'← Back to site','支払い: 現地支払い':'Payment: Pay at shop',
-      '候補を表示':'Show time slots','所要時間:':'Duration:','メニュー':'Menu',
-      '※ 営業時間 10:00 - 20:00（30分刻み）':'* Business hours 10:00 - 20:00 (every 30 min)',
-      '候補が見つかりません。別の日付をお試しください。':'No slots found. Please try another date.'
-    };
-    document.querySelectorAll('button, .title, .meta, label, .small, .empty, #r_price').forEach(el=>{
-      const t=(el.childNodes.length===1?(el.textContent||'').trim():'');
-      if(map[t]) el.textContent = map[t];
-    });
-  }catch(e){}
-});
-</script>
-
-
-<script>
-/*__RES_MENU_POPULATE__*/
-(function(){
-  try{
-    const MENUS={
-      "S1":[{id:"m1", name:"フルセット 120本", name_en:"Full set (120 lashes)", minutes:90, price:4250},
-            {id:"m2", name:"ボリュームラッシュ", name_en:"Volume lashes", minutes:120, price:5200}],
-      "S2":[{id:"m1", name:"全身アーユルヴェーダ", name_en:"Full-body Ayurveda", minutes:90, price:6630},
-            {id:"m2", name:"オイルトリートメント", name_en:"Oil treatment", minutes:60, price:4200}],
-      "S3":[{id:"m1", name:"ハーブ蒸し", name_en:"Herb steam", minutes:45, price:3500},
-            {id:"m2", name:"ボディスクラブ", name_en:"Body scrub", minutes:60, price:4800}]
-    };
-    const p=new URLSearchParams(location.search);
-    const salonId=p.get('salonId')||'S1';
-    const sel=document.getElementById('menuSelect');
-    const meta=document.getElementById('menuMeta');
-    if(!sel) return;
-    const pref = localStorage.getItem('bl_lang') || 'auto';
-    const lang = (pref==='en' ? 'en' : (pref==='ja' ? 'ja' : ((navigator.language||'en').toLowerCase().startsWith('ja')?'ja':'en')));
-    const items = MENUS[salonId]||[];
-    if(!sel.options.length){
-      const ph = document.createElement('option');
-      ph.value=''; ph.disabled=true; ph.selected=true;
-      ph.textContent = lang==='en' ? 'Select a menu' : 'メニューを選択';
-      sel.appendChild(ph);
-      items.forEach((it,i)=>{
-        const opt=document.createElement('option');
-        const name = (lang==='en' && it.name_en) ? it.name_en : it.name;
-        const dur = it.minutes ? ` (${it.minutes}${lang==='en'?' min':'分'})` : '';
-        opt.value=it.id; opt.textContent = name + dur;
-        opt.setAttribute('data-min', it.minutes||'');
-        opt.setAttribute('data-price', it.price||'');
-        sel.appendChild(opt);
-      });
-    }
-    sel.addEventListener('change', ()=>{
-      const o = sel.options[sel.selectedIndex];
-      const min = o.getAttribute('data-min')||'';
-      const prc = o.getAttribute('data-price')||'';
-      meta.textContent = [min?(lang==='en'? `${min} min`:`${min}分`):'', prc?('¥'+Number(prc).toLocaleString('ja-JP')):''].filter(Boolean).join(' · ');
-    });
-  }catch(e){}
-})();
-</script>
-<script>
-/*__RES_MENU_FROM_GAS__*/
-(async () => {
-  try {
-    const GAS_URL = window.GAS_URL || (new URLSearchParams(location.search).get('gas') || ''); // 既に上で定義済ならそれを使う
-    const GAS_KEY = window.GAS_KEY || 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
-    if(!GAS_URL){ console.warn('GAS_URL not set; skip menu fetch'); return; }
-
-    const p = new URLSearchParams(location.search);
-    const salonId = p.get('salonId') || 'S1';
-
-    const res = await fetch(`${GAS_URL}?kind=menus.list&key=${encodeURIComponent(GAS_KEY)}&salonId=${encodeURIComponent(salonId)}`);
-    const j = await res.json().catch(()=>({}));
-    if(!j || !j.ok){ console.warn('menus.list failed', j); return; }
-
-    const sel  = document.getElementById('menuSelect');
-    const help = document.getElementById('menuHelp');
-    if(!sel) return;
-
-    // 空にしてプレースホルダーを置く
-    sel.innerHTML = '';
-    const pref = localStorage.getItem('bl_lang') || 'auto';
-    const isEN = (pref==='en') ? true : (pref==='ja' ? false : !((navigator.language||'').toLowerCase().startsWith('ja')));
-    const ph   = document.createElement('option');
-    ph.value = ''; ph.disabled = true; ph.selected = true;
-    ph.textContent = isEN ? 'Select a menu' : 'メニューを選択';
-    sel.appendChild(ph);
-
-    // 反映
-    (j.items||[]).forEach(m => {
-      const opt = document.createElement('option');
-      const name = isEN ? (m.name_en || m.name_ja || '-') : (m.name_ja || m.name_en || '-');
-      const dur  = m.duration_min ? ` (${m.duration_min}${isEN ? ' min' : '分'})` : '';
-      opt.value = m.name_en || m.name_ja || '-';
-      opt.textContent = name + dur;
-      opt.dataset.min = m.duration_min || '';
-      opt.dataset.jpy = m.price_jpy || '';
-      sel.appendChild(opt);
-    });
-
-    if(help && (j.items||[]).length === 0){
-      help.textContent = isEN ? 'No menu yet.' : 'メニューが未登録です。';
-    }
-
-    // 選択で価格/時間の表示を書き換え
-    sel.addEventListener('change', () => {
-      const o = sel.selectedOptions[0];
-      const mins = Number(o?.dataset?.min || 0);
-      const jpy  = Number(o?.dataset?.jpy || 0);
-      const elDur = document.getElementById('r_dur');
-      const elJPY = document.getElementById('r_price');
-      if(elDur) elDur.textContent = mins ? (isEN ? `Duration: ${mins} min` : `所要時間: ${mins}分`) : '';
-      if(elJPY) elJPY.textContent = jpy ? `支払い: ¥${jpy.toLocaleString('ja-JP')}` : (isEN ? 'Payment: Pay at shop' : '支払い: 現地支払い');
-    });
-  } catch(e){ console.error(e); }
-})();
-</script>
-<script>
-/*__RES_STAFFS_FROM_GAS__*/
-// ----- スタッフ一覧の読み込み -----
-(async () => {
-  try {
-    // A-2 と同じく、ここでも URL/KEY をローカルに定義（または window.GAS_URL/GAS_KEY を参照）
-    const GAS_URL = window.GAS_URL || (new URLSearchParams(location.search).get('gas') || '');
-    const GAS_KEY = window.GAS_KEY || 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
-    if (!GAS_URL) { console.warn('GAS_URL not set; skip staffs fetch'); return; }
-
-    const p = new URLSearchParams(location.search);
-    const salonId = p.get('salonId') || 'S1';
-
-    const r = await fetch(`${GAS_URL}?kind=staffs.list&key=${encodeURIComponent(GAS_KEY)}&salonId=${encodeURIComponent(salonId)}`);
-    const j = await r.json().catch(()=>({}));
-
-    const sel = document.getElementById('staffSelect');
-    if (!sel) return; // セレクトが無ければ何もしない
-
-    // 既定「指名なし」はそのまま残して、後ろに追加
-    (j.items || []).forEach(st => {
-      const o = document.createElement('option');
-      o.value = st.staff_id || (st.name_en || '');
-      o.textContent = st.name_en || 'Staff';
-      sel.appendChild(o);
-    });
-  } catch (e) {
-    console.error(e);
-  }
-})();
-</script>
-<script>
-/*__RES_STAFFS_FROM_GAS__*/
-// ----- スタッフ一覧の読み込み -----
-(async () => {
-  try {
-    const GAS_URL = window.GAS_URL || (new URLSearchParams(location.search).get('gas') || '');
-    const GAS_KEY = window.GAS_KEY || 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
-    if (!GAS_URL) { console.warn('GAS_URL not set; skip staffs fetch'); return; }
-
-    const salonId = new URLSearchParams(location.search).get('salonId') || 'S1';
-    const r = await fetch(`${GAS_URL}?kind=staffs.list&key=${encodeURIComponent(GAS_KEY)}&salonId=${encodeURIComponent(salonId)}`);
-    const j = await r.json().catch(()=>({}));
-
-    const sel = document.getElementById('staffSelect');
-    if (!sel) return; // セレクトが無ければ何もしない
-
-    // 既定「指名なし」は残したまま追記
-    (j.items || []).forEach(st => {
-      const o = document.createElement('option');
-      o.value = st.staff_id || (st.name_en || '');
-      o.textContent = st.name_en || 'Staff';
-      sel.appendChild(o);
-    });
-  } catch (e) {
-    console.error(e);
-  }
-})();
-</script>
-
-
-<script>
-/*__RES_WEEK_EN__*/
-(function(){
-  try{
-    const pref = localStorage.getItem('bl_lang') || 'auto';
-    const lang = (pref==='en' ? 'en' : (pref==='ja' ? 'ja' : ((navigator.language||'en').toLowerCase().startsWith('ja')?'ja':'en')));
-    if(lang!=='en') return;
-
-    function parseJaRange(txt){
-      // e.g., "2025年9月15日 – 9月21日"
-      const m = txt.match(/(\d{4})年(\d+)月(\d+)日\s*–\s*(\d+)月(\d+)日/);
-      if(!m) return null;
-      const [_, y, m1, d1, m2, d2] = m.map(Number);
-      const y2 = y; // assume same year
-      const start = new Date(y, m1-1, d1);
-      const end = new Date(y2, m2-1, d2);
-      return {start, end};
-    }
-
-    function rewrite(){
-      const title = document.getElementById('hpWeekTitle');
-      const grid = document.getElementById('hpGrid');
-      if(!title || !grid) return;
-      const r = parseJaRange(title.textContent.trim());
-      if(!r) return;
-      // Title: "September 15, 2025 – September 21"
-      const t1 = r.start.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
-      const t2 = r.end.toLocaleDateString('en-US',{month:'long',day:'numeric'});
-      title.textContent = t1 + ' – ' + t2;
-      // Column headers
-      const ths = grid.querySelectorAll('thead tr th');
-      if(ths && ths.length>=8){
-        for(let i=1;i<=7;i++){
-          const d = new Date(r.start); d.setDate(d.getDate()+ (i-1));
-          ths[i].textContent = d.toLocaleDateString('en-US',{month:'short',day:'numeric',weekday:'short'});
-        }
-      }
-      // Legend (◯ Available × Unavailable)
-      const lg = document.getElementById('hpLegend');
-      if(lg) lg.textContent = '◯ Available    × Unavailable';
-      // Buttons
-      const prev = document.getElementById('hpPrev');
-      const next = document.getElementById('hpNext');
-      if(prev) prev.textContent = '‹ Prev';
-      if(next) next.textContent = 'Next ›';
-    }
-
-    // Run now and after next/prev clicks
-    function scheduleRewrite(){ setTimeout(rewrite, 0); }
-    document.getElementById('hpPrev')?.addEventListener('click', scheduleRewrite);
-    document.getElementById('hpNext')?.addEventListener('click', scheduleRewrite);
-    // Also run once on load (after initial grid build)
-    window.addEventListener('load', scheduleRewrite);
-    // Try also after DOMContentLoaded
-    document.addEventListener('DOMContentLoaded', scheduleRewrite);
-  }catch(e){}
-})();
-</script>
-
-<script src="./app.js"></script>
-<!-- 予約フォーム例（あなたの既存フォーム id/name に合わせてOK） -->
-<form id="reserveForm">
-  <input id="resName"  name="name"  placeholder="お名前" required>
-  <input id="resEmail"  name="email"  type="email" placeholder="you@example.com" required>
-  <!-- メール入力の直後に入れる（無理なら省略可。Cで自動生成されます） -->
-<small id="cardStatus" class="meta" style="margin-left:8px;opacity:.8"></small>
-
-  <input id="resPhone"  name="phone"  placeholder="電話">
-  <input id="resDate"  name="date"  type="date" required>
-  <input id="resTime"  name="time"  type="time" required>
-  <textarea id="resNotes"  name="notes"  placeholder="要望など"></textarea>
-  <button type="submit">予約を送信</button>
-  <button id="btnCompleteReservation" class="btn primary">予約を確定</button> 
-</form>
-
-
-<script>
-const SHEET_API   = "https://script.google.com/macros/s/AKfycbxYBpVwuWZ2e1B6oQJnVF-ZWob4OshrJ2Prk2s5CrRr9yV3QK147GOvTDmuH5Nfex1q/exec";
-const SHEET_TOKEN = "WahgalkjKJlkaOka1200j5";
-
-const usp2 = new URLSearchParams(location.search);
-const salonId   = usp.get("salonId")   || "UNKNOWN";
-const salonName = usp.get("salonName") || "Unknown Salon";
-
-function makeBookingId(){
-  return (crypto?.randomUUID ? "BL-" + crypto.randomUUID()
-                             : "BL-" + Date.now() + "-" + Math.random().toString(36).slice(2,8));
-}
-
-async function saveBookingToSheet(payload){
-  const res  = await fetch(`${SHEET_API}?token=${encodeURIComponent(SHEET_TOKEN)}`, {
-    method: "POST",
-    headers: { "Content-Type":"application/json" },
-    body: JSON.stringify({ action: "upsertBooking", ...payload })
-  });
-  const json = await res.json().catch(()=>({}));
-  if(!res.ok || !json.ok){ throw new Error(json.error || `Save failed (${res.status})`); }
-  return json;
-}
-
-document.getElementById("reserveForm").addEventListener("submit", async (e)=>{
-  e.preventDefault();
-  const f = e.currentTarget;
-
-  const payload = {
-    bookingId:  makeBookingId(),
-    createdAt:  new Date().toISOString(),
-    salonId, salonName,
-    customerName: f.querySelector('#resName').value.trim(),
-    email:        f.querySelector('#resEmail').value.trim(),
-    phone:        f.querySelector('#resPhone').value.trim(),
-    bookingDate:  f.querySelector('#resDate').value,
-    bookingTime:  f.querySelector('#resTime').value,
-    notes:        f.querySelector('#resNotes').value.trim(),
-    stripeCustomerId: "",
-    status: "saved"
-  };
-
-  try{
-    await saveBookingToSheet(payload);
-    alert("予約を受け付けました！");
-    // 例：完了画面へ
-    // location.href = "thankyou.html?bookingId=" + encodeURIComponent(payload.bookingId);
-  }catch(err){
-    console.error(err);
-    alert("保存に失敗しました。通信状況をご確認ください。");
-  }
-});
-</script>
-
-
-
-  <script src="https://js.stripe.com/v3"></script>
-  <script>
-  window.BL_PAY = {
-    // ★Stripeの公開鍵
-    pk: 'pk_test_51S59dhHFHLP5RXi1qkW9cuPEJAlJPuSaFeWFb5GuYhsXs9vkX6RJYfVYwQEdK8TwN3eKF7wEctQftyhYxb2rRIZN00146bOW8U',
-    // ★RenderのベースURL（/apiの親）
-    base: 'https://pay-server-uis7.onrender.com'
-  };
-</script>
-  <script>
-(() => {
-  // 既に保存済みなら状態だけ見せる（変更ボタンでフォームを出す）
-  const holder = document.getElementById('bl-card-box');
-  if(!holder) return;
-
-  const saved = (()=>{ try{return JSON.parse(localStorage.getItem('bl_saved_card')||'null')}catch(e){return null} })();
-  if(saved){
-    holder.innerHTML = `
-      <div class="notice" style="padding:10px;border:1px solid #eadfca;border-radius:10px">
-        カード情報は保存済みです ✅<br>
-        <small>（customerId: ${saved.customerId} / pm: ${saved.paymentMethodId}）</small><br>
-        <button id="bl-change" class="btn" style="margin-top:8px">別のカードにする</button>
-      </div>`;
-    document.getElementById('bl-change').onclick = mountForm;
-  }else{
-    mountForm();
-  }
-
-  function mountForm(){
-    const base = (window.BL_PAY?.base||'').replace(/\/$/,'');
-    const pk   = window.BL_PAY?.pk;
-    if(!pk || !base){ holder.textContent='設定不足（pk/base）'; return; }
-
-    holder.innerHTML = `
-      <div style="max-width:520px">
-        <label>メール<input id="sp_email" placeholder="you@example.com" style="width:100%"></label>
-        <!-- メール入力の直後に入れる（無理なら省略可。Cで自動生成されます） -->
-<small id="cardStatus" class="meta" style="margin-left:8px;opacity:.8"></small>
-
-        <label>お名前<input id="sp_name"  placeholder="Taro Yamada" style="width:100%"></label>
-        <div id="sp_card" style="border:1px solid #eadfca;border-radius:10px;padding:12px;margin:10px 0"></div>
-        <button id="sp_save" class="btn primary">カードを保存する</button>
-        <div id="sp_msg" class="notice" style="margin-top:8px"></div>
-      </div>`;
-
-    const stripe   = Stripe(pk);
-    const elements = stripe.elements();
-    const card     = elements.create('card', { hidePostalCode:true });
-    card.mount('#sp_card');
-
-    const $ = id => document.getElementById(id);
-    const msg = (t, ok=false) => { $('sp_msg').textContent = t; $('sp_msg').style.color = ok ? '#246A73' : '#6f5a54'; };
-
-    // 既存フォームから自動推測（あれば）
-    const val = s => {const el=document.querySelector(s); return el && el.value ? el.value.trim() : ''};
-    $('sp_email').value = val('#email') || val('[name="email"]');
-    $('sp_name').value  = val('#name')  || val('[name="name"]');
-
-    $('sp_save').addEventListener('click', async () => {
-      try{
-        const email = ($('sp_email').value||'').trim();
-        const name  = ($('sp_name').value||'').trim();
-        if(!email || !name) return msg('メールとお名前を入力してください');
-
-        msg('カード保存の準備中…');
-
-        // 1) SetupIntent を発行
-        const siRes = await fetch(base + '/api/setup-intent', {
-          method:'POST', headers:{ 'Content-Type':'application/json' },
-          body: JSON.stringify({ email, name })
-        });
-        const si = await siRes.json();
-        if(!si.ok) throw new Error(si.error||'setup-intent failed');
-
-        // 2) confirmCardSetup で保存
-        const result = await Stripe(pk).confirmCardSetup(si.clientSecret, {
-          payment_method: { card, billing_details: { email, name } }
-        });
-        if(result.error) throw result.error;
-
-        const payload = {
-          email, name,
-          customerId: si.customerId,
-          paymentMethodId: result.setupIntent.payment_method,
-          ts: Date.now()
-        };
-        localStorage.setItem('bl_saved_card', JSON.stringify(payload));
-
-        msg('カードを保存しました。', true);
-
-        // 3) スプレッドシートに記録（③-4：URLを渡したら自動で走る）
-        sendToSheet(payload);
-      }catch(e){
-        console.error(e);
-        msg('保存に失敗しました：' + (e.message||e));
-      }
-    });
-
-    // ③-4 で設定された URL があれば投げる
-    async function sendToSheet(payload){
-      const WEBHOOK =
-        // A) metaタグから取得（推奨）
-        (document.querySelector('meta[name="bl-sheet-hook"]')?.content) ||
-        // B) 事前にローカルに保存しておく方式
-        localStorage.getItem('bl_sheet_hook') ||
-        // C) ここに直書きしてもOK（空なら送らない）
-        '';
-
-      if(!WEBHOOK) return; // 未設定なら何もしない
-
-      try{
-        await fetch(WEBHOOK, {
-          method:'POST',
-          headers:{ 'Content-Type':'text/plain;charset=utf-8' }, // プリフライト回避
-          body: JSON.stringify({
-            kind:'card_saved',
-            salonId:  (new URLSearchParams(location.search)).get('salonId') || '',
-            salonName:(new URLSearchParams(location.search)).get('salonName') || '',
-            ...payload
-          })
-        });
-      }catch(e){ console.warn('Sheet logging failed', e); }
-    }
-  }
-})();
-</script>
-<!-- === 保存済みカードの有無チェック: BODY 終了直前に追加 === -->
-<script>
-(function(){
-  const $ = (s, r=document)=> r.querySelector(s);
-
-  document.addEventListener('DOMContentLoaded', () => {
-    // 1) メール入力とステータス表示
-    const emailInput =
-      $('#email') ||
-      $('input[type="email"]') ||
-      $('input[name="email"]');
-
-    if(!emailInput) return; // メール入力が無ければ何もしない
-
-    let statusEl = $('#cardStatus');
-    if(!statusEl){
-      statusEl = document.createElement('small');
-      statusEl.id = 'cardStatus';
-      statusEl.className = 'meta';
-      statusEl.style.marginLeft = '8px';
-      statusEl.style.opacity = '.85';
-      emailInput.insertAdjacentElement('afterend', statusEl);
-    }
-
-    // 2) 取得した customerId をフォームに載せる hidden
-    let hiddenCid = $('#customerId');
-    if(!hiddenCid){
-      hiddenCid = document.createElement('input');
-      hiddenCid.type = 'hidden';
-      hiddenCid.name = 'customerId';
-      hiddenCid.id = 'customerId';
-      (emailInput.form || document.body).appendChild(hiddenCid);
-    }
-
-    const setStatus = (text, good) => {
-      statusEl.textContent = text || '';
-      statusEl.style.color = good ? '#246A73' : '#6f5a54';
-    };
-
-    const debounce = (fn, ms=450) => {
-      let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); };
-    };
-
-    // 3) 入力監視 → GASに問い合わせ
-    const check = debounce(async ()=>{
-      const email = (emailInput.value||'').trim();
-      if(!email){ setStatus('', false); hiddenCid.value=''; return; }
-      setStatus('Checking…', false);
-      const cid = await findCustomerIdByEmail(email);
-      if(cid){
-        hiddenCid.value = cid;
-        setStatus('Card on file ✓', true);
-        // 任意: ローカルキャッシュ（同じ端末の体験を少し快適に）
-        localStorage.setItem('bl_cid_'+email, cid);
-      }else{
-        hiddenCid.value = '';
-        setStatus('No card on file', false);
-        localStorage.removeItem('bl_cid_'+email);
-      }
-    }, 450);
-
-    emailInput.addEventListener('input', check);
-    check(); // 初期表示も更新
-
-    // 4) フォーム送信時 or 「予約へ進む」ボタン押下時に、customerId を次画面へ渡す
-    //   (a) 予約フォームそのものがある場合
-    const form = emailInput.form || $('form');
-    if(form){
-      form.addEventListener('submit', (e)=>{
-        // hiddenCid.value に customerId が入っていればそのまま送信される
-        // 未保存時にブロックしたい場合は以下を解放:
-        // if(!hiddenCid.value){ e.preventDefault(); alert('先にカード保存をお願いします'); }
-      });
-    }
-
-    //   (b) フォームが無く、ボタンで confirm.html に遷移する構成の場合
-    //       → パラメータで渡す（既存の遷移ロジックに合わせて調整）
-    const nextBtn =
-      $('#reserve') ||
-      $('#goReserve') ||
-      $('button[data-go]') ||
-      $('.reserve-btn.primary') ||
-      $('.btn.primary');
-
-    if(nextBtn && !form){
-      nextBtn.addEventListener('click', (ev)=>{
-        ev.preventDefault();
-        // 既存のクエリを引き継いで confirm.html に遷移し、email/customerId を追加
-        const dest = new URL('confirm.html', location.href);
-        const cur  = new URL(location.href);
-        cur.searchParams.forEach((v,k)=>dest.searchParams.set(k,v));
-        const email = (emailInput.value||'').trim();
-        if(email) dest.searchParams.set('email', email);
-        if(hiddenCid.value) dest.searchParams.set('customerId', hiddenCid.value);
-        location.href = dest.toString();
-      });
-    }
-  });
-})();
-</script>
-<!-- === /BODY 終了直前 ここまで === -->
-<script>
-  // ここは「あなたの Web App URL(GAS_URL)」に差し替え
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxDJ_Tygj9CGP4r6ijAsJLWuWtrft4sZpFPky16eUiEI3ReM8GuyvwPa52GDKSygmUJ/exec';
-
-  async function postToGAS(kind, data) {
-    const payload = JSON.stringify({ kind, ...data });
-    // text/plain にすると CORS の事前フライトが回避されやすい
-    try {
-      await fetch(GAS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: payload,
-        // レスポンスを読みたいときは mode:'cors'（ダメなら 'no-cors' に）
-        mode: 'cors'
-      });
-      // 返り値を使わないなら何もせずOK（シートに入れば勝ち）
-    } catch (e) {
-      console.warn('postToGAS failed:', e);
-    }
-  }
-</script>
-<script>
-(function(){
-  const btn = document.getElementById('btnCompleteReservation');
-  if(!btn) return;
-
-  // 画面の入力値や現在の選択値の取り方は、あなたのID/変数名に合わせて調整してね
-  const qs = new URLSearchParams(location.search);
-
-  btn.addEventListener('click', () => {
-    const bookingId   = window.currentBookingId || ('BL-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '-' + Math.random().toString(36).slice(2,5));
-    const salonId     = qs.get('salonId') || window.salon?.id || '';
-    const salonName   = qs.get('salonName') || window.salon?.name || (document.getElementById('name')?.textContent || '');
-    const menuType    = qs.get('type') || 'menu';
-    const itemId      = qs.get('itemId') || window.selectedItem?.id || '';
-    const itemName    = window.selectedItem?.name || document.querySelector('#menuSelect option:checked')?.text || '';
-
-    const customerName  = document.querySelector('#yourName')?.value || '';
-    const customerEmail = document.querySelector('#yourEmail')?.value || '';
-    const customerPhone = document.querySelector('#yourPhone')?.value || '';
-    const country       = document.querySelector('#yourCountry')?.value || '';
-
-    const amountJPY   = Math.round(Number(document.querySelector('[data-total]')?.dataset.total || window.totalPrice || 0));
-    const stripe      = window.BL_STRIPE || {}; // カード保存済みなら {customerId, paymentMethodId} が入ってる
-
-    postToGAS('booking', {
-      bookingId, salonId, salonName, menuType, itemId, itemName,
-      customerName, customerEmail, customerPhone, country,
-      stripeCustomerId: stripe.customerId || '',
-      paymentMethodId:  stripe.paymentMethodId || '',
-      amountJPY, currency: 'JPY',
-      status: 'reserved',
-      note: ''
-    });
-  });
-})();
-</script>
-<script>
-/*__RES_CARD_SECTION_GATE__*/
-(function(){
-  const sec   = document.getElementById('cardSection');
-  const save  = document.getElementById('sp_save'); // 既存の保存ボタン（後で生成される場合もあるのでnullでもOK）
-  const agree = document.getElementById('agree');
-
-  // 選択済みフラグで Save 活性/非活性
-  function refresh(){
-    const picked = !!sessionStorage.getItem('pending_slot_iso') || !!sessionStorage.getItem('reserve_selected');
-    if(sec) sec.style.display = picked ? '' : 'none';
-    if(agree && save){
-      save.disabled = !(agree.checked && picked);
-    }
-  }
-
-  // 週グリッドのボタンクリックで「選ばれた時刻」を保存（他のコードでも set 済み）
-  const grid = document.getElementById('hpGrid');
-  if(grid){
-    grid.addEventListener('click', (ev)=>{
-      const btn = ev.target.closest('button');
-      if(!btn) return;
-      const iso = btn.dataset.iso || '';
-      if(iso){ sessionStorage.setItem('pending_slot_iso', iso); refresh(); }
-    });
-  }
-  if(agree){
-    agree.addEventListener('change', refresh);
-  }
-
-  // DOM 構築後・初期化
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', refresh);
-  }else{
-    refresh();
-  }
-
-  // 生成タイミングの違いに備えて少し監視
-  new MutationObserver(refresh).observe(document.body, {childList:true, subtree:true});
-})();
-</script>
-<script>
-// 1) 時間が選ばれたら #cardSection を出す
-(function(){
-  const sec = document.getElementById('cardSection');
-  if(!sec) return;
-  sec.style.display = 'none'; // 初期は隠す
-
-  // timetable で選択したISO文字列は adapter が sessionStorage に保存します
-  const KEY = 'pending_slot_iso';
-  // ページロード時に既に選択済みなら表示
-  if(sessionStorage.getItem(KEY)) sec.style.display = '';
-  // 以降のクリックでも表示
-  window.addEventListener('storage', (e)=>{
-    if(e.key === KEY && e.newValue){ sec.style.display = ''; sec.scrollIntoView({behavior:'smooth'}); }
-  });
-  // timetable の click フック（同一タブ内の変更に対応）
-  document.addEventListener('click', (ev)=>{
-    if((ev.target.tagName === 'BUTTON') && ev.target.dataset.iso){
-      sec.style.display = ''; sec.scrollIntoView({behavior:'smooth'});
-    }
-  });
-})();
-
-// 2) 「同意」で保存ボタンを有効化（mountFormで作る sp_save にも対応）
-(function(){
-  function wire(){
-    const agree = document.getElementById('agree');
-    const btn   = document.getElementById('sp_save');
-    if(!agree || !btn) return false;
-    const update = ()=> { btn.disabled = !agree.checked; };
-    agree.addEventListener('change', update);
-    update();
-    return true;
-  }
-  // mountForm 実行のタイミング対策
-  if(!wire()){
-    const mo = new MutationObserver(()=>{ wire() && mo.disconnect(); });
-    mo.observe(document.body, {childList:true, subtree:true});
-  }
-})();
-</script>
-
-
-<script id="redirect-on-slot-select">
-(function () {
-  const _origAlert = window.alert;
-  document.addEventListener('click', (e) => {
-    const btn = e.target.closest('#hpGrid td button');
-    if (!btn || !btn.dataset.iso) return;
-    sessionStorage.setItem('pending_slot_iso', btn.dataset.iso);
-  });
-  window.alert = function (msg) {
-    try {
-      if (typeof msg === 'string' && /^Selected:\s*/.test(msg)) {
-        const iso = msg.replace(/^Selected:\s*/, '').trim();
-        const p = new URLSearchParams(location.search);
-        const salonId   = p.get('salonId')   || '';
-        const salonName = (document.getElementById('r_salon')||{}).textContent || (p.get('salonName')||'');
-        const menuSel  = document.getElementById('menuSelect');
-        const opt      = menuSel && menuSel.selectedIndex > 0 ? menuSel.options[menuSel.selectedIndex] : null;
-        const itemName = opt ? opt.textContent.trim() : ((document.getElementById('r_item')||{}).textContent||'');
-        const minutes  = opt ? Number(opt.dataset.min||0) : 0;
-        const priceJPY = opt ? Number(opt.dataset.jpy||0) : 0;
-        const staffSel  = document.getElementById('staffSelect');
-        const staffId   = staffSel ? (staffSel.value||'') : '';
-        const staffName = staffSel && staffSel.selectedIndex >= 0 ? (staffSel.options[staffSel.selectedIndex].textContent||'') : '';
-        const cur = ((document.getElementById('r_price')||{}).dataset||{}).cur || sessionStorage.getItem('bl_currency') || 'JPY';
-        const q = new URLSearchParams({
-          salonId, salonName,
-          item: itemName, staffId, staffName,
-          iso, minutes: String(minutes),
-          price_jpy: String(priceJPY),
-          cur: String(cur).toUpperCase()
-        });
-        location.href = './card_save.html?' + q.toString();
-        return;
-      }
-    } catch (e) { console.error(e); }
-    return _origAlert.apply(window, arguments);
-  };
+  btnPrev.addEventListener('click', ()=>{ weekOffset--; buildWeek(weekOffset); });
+  btnNext.addEventListener('click', ()=>{ weekOffset++; buildWeek(weekOffset); });
 })();
 </script>
 </body>
-
 </html>

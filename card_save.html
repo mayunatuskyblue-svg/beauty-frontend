@@ -246,7 +246,7 @@ async function upsertCustomerRow({ email, name, customerId, paymentMethodId }){
     kind: 'customer',
     data: { email, name, customerId, paymentMethodId }
   })
-});
+　});
 
   const j = await res.json().catch(()=>({}));
   if(!j || !j.ok) throw new Error((j&&j.error)||'customer_upsert failed');

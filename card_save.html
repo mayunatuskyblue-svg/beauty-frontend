@@ -1,253 +1,194 @@
 <!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>カード情報の保存（後払い用）</title>
-  <link rel="preconnect" href="https://js.stripe.com" />
-  <script src="https://js.stripe.com/v3/"></script>
-  <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:#f6eddc; color:#222; margin:0}
-    .wrap{max-width:1024px; margin:0 auto; padding:24px}
-    h1{font-size:28px; margin:8px 0 16px}
-    .card{background:#fff; border-radius:16px; padding:20px; box-shadow:0 6px 20px rgba(0,0,0,.06); margin:0 0 20px}
-    .grid{display:grid; grid-template-columns:140px 1fr; row-gap:10px; column-gap:20px}
-    .muted{color:#666}
-    label{font-size:14px; color:#555}
-    input[type="text"],input[type="email"]{width:100%; padding:10px 12px; border-radius:10px; border:1px solid #ddd; outline:0}
-    .btn{display:inline-flex; align-items:center; gap:.5rem; padding:12px 20px; border:0; border-radius:999px; cursor:pointer; font-weight:700}
-    .btn-primary{background:#2c7e78; color:#fff}
-    .btn-ghost{background:#eef2ef; color:#2c7e78}
-    .row{display:flex; gap:12px; align-items:center}
-    .right{margin-left:auto}
-    .stripe-frame{border:1px solid #e4e4e4; border-radius:10px; padding:12px}
-    .center{display:flex; justify-content:center; align-items:center}
-    .note{font-size:12px; color:#777}
-    .hidden{display:none}
-    .ok{color:#2a7f62; font-weight:700}
-    .err{color:#b42318; font-weight:700; white-space:pre-wrap}
-    .pill{display:inline-flex; align-items:center; gap:.35rem; padding:.15rem .6rem; border-radius:999px; background:#eef2ef; color:#2c7e78; font-weight:700; font-size:12px}
-    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;}
-    @media (max-width:640px){ .grid{grid-template-columns:1fr} }
-  </style>
-
-  <script>
-    /***** ★ ここだけ設定してください（必要に応じて） ★ *****/
-    // Stripe publishable key
-    const STRIPE_PK = window.STRIPE_PK || 'pk_test_51S59dhHFHLP5RXi1qkW9cuPEJAlJPuSaFeWFb5GuYhsXs9vkX6RJYfVYwQEdK8TwN3eKF7wEctQftyhYxb2rRIZN00146bOW8U';
-
-    // Google Apps Script の WebApp URL（書き込みを使わないなら '' でOK）
-    const GAS_URL   = window.GAS_URL || 'https://script.google.com/macros/s/AKfycbxQHByDLRu-QlfAyRRMdM0-pGskH9Ka7IcFs9NeV2NB3DyDWhaLgvv8Hain_l9nZGvk/exec';
-
-    // GAS の簡易キー（GAS 側の検証用。使っていなければ空でOK）
-    const GAS_KEY   = window.GAS_KEY || 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
-
-    // （既定値）Render 側の pay-server（?pay= がない時に使われる）
-    window.PAY_SERVER = window.PAY_SERVER || 'https://pay-server-uis7.onrender.com';
-    /*****************************************************/
-  </script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>カード情報の保存（後払い用）</title>
+<link rel="preconnect" href="https://js.stripe.com" crossorigin>
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+  :root{--bg:#f6f1e6;--panel:#fff;--text:#222;--muted:#6b7280;--brand:#115e59}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;line-height:1.6}
+  .wrap{max-width:960px;margin:28px auto;padding:0 16px}
+  .card{background:var(--panel);border-radius:14px;box-shadow:0 6px 18px rgba(0,0,0,.06);padding:18px 20px;margin:14px 0}
+  h1{font-size:28px;margin:6px 0 12px}
+  dt{color:var(--muted);font-size:13px;margin-top:8px}
+  dd{margin:0 0 8px 0}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .btn{appearance:none;border:0;border-radius:12px;background:#c5e3dd;color:#10302c;padding:12px 18px;font-weight:700;cursor:pointer}
+  .btn.brand{background:var(--brand);color:#fff}
+  .btn:disabled{opacity:.55;cursor:not-allowed}
+  label.chk{display:flex;align-items:center;gap:8px;font-weight:600}
+  .inline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .help{color:var(--muted);font-size:12px}
+  #msg{white-space:pre-wrap}
+  .hidden{display:none}
+  .field{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>カード情報の保存（後払い用）</h1>
+<div class="wrap">
+  <h1>カード情報の保存（後払い用）</h1>
 
-    <!-- 予約概要 -->
-    <section class="card" id="summary">
-      <div class="grid">
-        <div class="muted">サロン</div><div id="s_salon" class="mono">-</div>
-        <div class="muted">メニュー</div><div id="s_menu" class="mono">-</div>
-        <div class="muted">施術者</div><div id="s_staff" class="mono">-</div>
-        <div class="muted">日時</div><div id="s_date" class="mono">-</div>
-        <div class="muted">お支払い目安</div><div id="s_price" class="mono">-</div>
-      </div>
-    </section>
-
-    <!-- 同意と次へ -->
-    <section class="card">
-      <p class="muted">以下に同意いただける場合、「カード情報の入力へ」を押してください。</p>
-      <div class="row">
-        <label class="row" style="gap:8px;">
-          <input type="checkbox" id="agree1" checked />
-          I agree to the Terms
-        </label>
-        <button class="btn btn-primary right" id="toFormBtn">カード情報の入力へ</button>
-        <a class="btn btn-ghost" href="javascript:history.back()">← 戻る</a>
-      </div>
-      <div id="warnAgree" class="err hidden">同意チェックを入れてください。</div>
-    </section>
-
-    <!-- カード入力 -->
-    <section class="card hidden" id="formSec">
-      <div class="grid" style="margin-bottom:12px">
-        <div class="muted">メール</div>
-        <div><input id="email" type="email" placeholder="you@example.com" /></div>
-        <div class="muted">お名前</div>
-        <div><input id="holder" type="text" placeholder="Taro Yamada" /></div>
-      </div>
-
-      <label class="muted">カード番号</label>
-      <div id="card-element" class="stripe-frame"></div>
-      <div class="note">テストカード例: 4242 4242 4242 4242 / 任意の有効期限 / 任意のCVC</div>
-
-      <div class="row" style="margin-top:14px">
-        <label class="row" style="gap:8px;"><input type="checkbox" id="agree2" checked /> I agree to the Terms</label>
-        <button class="btn btn-primary right" id="saveBtn">カードを保存する</button>
-        <a class="btn btn-ghost" href="javascript:history.back()">← 戻る</a>
-      </div>
-
-      <div id="msg" class="ok hidden">カード情報を保存登録が完了しました。</div>
-      <div id="errmsg" class="err hidden"></div>
-    </section>
-
-    <footer class="center" style="gap:16px; color:#666; margin:24px 0 6px">
-      <a class="muted" href="#">Terms</a>・
-      <a class="muted" href="#">Privacy</a>・
-      <a class="muted" href="#">Cancel Policy</a>・
-      <a class="muted" href="#">Contact</a>
-    </footer>
+  <div class="card">
+    <dl class="row">
+      <div><dt>サロン</dt><dd id="v_salon">-</dd></div>
+      <div><dt>メニュー</dt><dd id="v_menu">-</dd></div>
+      <div><dt>施術者</dt><dd id="v_staff">-</dd></div>
+      <div><dt>日時</dt><dd id="v_date">-</dd></div>
+      <div><dt>お支払い目安</dt><dd id="v_price">-</dd></div>
+    </dl>
   </div>
 
-  <script>
-    // -------------------- 予約クエリの展開 --------------------
-    const q = new URLSearchParams(location.search);
-    const salonId   = q.get('salonId')   || '';
-    const salonName = q.get('salonName') || '-';
-    const itemName  = q.get('item')      || '-';
-    const staffId   = q.get('staffId')   || '';
-    const staffName = q.get('staffName') || '指名なし';
-    const iso       = q.get('iso')       || '';
-    const price     = Number(q.get('price') || 0);
-    const cur       = (q.get('cur')||'JPY').toUpperCase();
+  <div class="card" id="stepAgree">
+    <div class="inline">
+      <label class="chk"><input type="checkbox" id="agree" checked> I agree to the Terms</label>
+      <button class="btn" id="goForm">カード情報の入力へ</button>
+      <a class="help" href="javascript:history.back()">← 戻る</a>
+    </div>
+    <p class="help">同意にチェックして「カード情報の入力へ」を押してください。</p>
+  </div>
 
-    // 表示
-    document.getElementById('s_salon').textContent = salonName;
-    document.getElementById('s_menu' ).textContent = itemName;
-    document.getElementById('s_staff').textContent = staffName;
-    const d = iso ? new Date(iso) : null;
-    document.getElementById('s_date' ).textContent = d ? d.toLocaleString() : '-';
-    const fmtPrice = new Intl.NumberFormat(cur==='JPY'?'ja-JP':'en-US',
-                       {style:'currency',currency:cur}).format(price||0);
-    document.getElementById('s_price').textContent = price ? fmtPrice : '現地支払い';
+  <div class="card hidden" id="stepForm">
+    <div class="row">
+      <div>
+        <dt>メール</dt>
+        <dd><input id="email" class="field" placeholder="you@example.com" value=""></dd>
+      </div>
+      <div>
+        <dt>お名前</dt>
+        <dd><input id="name" class="field" placeholder="Taro Yamada" value=""></dd>
+      </div>
+    </div>
+    <dt>カード番号</dt>
+    <div id="card" class="field"></div>
+    <div class="inline" style="margin-top:12px">
+      <button class="btn brand" id="saveBtn">カードを保存する</button>
+      <span id="spin" class="help hidden">処理中…</span>
+    </div>
+    <p id="msg" class="help"></p>
+  </div>
 
-    // -------------------- 「次へ」ボタン --------------------
-    document.getElementById('toFormBtn').addEventListener('click', () => {
-      if(!document.getElementById('agree1').checked){
-        document.getElementById('warnAgree').classList.remove('hidden');
-        return;
-      }
-      document.getElementById('warnAgree').classList.add('hidden');
-      document.getElementById('formSec').classList.remove('hidden');
-      initStripeOnce(); // 初回だけ Elements 準備
-    });
+  <p class="help">Terms ・ Privacy ・ Cancel Policy ・ Contact</p>
+</div>
 
-    // -------------------- Stripe Elements 初期化 --------------------
-    let stripe, elements, cardEl, inited = false;
-    function initStripeOnce(){
-      if(inited) return;
-      stripe = Stripe(STRIPE_PK);
-      elements = stripe.elements();
-      cardEl = elements.create('card', {hidePostalCode:true});
-      cardEl.mount('#card-element');
-      inited = true;
-    }
+<script>
+// ====== 可変設定（必要に応じて上書きできます） ======
+const STRIPE_PK = (window.STRIPE_PK || '').trim() || 'pk_test_12345'; // あなたの公開鍵に差し替え可
+const DEFAULT_PAY = 'https://pay-server-uis7.onrender.com';           // 既定の Pay Server
 
-    // -------------------- 保存ボタンクリック --------------------
-    document.getElementById('saveBtn').addEventListener('click', onSave);
+// ====== URL パラメータ ======
+const P = new URLSearchParams(location.search);
+const salonId = P.get('salonId') || '';
+const salonName = P.get('salonName') || '-';
+const item = decodeURIComponent(P.get('item') || '-');
+const staffName = decodeURIComponent(P.get('staffName') || '-');
+const iso = P.get('iso') || '';
+const price = Number(P.get('price') || 0);
+const cur = (P.get('cur') || 'JPY').toUpperCase();
+const PAY_SERVER = (window.PAY_SERVER || P.get('pay') || DEFAULT_PAY).replace(/\/+$/,'');
 
-    async function onSave(){
-      document.getElementById('msg').classList.add('hidden');
-      const em = (document.getElementById('email').value || '').trim();
-      const nm = (document.getElementById('holder').value|| '').trim() || staffName || 'Guest';
-      if(!document.getElementById('agree2').checked){
-        return showErr('同意チェックを入れてください。');
-      }
-      // PAY server 決定（?pay= ＞ window.PAY_SERVER）
-      const PAY = (q.get('pay') || window.PAY_SERVER || '').replace(/\/+$/,'');
+// ====== 画面表示 ======
+document.getElementById('v_salon').textContent = salonName || '-';
+document.getElementById('v_menu').textContent  = item || '-';
+document.getElementById('v_staff').textContent = staffName || '-';
+document.getElementById('v_date').textContent  = iso ? new Date(iso).toLocaleString() : '-';
+document.getElementById('v_price').textContent = price ? `${cur} ${price.toLocaleString('ja-JP')}` : '現地支払い';
 
-      
+// ====== エンドポイント候補（互換フォールバック） ======
+const endpoints = [
+  '/api/create_setup_intent',
+  '/api/setup_intent',
+  '/create_setup_intent',
+  '/create-setup-intent',
+  '/api/setup_intents/create',
+  '/setup_intent',
+  '/setup-intent'
+].map(p => PAY_SERVER + p);
 
-      // SetupIntent 作成
-      let clientSecret = '';
-      let lastStatus = 0, lastBody = '';
-      for (const url of endpoints){
-        try{
-         // すべて これ ひとつに統一
-const res = await fetch(`${PAY_SERVER}/api/setup-intent`, {
-  method: 'POST',
-  headers: { 'content-type': 'application/json' },
-  body: JSON.stringify({ email, name })
-});
-const j = await res.json();
-if (!res.ok || !j?.ok || !j?.clientSecret) {
-  throw new Error(`SetupIntent API not found (last=${res.status}). PAY=${PAY_SERVER}`);
+// ====== ユーティリティ ======
+const $ = s => document.querySelector(s);
+const show = (el, on=true)=>el.classList[on?'remove':'add']('hidden');
+const setMsg = (t, isErr=false)=>{ const m=$('#msg'); m.textContent=t||''; m.style.color=isErr?'#b91c1c':'#374151' };
+
+// ====== Stripe 初期化 ======
+let stripe, elements, cardElement, inited = false;
+function initStripe(){
+  if(inited) return;
+  stripe = Stripe(STRIPE_PK);
+  elements = stripe.elements();
+  cardElement = elements.create('card', { hidePostalCode: true });
+  cardElement.mount('#card');
+  inited = true;
 }
 
-          lastStatus = res.status;
-          lastBody   = await res.text();
-          if(res.ok){
-            // JSON/HTML どちらでも client_secret を拾う
-            try{
-              const j = JSON.parse(lastBody);
-              clientSecret = j.client_secret || j.clientSecret || (j.data && (j.data.client_secret || j.data.clientSecret)) || '';
-            }catch(_){/* HTML の場合はスルー */}
-            if(clientSecret) break;
-          }
-        }catch(_e){}
-      }
-      if(!clientSecret){
-        console.error('[card-save] endpoints tried:', endpoints);
-        return showErr(`エラーが発生しました。\nSetupIntent API not found (last=${lastStatus}).\nPAY=${(q.get('pay')||window.PAY_SERVER||'')}`);
-      }
+// ====== SetupIntent を複数エンドポイントで順に試す ======
+async function getClientSecret(email, name){
+  const body = JSON.stringify({ email, name });
+  let lastStatus = 0, lastUrl = '';
 
-      // カード確定
-      const r = await stripe.confirmCardSetup(clientSecret, {
-        payment_method: {
-          card: cardEl,
-          billing_details: { email: em || undefined, name: nm || undefined }
-        }
-      });
+  for (const url of endpoints){
+    try{
+      lastUrl = url;
+      const res = await fetch(url, { method:'POST', headers:{'content-type':'application/json'}, body });
+      lastStatus = res.status;
 
-      if(r.error){
-        return showErr(`カードの確定に失敗しました。\n${r.error.message||r.error.code||'unknown'}`);
+      // JSON で来る場合
+      if ((res.headers.get('content-type')||'').includes('application/json')){
+        const j = await res.json().catch(()=>({}));
+        if (j && j.ok && j.clientSecret) return j.clientSecret;
+        if (j && j.client_secret) return j.client_secret;
       }
 
-      // 成功
-      document.getElementById('msg').classList.remove('hidden');
-      alert('カード保存が完了しました。');
-
-      // GAS へログ（任意）
-      if(GAS_URL){
-        try{
-          const payload = {
-            key: GAS_KEY,
-            kind: 'customer',
-            email: em,
-            name: nm,
-            customerId: r.setupIntent?.customer || '',
-            paymentMethodId: r.setupIntent?.payment_method || '',
-            // 予約に紐づける場合の情報
-            salonId, salonName, staffId, staffName, itemName,
-            iso, price, cur
-          };
-          await fetch(GAS_URL, { method:'POST', body: JSON.stringify(payload) });
-          // booking 側に書くならこちらも送る
-          const payload2 = {
-            key: GAS_KEY, kind:'booking',
-            email: em, bookingId: r.setupIntent?.id || '',
-            status: 'card_saved', reviewed: 'no',
-            salonId, salonName, staffId, staffName, itemName, iso, price, cur
-          };
-          await fetch(GAS_URL, { method:'POST', body: JSON.stringify(payload2) });
-        }catch(_){}
-      }
+      // HTMLでclient_secretを含む場合（簡易抽出）
+      const tx = await res.text();
+      const m = tx.match(/(?:clientSecret|client_secret)["']?\s*[:=]\s*["']([^"']+)["']/i);
+      if (m) return m[1];
+    }catch(e){
+      // 続行
     }
+  }
+  throw new Error(`SetupIntent API not found (last=${lastStatus}).\nPAY=${PAY_SERVER}\nlastUrl=${lastUrl}`);
+}
 
-    function showErr(msg){
-      const el = document.getElementById('errmsg');
-      el.textContent = msg;
-      el.classList.remove('hidden');
-      return false;
-    }
-  </script>
+// ====== イベント ======
+$('#goForm').addEventListener('click', () => {
+  if (!$('#agree').checked) {
+    setMsg('利用規約への同意が必要です。', true);
+    return;
+  }
+  initStripe();
+  show($('#stepAgree'), false);
+  show($('#stepForm'), true);
+  setMsg('カード番号を入力し「カードを保存する」を押してください。');
+});
+
+$('#saveBtn').addEventListener('click', async () => {
+  const email = ($('#email').value || '').trim();
+  const name = ($('#name').value || '').trim() || 'Guest';
+
+  if (!email || !email.includes('@')) { setMsg('メールアドレスを入力してください。', true); return; }
+
+  $('#saveBtn').disabled = true;
+  show($('#spin'), true);
+  setMsg('通信中…');
+
+  try{
+    const clientSecret = await getClientSecret(email, name);
+    const {setupIntent, error} = await stripe.confirmCardSetup(clientSecret, {
+      payment_method: { card: cardElement, billing_details: { email, name } }
+    });
+
+    if (error) throw new Error(error.message || 'カード保存に失敗しました。');
+
+    setMsg(`カード保存が完了しました。 (status=${setupIntent.status})`);
+  }catch(e){
+    setMsg(`エラーが発生しました。\n${e.message || e}`, true);
+  }finally{
+    $('#saveBtn').disabled = false;
+    show($('#spin'), false);
+  }
+});
+</script>
 </body>
 </html>

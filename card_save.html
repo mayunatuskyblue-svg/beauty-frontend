@@ -211,12 +211,12 @@ async function recordBookingToSheet({ bookingId, email }){
   const res = await fetch(GAS_URL, {
     method:'POST',
     headers:{'Content-Type': 'text/plain;charset=utf-8'},
-    body: JSON.stringify({
-      key: GAS_KEY,
-      kind:'booking_create',
-      bookingId,
-      email: email||''
-    })
+   body: JSON.stringify({
++     key: GAS_KEY,
++     kind: 'booking',                 // ★ Code.gs に合わせる
++     data: { bookingId, email: email||'' }
++   })
++ });
   const j = await res.json().catch(()=>({}));
   if(!j || !j.ok) throw new Error((j&&j.error)||'booking_create failed');
 }

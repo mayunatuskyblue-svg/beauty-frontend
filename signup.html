@@ -42,23 +42,30 @@
 
   <h1>新規登録</h1>
 
-  <form class="form" id="signupForm">
+ <div class="form">
+  <div style="display:flex;justify-content:center;gap:10px;margin-bottom:16px">
+    <button type="button" id="tabPassword" class="btn" style="flex:1;background:#246A73">パスワード登録</button>
+    <button type="button" id="tabMagic" class="btn" style="flex:1;background:#999">メールリンク登録</button>
+  </div>
+
+  <!-- パスワード登録フォーム -->
+  <div id="formPassword">
     <label>メールアドレス</label>
-    <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required>
+    <input id="emailPw" type="email" placeholder="you@example.com" required>
+    <label>パスワード</label>
+    <input id="passPw" type="password" placeholder="********" required minlength="6">
+    <button class="btn" id="signupPwBtn">アカウント作成</button>
+  </div>
 
-    <label>パスワード（6文字以上）</label>
-    <div class="row">
-      <input id="pass" type="password" placeholder="********" autocomplete="new-password" minlength="6" required>
-      <button type="button" id="togglePass" class="btn" style="width:auto;height:40px;padding:0 10px;background:#fff;color:var(--teal)">表示</button>
-    </div>
-
-    <label>パスワード（確認）</label>
-    <input id="pass2" type="password" placeholder="********" autocomplete="new-password" minlength="6" required>
-
-    <button class="btn" type="submit" id="signupBtn">アカウントを作成</button>
-    <a class="link" href="login.html">すでにアカウントがあります</a>
-  </form>
+  <!-- Magic Link登録フォーム（最初は非表示） -->
+  <div id="formMagic" style="display:none">
+    <label>メールアドレス</label>
+    <input id="emailMagic" type="email" placeholder="you@example.com" required>
+    <button class="btn" id="signupMagicBtn">登録用リンクを送る</button>
+    <p class="link" id="hintMagic" style="display:none">メール内のリンクを開くと登録完了します。</p>
+  </div>
 </div>
+ 
 
 <!-- フッター（あなたの既存のモーダル実装はそのまま） -->
 <footer id="ft" style="margin:18px 0 40px;text-align:center;color:#6b5e55;font-size:12px">
@@ -67,6 +74,28 @@
   <a href="cancel.html" class="ft-link" data-ft="cancel" style="margin:0 10px">Cancel Policy</a>·
   <a href="contact.html" class="ft-link" data-ft="contact" style="margin:0 10px">Contact</a>
 </footer>
+
+  <script>
+  // タブ切替処理
+  const tabPw = document.getElementById('tabPassword');
+  const tabMagic = document.getElementById('tabMagic');
+  const formPw = document.getElementById('formPassword');
+  const formMagic = document.getElementById('formMagic');
+
+  tabPw.addEventListener('click', ()=>{
+    formPw.style.display = 'block';
+    formMagic.style.display = 'none';
+    tabPw.style.background = '#246A73';
+    tabMagic.style.background = '#999';
+  });
+  tabMagic.addEventListener('click', ()=>{
+    formPw.style.display = 'none';
+    formMagic.style.display = 'block';
+    tabPw.style.background = '#999';
+    tabMagic.style.background = '#246A73';
+  });
+</script>
+
 
 <script>
   // 言語設定（既存ロジック）
@@ -94,37 +123,51 @@
   };
   const app  = initializeApp(firebaseConfig);
   const auth = getAuth(app);
-
-  // パスワード表示切替
-  const pass = document.getElementById('pass');
-  document.getElementById('togglePass').addEventListener('click', ()=>{
-    pass.type = (pass.type === 'password') ? 'text' : 'password';
-  });
-
-  // 新規登録
-  document.getElementById('signupForm').addEventListener('submit', async (ev)=>{
-    ev.preventDefault();
-    const email = document.getElementById('email').value.trim();
-    const p1 = document.getElementById('pass').value;
-    const p2 = document.getElementById('pass2').value;
-    if(!email || !p1 || p1.length<6){ alert('正しいメール/パスワードを入力してください'); return; }
-    if(p1 !== p2){ alert('確認用パスワードが一致しません'); return; }
-    try{
-      const cred = await createUserWithEmailAndPassword(auth, email, p1);
+// パスワード登録
+  document.getElementById('signupPwBtn').addEventListener('click', async ()=>{
+    const email = document.getElementById('emailPw').value.trim();
+    const pass  = document.getElementById('passPw').value;
+    if(!email || !pass){ alert('入力してください'); return; }
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, pass);
       localStorage.setItem('bl_auth', JSON.stringify({ email: cred.user.email, uid: cred.user.uid, ts: Date.now() }));
-      location.href = new URLSearchParams(location.search).get('redirect') || 'mypage.html';
-    }catch(err){
-      alert('登録に失敗しました: ' + (err?.message || err));
+      location.href = redirect;
+    } catch(e){
+      alert('登録失敗: ' + (e.message||e));
     }
   });
 
-  // セッション維持（常に bl_auth を同期）
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      localStorage.setItem('bl_auth', JSON.stringify({ email: user.email, uid: user.uid, ts: Date.now() }));
-    } else {
-      localStorage.removeItem('bl_auth');
+  // Magic Link登録
+  document.getElementById('signupMagicBtn').addEventListener('click', async ()=>{
+    const email = document.getElementById('emailMagic').value.trim();
+    if(!email){ alert('メールを入力してください'); return; }
+    try {
+      await sendSignInLinkToEmail(auth, email, { 
+        url: location.origin+'/login.html?redirect='+encodeURIComponent(redirect),
+        handleCodeInApp:true 
+      });
+      localStorage.setItem('emailForSignIn', email);
+      document.getElementById('hintMagic').style.display = 'block';
+      alert('登録用リンクを送信しました。メールをご確認ください。');
+    } catch(e){
+      alert('送信失敗: ' + (e.message||e));
     }
+  });
+
+  // Magic Link 完了処理
+  if(isSignInWithEmailLink(auth, location.href)){
+    let email = localStorage.getItem('emailForSignIn') || prompt('メールアドレスを入力してください');
+    signInWithEmailLink(auth, email, location.href).then((cred)=>{
+      localStorage.removeItem('emailForSignIn');
+      localStorage.setItem('bl_auth', JSON.stringify({ email: cred.user.email, uid: cred.user.uid, ts: Date.now() }));
+      location.replace(redirect);
+    }).catch(e=>alert('ログイン失敗: ' + (e.message||e)));
+  }
+
+  // セッション保持
+  onAuthStateChanged(auth, (user) => {
+    if (user) localStorage.setItem('bl_auth', JSON.stringify({ email: user.email, uid: user.uid, ts: Date.now() }));
+    else localStorage.removeItem('bl_auth');
   });
 </script>
 </body>

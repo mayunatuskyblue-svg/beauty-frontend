@@ -82,6 +82,15 @@ function makeBookingId({salonId, iso, email}){
       <p class="small muted">If you agree with the following terms, please accept the Terms of Service and click "Proceed to Card Information Entry"</p>
       <label class="agree"><input type="checkbox" id="agree2"> I agree to the Terms</label>
       <div class="actions">
+        <input type="checkbox" id="agreeTerms" checked>
+<label for="agreeTerms"> I agree to the Terms</label>
+
+<button id="toCardBtn" type="button" class="btn" disabled
+        style="pointer-events:auto; position:relative; z-index:2;">
+  Proceed to Card Information
+</button>
+<a id="backLink" href="javascript:history.back()" class="ml-3">← Go back</a>
+
         <button id="goCard" class="btn" disabled>Proceed to Card Information</button>
         <a href="javascript:history.back()" class="back muted small">← Go back</a>
       </div>
@@ -104,6 +113,15 @@ function makeBookingId({salonId, iso, email}){
 
       <label class="agree"><input type="checkbox" id="agree"> I agree to the Terms</label>
       <div class="actions">
+        <input type="checkbox" id="agreeTerms" checked>
+        <label for="agreeTerms"> I agree to the Terms</label>
+
+        <button id="toCardBtn" type="button" class="btn" disabled
+        style="pointer-events:auto; position:relative; z-index:2;">
+         Proceed to Card Information
+        </button>
+        <a id="backLink" href="javascript:history.back()" class="ml-3">← Go back</a>
+
         <button id="save" class="btn" disabled>Save Card Information</button>
         <a href="javascript:history.back()" class="back muted small">← Go Back</a>
       </div>

@@ -42,19 +42,35 @@
 
   <h1>ログイン</h1>
 
-  <form class="form" id="loginForm">
-    <label>メールアドレス</label>
-    <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required>
-
-    <label>パスワード</label>
-    <div class="row">
-      <input id="pass" type="password" placeholder="********" autocomplete="current-password" minlength="6" required>
-      <button type="button" id="togglePass" class="btn" style="width:auto;height:40px;padding:0 10px;background:#fff;color:var(--teal)">表示</button>
+  <div class="form">
+    <div style="display:flex;justify-content:center;gap:10px;margin-bottom:16px">
+      <button type="button" id="tabPassword" class="btn" style="flex:1;background:#246A73">パスワードでログイン</button>
+      <button type="button" id="tabMagic" class="btn" style="flex:1;background:#999">メールリンクでログイン</button>
     </div>
 
-    <button class="btn" type="submit" id="loginBtn">ログイン</button>
-    <a class="link" href="signup.html">新規登録はこちら</a>
-  </form>
+    <!-- パスワードログイン -->
+    <div id="formPassword">
+      <label>メールアドレス</label>
+      <input id="emailPw" type="email" placeholder="you@example.com" autocomplete="email" required>
+
+      <label>パスワード</label>
+      <div class="row">
+        <input id="passPw" type="password" placeholder="********" autocomplete="current-password" minlength="6" required>
+        <button type="button" id="togglePass" class="btn" style="width:auto;height:40px;padding:0 10px;background:#fff;color:var(--teal)">表示</button>
+      </div>
+      <button class="btn" id="loginPwBtn">ログイン</button>
+      <a class="link" href="signup.html">新規登録はこちら</a>
+    </div>
+
+    <!-- メールリンクログイン（最初は非表示） -->
+    <div id="formMagic" style="display:none">
+      <label>メールアドレス</label>
+      <input id="emailMagic" type="email" placeholder="you@example.com" autocomplete="email" required>
+      <button class="btn" id="loginMagicBtn">ログインリンクを送る</button>
+      <p class="link" id="hintMagic" style="display:none">メール内のリンクを開くとログイン完了します。</p>
+      <a class="link" href="signup.html">アカウント作成（新規登録）はこちら</a>
+    </div>
+  </div>
 </div>
 
 <footer id="ft" style="margin:18px 0 40px;text-align:center;color:#6b5e55;font-size:12px">
@@ -65,19 +81,41 @@
 </footer>
 
 <script>
-  // 言語設定（既存ロジック）
+  // 言語設定（既存）
   const sel=document.getElementById('langSelect');
   if(sel){ sel.value=localStorage.getItem('bl_lang')||'auto';
     sel.onchange=()=>{ localStorage.setItem('bl_lang', sel.value); location.reload(); };
   }
   // リダイレクト先
-  var redirect = new URLSearchParams(location.search).get('redirect') || 'mypage.html';
+  const redirect = new URLSearchParams(location.search).get('redirect') || 'mypage.html';
+
+  // タブ切替
+  const tabPw = document.getElementById('tabPassword');
+  const tabMagic = document.getElementById('tabMagic');
+  const formPw = document.getElementById('formPassword');
+  const formMg = document.getElementById('formMagic');
+  tabPw.addEventListener('click', ()=>{
+    formPw.style.display='block'; formMg.style.display='none';
+    tabPw.style.background='#246A73'; tabMagic.style.background='#999';
+  });
+  tabMagic.addEventListener('click', ()=>{
+    formPw.style.display='none'; formMg.style.display='block';
+    tabPw.style.background='#999'; tabMagic.style.background='#246A73';
+  });
+
+  // パスワード表示切替
+  const passPw = document.getElementById('passPw');
+  document.getElementById('togglePass').addEventListener('click', ()=>{
+    passPw.type = (passPw.type === 'password') ? 'text' : 'password';
+  });
 </script>
 
 <!-- Firebase 認証（モジュール） -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
+  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged,
+           sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink } 
+    from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAHSzuLbPg1xrlugca7bNYxe44FsTiQDeY",
@@ -88,17 +126,10 @@
   const app  = initializeApp(firebaseConfig);
   const auth = getAuth(app);
 
-  // パスワード表示切替
-  const pass = document.getElementById('pass');
-  document.getElementById('togglePass').addEventListener('click', ()=>{
-    pass.type = (pass.type === 'password') ? 'text' : 'password';
-  });
-
-  // ログイン
-  document.getElementById('loginForm').addEventListener('submit', async (ev)=>{
-    ev.preventDefault();
-    const email = document.getElementById('email').value.trim();
-    const pwd   = document.getElementById('pass').value;
+  // パスワードでログイン
+  document.getElementById('loginPwBtn').addEventListener('click', async ()=>{
+    const email = (document.getElementById('emailPw') as any).value.trim?.() || document.getElementById('emailPw').value.trim();
+    const pwd   = document.getElementById('passPw').value;
     if(!email || !pwd){ alert('メール/パスワードを入力してください'); return; }
     try{
       const cred = await signInWithEmailAndPassword(auth, email, pwd);
@@ -109,13 +140,42 @@
     }
   });
 
+  // メールリンク送信
+  document.getElementById('loginMagicBtn').addEventListener('click', async ()=>{
+    const email = document.getElementById('emailMagic').value.trim();
+    if(!email){ alert('メールを入力してください'); return; }
+    try{
+      await sendSignInLinkToEmail(auth, email, { 
+        url: location.origin + '/login.html?redirect=' + encodeURIComponent(redirect),
+        handleCodeInApp: true
+      });
+      localStorage.setItem('emailForSignIn', email);
+      document.getElementById('hintMagic').style.display='block';
+      alert('ログインリンクを送信しました。メールをご確認ください。');
+    }catch(e){
+      alert('送信失敗: ' + (e?.message||e));
+    }
+  });
+
+  // メールリンク完了処理
+  (async ()=>{
+    if(isSignInWithEmailLink(auth, location.href)){
+      let email = localStorage.getItem('emailForSignIn') || prompt('メールアドレスを入力してください');
+      try{
+        const cred = await signInWithEmailLink(auth, email, location.href);
+        localStorage.removeItem('emailForSignIn');
+        localStorage.setItem('bl_auth', JSON.stringify({ email: cred.user.email, uid: cred.user.uid, ts: Date.now() }));
+        location.replace(redirect);
+      }catch(e){
+        alert('ログインに失敗しました: ' + (e?.message||e));
+      }
+    }
+  })();
+
   // セッション維持
   onAuthStateChanged(auth, (user) => {
-    if (user) {
-      localStorage.setItem('bl_auth', JSON.stringify({ email: user.email, uid: user.uid, ts: Date.now() }));
-    } else {
-      localStorage.removeItem('bl_auth');
-    }
+    if (user) localStorage.setItem('bl_auth', JSON.stringify({ email: user.email, uid: user.uid, ts: Date.now() }));
+    else localStorage.removeItem('bl_auth');
   });
 </script>
 </body>

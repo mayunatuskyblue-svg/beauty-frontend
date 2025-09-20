@@ -281,6 +281,24 @@ $('#saveBtn').addEventListener('click', async () => {
   }
 });
 </script>
+  <script>
+  const dataRaw = sessionStorage.getItem('pendingReservation');
+  const reservation = dataRaw ? JSON.parse(dataRaw) : null;
+
+  if (!reservation) {
+    // 直接アクセスされた場合などは予約画面へ戻す
+    window.location.replace('reservation.html');
+  } else {
+    // 例：画面に反映（あなたの要素IDに合わせて置き換え）
+    // document.getElementById('confirmName').textContent = reservation.name;
+    // document.getElementById('confirmMenu').textContent = reservation.menu;
+    // …必要に応じて表示
+
+    // ここからStripeやカード登録フローへ進める処理を呼ぶ
+    // saveCard(reservation) みたいな関数を実行してOK
+  }
+</script>
+
 </body>
 </html>
 

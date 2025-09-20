@@ -147,12 +147,15 @@ async function recordBookingToSheet({ bookingId, email }){
 function setMsg(t, isErr=false){ const el=document.getElementById('msg'); el.textContent=t||''; el.style.color=isErr?'#74070E':'#2E1A16'; }
 function uid(n=8){ const s='23456789ABCDEFGHJKLMNPQRSTUVWXYZ'; return Array.from(crypto.getRandomValues(new Uint8Array(n))).map(b=>s[b%s.length]).join(''); }
 
+<!-- 150〜172行目をこのブロックで置換 -->
+<script>
 document.getElementById('btnConfirm').addEventListener('click', async ()=>{
   const email = (document.getElementById('email').value||'').trim();
   const dtIso = localStorage.getItem('reserve_selected') || '';
   const dateText = dtIso ? new Date(dtIso).toLocaleString() : (dateTextParam || '');
   if(dateText) document.getElementById('v_date').textContent = dateText;
 
+  // 予約ID（元の仕様を踏襲）
   const bid = [salonId||'S', (dateText||'').replace(/[^0-9]/g,''), uid(4)].filter(Boolean).join('-');
 
   document.getElementById('btnConfirm').disabled = true;
@@ -160,16 +163,36 @@ document.getElementById('btnConfirm').addEventListener('click', async ()=>{
   setMsg('');
 
   try{
+    // 既存のシート反映処理はそのまま
     await recordBookingToSheet({ bookingId: bid, email });
     if(email) try{ localStorage.setItem('bl_email', email); }catch(e){}
-    setMsg('予約を受け付けました。ご来店をお待ちしています！\\n予約ID: '+bid);
+    setMsg('予約を受け付けました。ご来店をお待ちしています！\n予約ID: '+bid);
+
   }catch(e){
-    setMsg('予約は完了しましたが、シート反映に失敗しました。後で自動再送します。\\n'+(e.message||e), true);
+    setMsg('予約は完了しましたが、シート反映に失敗しました。後で自動再送します。\n'+(e.message||e), true);
+
   }finally{
     document.getElementById('btnConfirm').disabled = false;
     document.getElementById('spin').style.display = 'none';
+
+    // 追記：カード登録画面に渡す最低限の情報を保存して遷移
+    const payload = {
+      email: (document.getElementById('email').value||'').trim(),
+      salon:  document.getElementById('v_salon')?.textContent?.trim() || '',
+      menu:   document.getElementById('v_menu')?.textContent?.trim()  || '',
+      staff:  document.getElementById('v_staff')?.textContent?.trim() || '',
+      date:   document.getElementById('v_date')?.textContent?.trim()  || dateText || '',
+      price:  document.getElementById('v_price')?.textContent?.trim() || '',
+      bookingId: bid || ''
+    };
+    try { sessionStorage.setItem('pendingReservation', JSON.stringify(payload)); } catch(_e) {}
+
+    // カード情報登録ページへ
+    window.location.href = 'card_save.html';
   }
 });
+</script>
+
 
 // ===== 週次タイムテーブル =====
 (function(){
@@ -243,40 +266,7 @@ document.getElementById('btnConfirm').addEventListener('click', async ()=>{
   btnNext.addEventListener('click', ()=>{ weekOffset++; buildWeek(weekOffset); });
 })();
 </script>
-  <!-- 例: 予約ボタン -->
-<button id="reserveBtn">この内容で予約する</button>
-
-<script>
-  document.getElementById('reserveBtn')?.addEventListener('click', async (e) => {
-    e.preventDefault();
-
-    // ▼ここで予約内容を取得（あなたのフォームのname/IDに合わせて書き換えてね）
-    const payload = {
-      name: document.querySelector('[name="name"]')?.value || '',
-      phone: document.querySelector('[name="phone"]')?.value || '',
-      menu:  document.querySelector('[name="menu"]')?.value || '',
-      date:  document.querySelector('[name="date"]')?.value || '',
-      time:  document.querySelector('[name="time"]')?.value || ''
-    };
-
-    // 必要ならサーバー保存（成功したら遷移）——コメント外せば使える
-    // try {
-    //   const res = await fetch('/api/reservations', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify(payload),
-    //   });
-    //   if (!res.ok) throw new Error('予約の保存に失敗しました');
-    // } catch (err) {
-    //   alert(err.message);
-    //   return; // 失敗したら遷移しない
-    // }
-
-    // 画面間の受け渡し用に保存 → 自動遷移
-    sessionStorage.setItem('pendingReservation', JSON.stringify(payload));
-    window.location.href = 'card_save.html';
-  });
-</script>
+  
 
 </body>
 </html>

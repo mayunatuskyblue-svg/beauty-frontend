@@ -14,6 +14,10 @@
   const PAY_SERVER = 'https://pay-server-uis7.onrender.com'; /* ←あなたの Render URL */
   const GAS_URL = 'https://script.google.com/macros/s/AKfycbxQHByDLRu-QlfAyRRMdM0-pGskH9Ka7IcFs9NeV2NB3DyDWhaLgvv8Hain_l9nZGvk/exec';
   const GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
+  const STRIPE_PK  =  'pk_test_51S59dhHFHLP5RXi1qkW9cuPEJAlJPuSaFeWFb5GuYhsXs9vkX6RJYfVYwQEdK8TwN3eKF7wEctQftyhYxb2rRIZN00146bOW8U';
+　const stripe = Stripe(STRIPE_PK);
+</script>
+
 </script>
 
 <style>
@@ -281,8 +285,42 @@ if (!client_secret) {
 
       msg.textContent = 'カード保存と予約登録が完了しました。';
       alert('カード保存が完了しました。');
-    }catch(e){
-      console.error(e);
+      try {
+  // ここはあなたのコードで取得済みの値を使ってください
+  // email / name はフォームの入力値、customerId と paymentMethodId は
+  // setupIntent 確定後の値（例: si.payment_method / customer.id）です。
+  const email = document.getElementById('email').value.trim();
+  const name  = document.getElementById('name').value.trim();
+
+  // 例）あなたの変数名に合わせてください
+  //   si  ... stripe.confirmCardSetup の戻り (setupIntent)
+  //   customerId ... サーバから返している customerId
+  const paymentMethodId = (si && si.setupIntent && si.setupIntent.payment_method) || '';
+  const customerIdFromServer = window.__customerId || ''; // 返しているならここに保持しておく
+
+  const resG = await fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      key: GAS_KEY,
+      kind: 'customer',
+      data: {
+        email,
+        name,
+        customerId: customerIdFromServer,
+        paymentMethodId
+      }
+    })
+  });
+  const jG = await resG.json().catch(()=>({}));
+  console.log('[gas][customer] resp:', jG);
+  if (!jG || jG.ok !== true) {
+    console.warn('GAS upsertCustomer failed', jG);
+  }
+} catch (e) {
+  console.error('GAS upsertCustomer error', e);
+}
+
       alert('エラーが発生しました。');
     }
   });

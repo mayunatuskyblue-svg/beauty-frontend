@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>カード情報の保存 | BeautyLanka</title>
+<title>Save Card Information | BeautyLanka</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap" rel="stylesheet">
@@ -64,26 +64,26 @@ function makeBookingId({salonId, iso, email}){
 </head>
 <body>
   <div class="wrap">
-    <h1>カード情報の保存（後払い用）</h1>
+    <h1>Save Card Information</h1>
 
     <!-- 予約内容の概要 -->
     <div class="summary">
       <div class="grid">
-        <div class="muted">サロン</div><div id="s_salon">-</div>
-        <div class="muted">メニュー</div><div id="s_menu">-</div>
-        <div class="muted">施術者</div><div id="s_staff">-</div>
-        <div class="muted">日時</div><div id="s_when">-</div>
-        <div class="muted">お支払い目安</div><div id="s_price" class="price">-</div>
+        <div class="muted">salon</div><div id="s_salon">-</div>
+        <div class="muted">menu</div><div id="s_menu">-</div>
+        <div class="muted">staff</div><div id="s_staff">-</div>
+        <div class="muted">date</div><div id="s_when">-</div>
+        <div class="muted">price</div><div id="s_price" class="price">-</div>
       </div>
     </div>
 
     <!-- STEP 1: 同意 & 次へ -->
     <section class="section" id="confirmStep">
-      <p class="small muted">以下の内容でよろしければ、利用規約に同意して「カード情報の入力へ」を押してください。</p>
+      <p class="small muted">If you agree with the following terms, please accept the Terms of Service and click "Proceed to Card Information Entry"</p>
       <label class="agree"><input type="checkbox" id="agree2"> I agree to the Terms</label>
       <div class="actions">
-        <button id="goCard" class="btn" disabled>カード情報の入力へ</button>
-        <a href="javascript:history.back()" class="back muted small">← 戻る</a>
+        <button id="goCard" class="btn" disabled>Proceed to Card Information</button>
+        <a href="javascript:history.back()" class="back muted small">← Go back</a>
       </div>
     </section>
 
@@ -95,17 +95,17 @@ function makeBookingId({salonId, iso, email}){
           <input type="email" id="email" placeholder="you@example.com">
         </div>
         <div>
-          <label>お名前</label>
+          <label>Your name</label>
           <input type="text" id="name" placeholder="Your name">
         </div>
       </div>
-      <label>カード番号</label>
+      <label>card number</label>
       <div id="card"></div>
 
       <label class="agree"><input type="checkbox" id="agree"> I agree to the Terms</label>
       <div class="actions">
-        <button id="save" class="btn" disabled>カードを保存する</button>
-        <a href="javascript:history.back()" class="back muted small">← 戻る</a>
+        <button id="save" class="btn" disabled>Save Card Information</button>
+        <a href="javascript:history.back()" class="back muted small">← Go Back</a>
       </div>
       <p id="msg" class="small muted"></p>
     </section>

@@ -9,14 +9,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&display=swap" rel="stylesheet">
 
 <script>
-  /* ここはそのままでOK（URLの ?pk=... でも上書き可能） */
+  /* 必要なら URL の ?pk= で上書き可能 */
   window.STRIPE_PK = window.STRIPE_PK || 'pk_test_51S59dhHFHLP5RXi1qkW9cuPEJAlJPuSaFeWFb5GuYhsXs9vkX6RJYfVYwQEdK8TwN3eKF7wEctQftyhYxb2rRIZN00146bOW8U';
-  const PAY_SERVER = 'https://pay-server-uis7.onrender.com'; /* ←あなたの Render URL */
+  const PAY_SERVER = 'https://pay-server-uis7.onrender.com';
   const GAS_URL = 'https://script.google.com/macros/s/AKfycbxQHByDLRu-QlfAyRRMdM0-pGskH9Ka7IcFs9NeV2NB3DyDWhaLgvv8Hain_l9nZGvk/exec';
   const GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
-  const STRIPE_PK = 'pk_test_51S59dhHFHLP5RXi1qkW9cuPEJAlJPuSaFeWFb5GuYhsXs9vkX6RJYfVYwQEdK8TwN3eKF7wEctQftyhYxb2rRIZN00146bOW8U'
-</script>
-
 </script>
 
 <style>
@@ -77,26 +74,17 @@ function makeBookingId({salonId, iso, email}){
       </div>
     </div>
 
-    <!-- STEP 1: 同意 & 次へ -->
+    <!-- STEP 1: 同意 & 次へ（重複を排除して1組だけに） -->
     <section class="section" id="confirmStep">
       <p class="small muted">If you agree with the following terms, please accept the Terms of Service and click "Proceed to Card Information Entry"</p>
-      <label class="agree"><input type="checkbox" id="agree2"> I agree to the Terms</label>
+      <label class="agree"><input type="checkbox" id="agreeStep1"> I agree to the Terms</label>
       <div class="actions">
-        <input type="checkbox" id="agreeTerms" checked>
-<label for="agreeTerms"> I agree to the Terms</label>
-
-<button id="toCardBtn" type="button" class="btn" disabled
-        style="pointer-events:auto; position:relative; z-index:2;">
-  Proceed to Card Information
-</button>
-<a id="backLink" href="javascript:history.back()" class="ml-3">← Go back</a>
-
         <button id="goCard" class="btn" disabled>Proceed to Card Information</button>
         <a href="javascript:history.back()" class="back muted small">← Go back</a>
       </div>
     </section>
 
-    <!-- STEP 2: カード入力 -->
+    <!-- STEP 2: カード入力（保存ボタン #save を追加） -->
     <section class="section" id="cardStep" style="display:none">
       <div class="row">
         <div>
@@ -113,6 +101,7 @@ function makeBookingId({salonId, iso, email}){
 
       <label class="agree"><input type="checkbox" id="agree"> I agree to the Terms</label>
       <div class="actions">
+        <button id="save" class="btn" disabled>Save card</button>
       </div>
       <p id="msg" class="small muted"></p>
     </section>
@@ -147,21 +136,20 @@ function makeBookingId({salonId, iso, email}){
   const pkParam = window.STRIPE_PK || (window.__STRIPE_PK__ || '');
   const msg = document.getElementById('msg');
 
-  const goBtn = document.getElementById('goCard');     // ← STEP1 のボタン
-  const agree2 = document.getElementById('agree2');    // ← STEP1 の同意
+  const goBtn   = document.getElementById('goCard');    // STEP1 のボタン
+  const agreeS1 = document.getElementById('agreeStep1');// STEP1 の同意
 
-  const agree = document.getElementById('agree');      // ← STEP2 の同意
+  const agree   = document.getElementById('agree');      // STEP2 の同意
   const saveBtn = document.getElementById('save');
 
-  const cardStep = document.getElementById('cardStep');
+  const cardStep    = document.getElementById('cardStep');
   const confirmStep = document.getElementById('confirmStep');
 
   // STEP1: 同意しないと次へ進めない
-  function toggleGo(){ goBtn.disabled = !agree2.checked; }
-  agree2.addEventListener('change', toggleGo);
+  function toggleGo(){ goBtn.disabled = !agreeS1.checked; }
+  agreeS1.addEventListener('change', toggleGo);
   toggleGo();
 
-  // PK が未設定なら警告（STEP2 へ入る時点でもブロック）
   if(!pkParam){
     msg.textContent = 'Stripe publishable key が設定されていません。URLの pk=... か、上部スクリプトで window.STRIPE_PK を指定してください。';
   }
@@ -180,7 +168,7 @@ function makeBookingId({salonId, iso, email}){
 
   // STEP1 → STEP2
   goBtn.addEventListener('click', async ()=>{
-    if (!agree2.checked) return;
+    if (!agreeS1.checked) return;
     confirmStep.style.display = 'none';
     cardStep.style.display = '';
     await ensureStripe();
@@ -199,55 +187,44 @@ function makeBookingId({salonId, iso, email}){
     if(!agree.checked){ alert('利用規約に同意してください'); return; }
 
     try{
-      // ==== SetupIntent を作成（Render の pay-server を順番トライ） ====
-      // ==== SetupIntent を作成（Render の pay-server を順番トライ or 強制パス） ====
-// 1) ベース URL
-const PAY = (new URLSearchParams(location.search).get('pay') || PAY_SERVER || '').replace(/\/+$/,'');
+      /* ==== SetupIntent を作成：Render の pay-server を順番トライ（表記ゆれ対応） ==== */
+      const PAY = (new URLSearchParams(location.search).get('pay') || (window.PAY_SERVER||'') || '').replace(/\/+$/,'');
+      const siOverride = new URLSearchParams(location.search).get('si'); // 例: ?si=/api/create_setup_intent
+      const setupIntentUrls = siOverride
+        ? [ `${PAY}${siOverride.startsWith('/') ? '' : '/'}${siOverride}` ]
+        : [
+            `${PAY}/api/create_setup_intent`,
+            `${PAY}/api/create-setup-intent`,
+            `${PAY}/create_setup_intent`,
+            `${PAY}/create-setup-intent`,
+            `${PAY}/api/setup_intent`,
+            `${PAY}/api/setup-intent`,
+            `${PAY}/api/setup_intents/create`,
+            `${PAY}/setup_intent`
+          ];
 
-// 2) クエリでパス名を強制（例: ?si=/api/create_setup_intent）
-const siOverride = new URLSearchParams(location.search).get('si'); // leading slash OK
-const setupIntentUrls = siOverride
-  ? [ `${PAY}${siOverride.startsWith('/') ? '' : '/'}${siOverride}` ]
-  : [
-      `${PAY}/api/create_setup_intent`,
-      `${PAY}/api/create-setup-intent`,
-      `${PAY}/create_setup_intent`,
-      `${PAY}/create-setup-intent`,
-      `${PAY}/api/setup_intent`,
-      `${PAY}/api/setup-intent`,
-      `${PAY}/api/setup_intents/create`,
-      `${PAY}/setup_intent`
-    ];
-
-let client_secret = '', tried = [], lastStatus = 0, lastText = '';
-for (const u of setupIntentUrls) {
-  try {
-    tried.push(u);
-    const r = await fetch(u, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email, name })
-    });
-    lastStatus = r.status;
-    const txt = await r.text();
-    let j={}; try { j = JSON.parse(txt); } catch(_){}
-    // client_secret / clientSecret の両方に対応
-const gotSecret =
-  j.client_secret || j.clientSecret ||
-  (j.data && (j.data.client_secret || j.data.clientSecret));
-
-if (r.ok && gotSecret) {
-  client_secret = gotSecret;
-  break;
-}
-
-  } catch (e) { lastText = String(e); }
-}
-if (!client_secret) {
-  console.error('[card-save] endpoints tried:', tried);
-  throw new Error(`SetupIntent API not found (last=${lastStatus}).\nPAY=${PAY}\n${lastText || ''}`);
-}
-
+      let client_secret = '', tried = [], lastStatus = 0, lastText = '';
+      for (const u of setupIntentUrls) {
+        try {
+          tried.push(u);
+          const r = await fetch(u, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ email, name })
+          });
+          lastStatus = r.status;
+          const txt = await r.text();
+          let j={}; try { j = JSON.parse(txt); } catch(_){}
+          const gotSecret =
+            j.client_secret || j.clientSecret ||
+            (j.data && (j.data.client_secret || j.data.clientSecret));
+          if (r.ok && gotSecret) { client_secret = gotSecret; break; }
+        } catch (e) { lastText = String(e); }
+      }
+      if (!client_secret) {
+        console.error('[card-save] endpoints tried:', tried);
+        throw new Error(`SetupIntent API not found (last=${lastStatus}).\nPAY=${PAY}\n${lastText || ''}`);
+      }
 
       // Stripe にカード保存を依頼
       const { setupIntent, error } = await stripe.confirmCardSetup(client_secret, {
@@ -255,10 +232,9 @@ if (!client_secret) {
       });
       if(error){ alert(error.message || 'カード保存に失敗しました'); return; }
 
-      // ローカル保存 & GAS へ同期
+      // ローカル保存 & GAS へ同期（customers）
       const saved = { email, name, customerId: setupIntent.customer, paymentMethodId: setupIntent.payment_method };
       localStorage.setItem('bl_saved_card', JSON.stringify(saved));
-
       if (window.GAS_URL && window.GAS_KEY){
         await fetch(window.GAS_URL, {
           method: 'POST',
@@ -267,7 +243,7 @@ if (!client_secret) {
         }).then(r=>r.json()).catch(()=>({}));
       }
 
-      // 予約行の作成（任意）
+      // 予約行（bookings）も作成（任意）
       const ctx = window.__BL_CTX__ || {};
       const bookingId = makeBookingId({ salonId: ctx.salonId, iso: ctx.iso, email });
       const data = {
@@ -290,45 +266,41 @@ if (!client_secret) {
       }
 
       msg.textContent = 'カード保存と予約登録が完了しました。';
-      
+      alert('カード保存が完了しました。');
+    }catch(e){
+      console.error(e);
+      alert('エラーが発生しました。' + (e && e.message ? '\n' + e.message : ''));
     }
   });
 })();
 </script>
-  <script>
-/* clientSecret ↔ client_secret のズレを吸収する fetch フィルタ（追記だけでOK） */
+
+<!-- clientSecret / client_secret のズレ吸収フィルタ（追記だけでOK） -->
+<script>
 (() => {
   const origFetch = window.fetch;
   const qs = new URLSearchParams(location.search);
   const PAY = qs.get('pay') || 'https://pay-server-uis7.onrender.com';
-  const siParam = (qs.get('si') || '/api/setup-intent').replace(/\/+$/, '');
-
-  function matchesSetupIntent(url) {
-    // 両方の表記を面倒みる（setup-intent / setup_intent）
+  function matchesSetupIntent(url){
     return (url.includes('setup-intent') || url.includes('setup_intent'));
   }
-
-  window.fetch = async function(input, init) {
+  window.fetch = async function(input, init){
     const res = await origFetch(input, init);
-    try {
+    try{
       const url = (typeof input === 'string' ? input : input.url) || '';
       if (url.startsWith(PAY) && matchesSetupIntent(url)) {
-        // サーバーのレスポンスを読み直して client_secret を補完して返す
         const text = await res.text();
-        let j = {};
-        try { j = JSON.parse(text); } catch(_) {}
-
-        // 可能性のある場所を全部埋める
+        let j = {}; try { j = JSON.parse(text); } catch(_){}
         if (j && typeof j === 'object') {
           if (!j.client_secret && j.clientSecret) j.client_secret = j.clientSecret;
           if (j.data && !j.data.client_secret && j.data.clientSecret) {
             j.data.client_secret = j.data.clientSecret;
           }
         }
-        const blob = new Blob([JSON.stringify(j)], { type: 'application/json' });
+        const blob = new Blob([JSON.stringify(j)], { type:'application/json' });
         return new Response(blob, { status: res.status, statusText: res.statusText, headers: res.headers });
       }
-    } catch (_) {}
+    }catch(_){}
     return res;
   };
 })();

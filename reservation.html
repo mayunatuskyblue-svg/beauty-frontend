@@ -243,5 +243,40 @@ document.getElementById('btnConfirm').addEventListener('click', async ()=>{
   btnNext.addEventListener('click', ()=>{ weekOffset++; buildWeek(weekOffset); });
 })();
 </script>
+  <!-- 例: 予約ボタン -->
+<button id="reserveBtn">この内容で予約する</button>
+
+<script>
+  document.getElementById('reserveBtn')?.addEventListener('click', async (e) => {
+    e.preventDefault();
+
+    // ▼ここで予約内容を取得（あなたのフォームのname/IDに合わせて書き換えてね）
+    const payload = {
+      name: document.querySelector('[name="name"]')?.value || '',
+      phone: document.querySelector('[name="phone"]')?.value || '',
+      menu:  document.querySelector('[name="menu"]')?.value || '',
+      date:  document.querySelector('[name="date"]')?.value || '',
+      time:  document.querySelector('[name="time"]')?.value || ''
+    };
+
+    // 必要ならサーバー保存（成功したら遷移）——コメント外せば使える
+    // try {
+    //   const res = await fetch('/api/reservations', {
+    //     method: 'POST',
+    //     headers: { 'Content-Type': 'application/json' },
+    //     body: JSON.stringify(payload),
+    //   });
+    //   if (!res.ok) throw new Error('予約の保存に失敗しました');
+    // } catch (err) {
+    //   alert(err.message);
+    //   return; // 失敗したら遷移しない
+    // }
+
+    // 画面間の受け渡し用に保存 → 自動遷移
+    sessionStorage.setItem('pendingReservation', JSON.stringify(payload));
+    window.location.href = 'card_save.html';
+  });
+</script>
+
 </body>
 </html>

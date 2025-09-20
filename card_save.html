@@ -274,6 +274,9 @@ $('#saveBtn').addEventListener('click', async () => {
       payment_method: { card: cardElement, billing_details: { email, name } }
     });
     if (error) throw new Error(error.message || String(error));
+　　// ▼追記（L276 の直後あたり）
+　　if (!setupIntent || setupIntent.status !== 'succeeded') throw new Error('カード保存に失敗しました（未確定）');
+　　if (!setupIntent.customer) throw new Error('カードは作成されましたが、顧客に紐づいていません（server: SetupIntentにcustomer未指定）。');
 
     await upsertCustomerRow({
       email, name, customerId, paymentMethodId: setupIntent.payment_method
@@ -282,7 +285,9 @@ $('#saveBtn').addEventListener('click', async () => {
     // 予約IDがあれば bookings へも追記
     try{ await recordBookingToSheet({ bookingId: BOOKING_ID, email }); }catch(e){ console.warn('booking_create failed', e); }
 
-    setMsg('カード情報を保存しました。後払いに利用できます。');
+    // 置き換え（L285）
+　　setMsg('カード情報を保存しました。後払いに利用できます（顧客に紐づき確認済み）。');
+
   }catch(e){
     setMsg('エラー: ' + (e.message || String(e)), true);
   }finally{

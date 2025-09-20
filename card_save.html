@@ -131,19 +131,7 @@ const PAY_SERVER = (p.get('payServer') || DEFAULT_PAY_SERVER).replace(/\/$/,'');
 const STRIPE_PK  = p.get('pk') || localStorage.getItem('bl_stripe_pk') || 'pk_test_51S59dhHFHLP5RXi1qkW9cuPEJAlJPuSaFeWFb5GuYhsXs9vkX6RJYfVYwQEdK8TwN3eKF7wEctQftyhYxb2rRIZN00146bOW8U';
 
 // ===== エンドポイント候補（フォールバック対応）
-const endpoints = [
-  // ハイフン系（/api 配下も試す）
-  '/api/create-setup-intent','/api/setup-intent',
-  '/create-setup-intent','/setup-intent',
-
-  // スネーク系（互換）
-  '/api/create_setup_intent','/api/setup_intent',
-  '/create_setup_intent','/setup_intent',
-
-  // バリエーション（複数形など）
-  '/api/setup_intents/create','/setup_intents/create'
-].map(path => PAY_SERVER + path);
-
+const endpoints = ['/api/setup-intent'].map(path => PAY_SERVER + path);
 
 // ===== GAS への upsert 設定
 const GAS_URL = document.querySelector('meta[name=bl-sheet-hook]')?.content || p.get('gas') || '';

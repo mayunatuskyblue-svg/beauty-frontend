@@ -164,26 +164,24 @@
       // PAY server 決定（?pay= ＞ window.PAY_SERVER）
       const PAY = (q.get('pay') || window.PAY_SERVER || '').replace(/\/+$/,'');
 
-      // 候補（表記ゆれ吸収）。最初に成功したURLを採用
-      const endpoints = [
-        `${PAY}/api/create_setup_intent`,
-        `${PAY}/api/setup_intent`,
-        `${PAY}/setup_intent`,
-        `${PAY}/create_setup_intent`,
-        `${PAY}/create-setup-intent`,
-        `${PAY}/api/setup_intents/create`
-      ];
+      
 
       // SetupIntent 作成
       let clientSecret = '';
       let lastStatus = 0, lastBody = '';
       for (const url of endpoints){
         try{
-          const res = await fetch(url, {
-            method:'POST',
-            headers:{'content-type':'application/json'},
-            body: JSON.stringify({ email: em || 'test@example.com', name: nm })
-          });
+         // すべて これ ひとつに統一
+const res = await fetch(`${PAY_SERVER}/api/setup-intent`, {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({ email, name })
+});
+const j = await res.json();
+if (!res.ok || !j?.ok || !j?.clientSecret) {
+  throw new Error(`SetupIntent API not found (last=${res.status}). PAY=${PAY_SERVER}`);
+}
+
           lastStatus = res.status;
           lastBody   = await res.text();
           if(res.ok){

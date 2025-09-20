@@ -147,8 +147,7 @@ async function recordBookingToSheet({ bookingId, email }){
 function setMsg(t, isErr=false){ const el=document.getElementById('msg'); el.textContent=t||''; el.style.color=isErr?'#74070E':'#2E1A16'; }
 function uid(n=8){ const s='23456789ABCDEFGHJKLMNPQRSTUVWXYZ'; return Array.from(crypto.getRandomValues(new Uint8Array(n))).map(b=>s[b%s.length]).join(''); }
 
-<!-- 150〜172行目をこのブロックで置換 -->
-<script>
+
 document.getElementById('btnConfirm').addEventListener('click', async ()=>{
   const email = (document.getElementById('email').value||'').trim();
   const dtIso = localStorage.getItem('reserve_selected') || '';
@@ -195,6 +194,8 @@ document.getElementById('btnConfirm').addEventListener('click', async ()=>{
 
 
 // ===== 週次タイムテーブル =====
+  <script>
+
 (function(){
   const grid = document.getElementById('hpGrid');
   const title = document.getElementById('hpWeekTitle');

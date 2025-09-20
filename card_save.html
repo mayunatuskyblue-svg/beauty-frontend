@@ -14,6 +14,26 @@
   const PAY_SERVER = 'https://pay-server-uis7.onrender.com';
   const GAS_URL = 'https://script.google.com/macros/s/AKfycbxQHByDLRu-QlfAyRRMdM0-pGskH9Ka7IcFs9NeV2NB3DyDWhaLgvv8Hain_l9nZGvk/exec';
   const GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
+  const CREATE_SETUP_INTENT_URL = `${PAY_SERVER}/api/setup_intent`;
+  async function createSetupIntent(email, name) {
+  const res = await fetch(CREATE_SETUP_INTENT_URL, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email, name })     // サーバ実装に合わせて必要なら他のパラメータもここに
+  });
+
+  const text = await res.text();              // HTMLが返る事故を検知するために一度textで確認
+  let j;
+  try { j = JSON.parse(text); }
+  catch (e) {
+    throw new Error(`Bad JSON from ${CREATE_SETUP_INTENT_URL}: ` + text.slice(0, 120));
+  }
+
+  if (!res.ok || !j?.ok || !j?.clientSecret) {
+    throw new Error(`API error ${res.status} at ${CREATE_SETUP_INTENT_URL}`);
+  }
+  return j; // { ok:true, clientSecret, customerId … }
+}
 </script>
 
 <style>

@@ -127,7 +127,32 @@ const GAS_URL = document.querySelector('meta[name=bl-sheet-hook]')?.content || p
 const GAS_KEY = p.get('key') || localStorage.getItem('bl_gas_key') || '';
 
 // ===== シート反映（bookings 追記） =====
-async function recordBookingToSheet({ bookingId, email }){
+async function recordBookingToSheet({ bookingId, email })
+    // --- ここから追記: 保存用データ作成 ---
+    const payload = {
+      salonId: salonId || '',
+      salonName: salonName || '',
+      item: itemName || '',
+      staffName: staffName || '',
+      // 選択されていればその日時、なければURL由来の日時
+      date: (localStorage.getItem('reserve_selected') || dateTextParam || ''),
+      price_jpy: priceJPY || 0,
+      bookingId: bid
+    };
+    sessionStorage.setItem('pendingReservation', JSON.stringify(payload));
+
+    // --- ここから追記: card_save.html へ渡すクエリを組み立てて遷移 ---
+    const q = new URLSearchParams({
+      salonId: payload.salonId,
+      salonName: payload.salonName,
+      item: payload.item,
+      staffName: payload.staffName,
+      dt: payload.date,          // card_save.html は dt/date のどちらでも読める
+      price_jpy: String(payload.price_jpy),
+      bookingId: payload.bookingId
+    });
+    window.location.href = 'card_save.html?' + q.toString();
+{
   if(!GAS_URL){ console.warn('GAS_URL not set'); return; }
   const res = await fetch(GAS_URL, {
     method: 'POST',

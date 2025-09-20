@@ -262,9 +262,25 @@ $('#saveBtn').addEventListener('click', async () => {
       payment_method: { card: cardElement, billing_details: { email, name } }
     });
     if (error) throw new Error(error.message || String(error));
-　　// ▼追記（L276 の直後あたり）
-　　if (!setupIntent || setupIntent.status !== 'succeeded') throw new Error('カード保存に失敗しました（未確定）');
-　　if (!setupIntent.customer) throw new Error('カードは作成されましたが、顧客に紐づいていません（server: SetupIntentにcustomer未指定）。');
+　　if (!setupIntent || setupIntent.status !== 'succeeded') {
+　　throw new Error('カード保存に失敗しました（未確定）');
+    }
+   if (!customerId) {
+   throw new Error('顧客IDの取得に失敗しました（serverのレスポンスを確認してください）。');
+   }
+    // 念のため保険：confirm 後に customer に手動で attach（必要なときだけ）
+try {
+  const needsAttach = !setupIntent.customer; // Stripe.js の戻りには customer が載らない場合あり
+  if (needsAttach && setupIntent.payment_method && customerId) {
+    await fetch(PAY_SERVER + '/api/attach-payment-method', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ paymentMethodId: setupIntent.payment_method, customerId })
+    });
+  }
+} catch (e) {
+  console.warn('attach fallback failed', e);
+}
 
     await upsertCustomerRow({
       email, name, customerId, paymentMethodId: setupIntent.payment_method

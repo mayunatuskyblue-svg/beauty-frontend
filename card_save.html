@@ -6,28 +6,42 @@
 <title>カード情報の保存（後払い用）</title>
 <link rel="preconnect" href="https://js.stripe.com" crossorigin>
 <script src="https://js.stripe.com/v3/"></script>
+<!-- Google Apps Script WebApp URL（customers シート upsert 用） -->
+<meta name="bl-sheet-hook" content="">
 <style>
-  :root{--bg:#f6f1e6;--panel:#fff;--text:#222;--muted:#6b7280;--brand:#115e59}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;line-height:1.6}
+  :root{--bg:#f6f1e6;--panel:#fff;--text:#222;--muted:#6b7280;--brand:#115e59;--stroke:#e5e7eb}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:"Inter","Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.6}
   .wrap{max-width:960px;margin:28px auto;padding:0 16px}
-  .card{background:var(--panel);border-radius:14px;box-shadow:0 6px 18px rgba(0,0,0,.06);padding:18px 20px;margin:14px 0}
+  .card{background:var(--panel);border-radius:14px;box-shadow:0 6px 18px rgba(0,0,0,.06);padding:18px 20px;margin:14px 0;border:1px solid var(--stroke)}
   h1{font-size:28px;margin:6px 0 12px}
   dt{color:var(--muted);font-size:13px;margin-top:8px}
   dd{margin:0 0 8px 0}
-  .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  .btn{appearance:none;border:0;border-radius:12px;background:#c5e3dd;color:#10302c;padding:12px 18px;font-weight:700;cursor:pointer}
-  .btn.brand{background:var(--brand);color:#fff}
-  .btn:disabled{opacity:.55;cursor:not-allowed}
-  label.chk{display:flex;align-items:center;gap:8px;font-weight:600}
-  .inline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-  .help{color:var(--muted);font-size:12px}
-  #msg{white-space:pre-wrap}
+  .row{display:grid;grid-template-columns:160px 1fr;gap:6px 14px}
+  input[type="email"],input[type="text"]{height:40px;border-radius:12px;border:1px solid var(--stroke);padding:0 12px;width:100%}
+  .inline{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .btn{height:44px;border-radius:999px;padding:0 18px;font-weight:800;cursor:pointer;border:1px solid var(--stroke);background:#fff}
+  .btn.brand{background:var(--brand);color:#fff;border-color:var(--brand)}
   .hidden{display:none}
-  .field{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px}
+  #msg{white-space:pre-line}
+  #card{border:1px solid var(--stroke);border-radius:12px;padding:12px}
+  footer a{color:#334155;text-decoration:none;margin-right:10px}
+  footer a:hover{text-decoration:underline}
+  /* modal */
+  #ftModal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:9999}
+  #ftBackdrop{position:absolute;inset:0;background:rgba(0,0,0,.4)}
+  #ftDlg{position:relative;background:#fff;border:1px solid var(--stroke);border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,.18);width:min(92vw,720px);max-height:80vh;overflow:auto;padding:18px}
+  #ftDlg header{display:flex;align-items:center;gap:8px;justify-content:space-between;margin-bottom:8px}
+  #ftDlg header h3{margin:0;font-size:18px}
+  #ftClose{border:1px solid var(--stroke);background:#fff;border-radius:10px;padding:6px 10px;cursor:pointer}
+
+  .ft-transparent{background:transparent;border:none;box-shadow:none;padding:12px 10px;margin-top:10px;text-align:left}
+  .ft-transparent a{color:#374151;text-decoration:none;margin-right:14px;opacity:.9}
+  .ft-transparent a:hover{text-decoration:underline;opacity:1}
 </style>
 </head>
 <body>
 <div class="wrap">
+  <a class="btn" href="index.html">← 戻る</a>
   <h1>カード情報の保存（後払い用）</h1>
 
   <div class="card">
@@ -36,83 +50,122 @@
       <div><dt>メニュー</dt><dd id="v_menu">-</dd></div>
       <div><dt>施術者</dt><dd id="v_staff">-</dd></div>
       <div><dt>日時</dt><dd id="v_date">-</dd></div>
-      <div><dt>お支払い目安</dt><dd id="v_price">-</dd></div>
+      <div><dt>目安金額</dt><dd id="v_price">-</dd></div>
     </dl>
   </div>
 
   <div class="card" id="stepAgree">
     <div class="inline">
-      <label class="chk"><input type="checkbox" id="agree" checked> I agree to the Terms</label>
-      <button class="btn" id="goForm">カード情報の入力へ</button>
-      <a class="help" href="javascript:history.back()">← 戻る</a>
+      <label class="chk"><input type="checkbox" id="agree"> I agree to the Terms</label>
+      <button class="btn" type="button" id="openTerms">Terms</button>
+      <button class="btn brand" type="button" id="goForm">カード情報の入力へ</button>
     </div>
-    <p class="help">同意にチェックして「カード情報の入力へ」を押してください。</p>
+    <p class="inline" style="color:var(--muted);font-size:12px">チェックしてから「カード情報の入力へ」を押してください。</p>
   </div>
 
   <div class="card hidden" id="stepForm">
     <div class="row">
-      <div>
-        <dt>メール</dt>
-        <dd><input id="email" class="field" placeholder="you@example.com" value=""></dd>
-      </div>
-      <div>
-        <dt>お名前</dt>
-        <dd><input id="name" class="field" placeholder="Taro Yamada" value=""></dd>
-      </div>
+      <dt>メール</dt><dd><input type="email" id="email" placeholder="you@example.com"></dd>
+      <dt>お名前</dt><dd><input type="text" id="name" placeholder="TARO YAMADA"></dd>
+      <dt>カード番号</dt><dd><div id="card"></div></dd>
     </div>
-    <dt>カード番号</dt>
-    <div id="card" class="field"></div>
-    <div class="inline" style="margin-top:12px">
-      <button class="btn brand" id="saveBtn">カードを保存する</button>
-      <span id="spin" class="help hidden">処理中…</span>
+    <div class="inline" style="margin-top:8px">
+      <button id="saveBtn" class="btn brand">カードを保存する</button>
+      <span id="spin" class="hidden">処理中…</span>
     </div>
-    <p id="msg" class="help"></p>
   </div>
 
-  <p class="help">Terms ・ Privacy ・ Cancel Policy ・ Contact</p>
+  <div id="msg"></div>
+
+  <footer class="ft-transparent">
+    <a href="#" class="ft-link" data-ft="terms">Terms</a>
+    <a href="#" class="ft-link" data-ft="privacy">Privacy</a>
+    <a href="#" class="ft-link" data-ft="cancel">Cancel Policy</a>
+    <a href="#" class="ft-link" data-ft="contact">Contact</a>
+  </footer>
+</div>
+
+<!-- modal -->
+<div id="ftModal">
+  <div id="ftBackdrop"></div>
+  <div id="ftDlg" role="dialog" aria-modal="true" aria-labelledby="ftTitle">
+    <header><h3 id="ftTitle">Terms</h3><button id="ftClose">Close</button></header>
+    <div id="ftBody">Loading…</div>
+  </div>
 </div>
 
 <script>
-// ====== 可変設定（必要に応じて上書きできます） ======
-const STRIPE_PK = (window.STRIPE_PK || '').trim() || 'pk_test_12345'; // あなたの公開鍵に差し替え可
-const DEFAULT_PAY = 'https://pay-server-uis7.onrender.com';           // 既定の Pay Server
+// ===== 通貨ユーティリティ =====
+const RATES = { JPY:1, USD:0.0067, EUR:0.0061, LKR:2.05 };
+function getLang(){ try{ return (localStorage.getItem('bl_lang')||'auto')==='ja' ? 'ja' : 'en'; }catch(e){ return 'en'; } }
+function getCurrency(){ try{ return localStorage.getItem('bl_currency') || 'JPY'; }catch(e){ return 'JPY'; } }
+function fmtCurrencyFromJPY(jpy, cur){
+  const n = Math.max(0, Number(jpy)||0);
+  const converted = Math.round(n * (RATES[cur] || 1));
+  try{
+    return new Intl.NumberFormat(getLang()==='ja'?'ja-JP':'en-US',
+      { style:'currency', currency: cur, maximumFractionDigits:0 }).format(converted);
+  }catch(e){
+    const symbols = {JPY:'¥', USD:'$', EUR:'€', LKR:'Rs '};
+    return (symbols[cur]||'') + converted.toLocaleString();
+  }
+}
 
-// ====== URL パラメータ ======
-const P = new URLSearchParams(location.search);
-const salonId = P.get('salonId') || '';
-const salonName = P.get('salonName') || '-';
-const item = decodeURIComponent(P.get('item') || '-');
-const staffName = decodeURIComponent(P.get('staffName') || '-');
-const iso = P.get('iso') || '';
-const price = Number(P.get('price') || 0);
-const cur = (P.get('cur') || 'JPY').toUpperCase();
-const PAY_SERVER = (window.PAY_SERVER || P.get('pay') || DEFAULT_PAY).replace(/\/+$/,'');
+// ===== 画面パラメータ → 表示
+const p = new URLSearchParams(location.search);
+const salon   = p.get('salonName') || p.get('salon') || '-';
+const menu    = p.get('item') || p.get('menu') || '-';
+const staff   = p.get('staffName') || p.get('staff') || '指名なし';
+const when    = p.get('date') || p.get('dt') || '-';
+const priceJP = Number(p.get('price_jpy') || 0);
 
-// ====== 画面表示 ======
-document.getElementById('v_salon').textContent = salonName || '-';
-document.getElementById('v_menu').textContent  = item || '-';
-document.getElementById('v_staff').textContent = staffName || '-';
-document.getElementById('v_date').textContent  = iso ? new Date(iso).toLocaleString() : '-';
-document.getElementById('v_price').textContent = price ? `${cur} ${price.toLocaleString('ja-JP')}` : '現地支払い';
+document.getElementById('v_salon').textContent = salon;
+document.getElementById('v_menu').textContent  = menu;
+document.getElementById('v_staff').textContent = staff;
+document.getElementById('v_date').textContent  = when || '-';
+document.getElementById('v_price').textContent = priceJP ? fmtCurrencyFromJPY(priceJP, getCurrency()) : '—';
 
-// ====== エンドポイント候補（互換フォールバック） ======
+// ===== Pay サーバーと Stripe の設定
+const DEFAULT_PAY_SERVER = 'https://pay-server-uis7.onrender.com';
+const PAY_SERVER = (p.get('payServer') || DEFAULT_PAY_SERVER).replace(/\/$/,'');
+const STRIPE_PK  = p.get('pk') || localStorage.getItem('bl_stripe_pk') || 'pk_test_12345';
+
+// ===== エンドポイント候補（フォールバック対応）
 const endpoints = [
-  '/api/create_setup_intent',
-  '/api/setup_intent',
-  '/create_setup_intent',
-  '/create-setup-intent',
-  '/api/setup_intents/create',
-  '/setup_intent',
-  '/setup-intent'
-].map(p => PAY_SERVER + p);
+  '/api/create_setup_intent','/api/setup_intent','/create_setup_intent','/create-setup-intent',
+  '/api/setup_intents/create','/setup_intent','/setup-intent'
+].map(path => PAY_SERVER + path);
 
-// ====== ユーティリティ ======
+// ===== GAS への upsert 設定
+const GAS_URL = document.querySelector('meta[name=bl-sheet-hook]')?.content || p.get('gas') || '';
+const GAS_KEY = p.get('key') || localStorage.getItem('bl_gas_key') || '';
+
 const $ = s => document.querySelector(s);
 const show = (el, on=true)=>el.classList[on?'remove':'add']('hidden');
 const setMsg = (t, isErr=false)=>{ const m=$('#msg'); m.textContent=t||''; m.style.color=isErr?'#b91c1c':'#374151' };
 
-// ====== Stripe 初期化 ======
-let stripe, elements, cardElement, inited = false;
+// ===== Footer modal (inline content) =====
+(function(){
+  const modal = $('#ftModal'), body=$('#ftBody'), title=$('#ftTitle');
+  const content = {
+    terms:{title:'Terms', html:'<p>Use of this service requires compliance with shop policies. By proceeding you agree to the terms.</p>'},
+    privacy:{title:'Privacy', html:'<p>We store minimal data (favorites, reservations, language) in your browser. We do not sell personal data.</p>'},
+    cancel:{title:'Cancel Policy', html:'<p>Free cancellation until 24 hours before appointment. Within 24 hours, please contact the shop directly.</p>'},
+    contact:{title:'Contact', html:'<p>Email: support@beautylanka.example</p>'}
+  };
+  function open(kind){ const c=content[kind]||content.terms; title.textContent=c.title; body.innerHTML=c.html; modal.style.display='flex'; }
+  function close(){ modal.style.display='none'; }
+  document.addEventListener('click', (e)=>{
+    const a = e.target.closest && e.target.closest('.ft-link');
+    if(a){ e.preventDefault(); open(a.dataset.ft); }
+  });
+  $('#openTerms').addEventListener('click', ()=>open('terms'));
+  $('#ftClose').addEventListener('click', close);
+  $('#ftBackdrop').addEventListener('click', close);
+})();
+
+// ===== Stripe 初期化（同意前は表示しない） =====
+let stripe, elements, cardElement, inited=false;
 function initStripe(){
   if(inited) return;
   stripe = Stripe(STRIPE_PK);
@@ -122,71 +175,109 @@ function initStripe(){
   inited = true;
 }
 
-// ====== SetupIntent を複数エンドポイントで順に試す ======
-async function getClientSecret(email, name){
-  const body = JSON.stringify({ email, name });
-  let lastStatus = 0, lastUrl = '';
-
-  for (const url of endpoints){
-    try{
-      lastUrl = url;
-      const res = await fetch(url, { method:'POST', headers:{'content-type':'application/json'}, body });
-      lastStatus = res.status;
-
-      // JSON で来る場合
-      if ((res.headers.get('content-type')||'').includes('application/json')){
-        const j = await res.json().catch(()=>({}));
-        if (j && j.ok && j.clientSecret) return j.clientSecret;
-        if (j && j.client_secret) return j.client_secret;
-      }
-
-      // HTMLでclient_secretを含む場合（簡易抽出）
-      const tx = await res.text();
-      const m = tx.match(/(?:clientSecret|client_secret)["']?\s*[:=]\s*["']([^"']+)["']/i);
-      if (m) return m[1];
-    }catch(e){
-      // 続行
-    }
-  }
-  throw new Error(`SetupIntent API not found (last=${lastStatus}).\nPAY=${PAY_SERVER}\nlastUrl=${lastUrl}`);
-}
-
-// ====== イベント ======
+// 同意 → 入力フォーム表示
 $('#goForm').addEventListener('click', () => {
-  if (!$('#agree').checked) {
-    setMsg('利用規約への同意が必要です。', true);
-    return;
-  }
+  if (!$('#agree').checked) { setMsg('利用規約への同意が必要です。', true); return; }
   initStripe();
   show($('#stepAgree'), false);
   show($('#stepForm'), true);
   setMsg('カード番号を入力し「カードを保存する」を押してください。');
 });
 
-$('#saveBtn').addEventListener('click', async () => {
-  const email = ($('#email').value || '').trim();
-  const name = ($('#name').value || '').trim() || 'Guest';
+// ===== SetupIntent を複数エンドポイントで順に試す =====
+async function getClientSecret(email, name){
+  const body = JSON.stringify({ email, name });
+  let lastStatus = 0, lastUrl = '';
+  for (const url of endpoints){
+    try{
+      lastUrl = url;
+      const res = await fetch(url, { method:'POST', headers:{'content-type':'application/json'}, body });
+      lastStatus = res.status;
+      if ((res.headers.get('content-type')||'').includes('application/json')){
+        const j = await res.json().catch(()=>({}));
+        if (j && j.ok && j.clientSecret) return {secret:j.clientSecret, customerId:j.customerId||''};
+        if (j && (j.client_secret||j.clientSecret)) return {secret:(j.client_secret||j.clientSecret), customerId:j.customerId||''};
+      }
+      const tx = await res.text();
+      const m = tx.match(/(?:clientSecret|client_secret)["']?\s*[:=]\s*["']([^"']+)["']/i);
+      if (m) return {secret:m[1], customerId:''};
+    }catch(e){ /* try next */ }
+  }
+  throw new Error('SetupIntent を作成できませんでした。最後のURL: '+lastUrl+' (status='+lastStatus+')');
+}
 
+
+// ===== bookings シートへ追記 =====
+async function recordBookingToSheet({ bookingId, email }){
+  if(!GAS_URL){ console.warn('GAS_URL not set'); return; }
+  if(!bookingId) return;
+  const res = await fetch(GAS_URL, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      key: GAS_KEY,
+      kind:'booking_create',
+      bookingId,
+      email: email||''
+    })
+  });
+  const j = await res.json().catch(()=>({}));
+  if(!j || !j.ok) throw new Error((j&&j.error)||'booking_create failed');
+}
+
+// ===== bookingId の決定（URLにあれば採用。なければ生成） =====
+function genBookingIdFromParams(){
+  const idFromUrl = p.get('bookingId') || p.get('bid');
+  if (idFromUrl) return idFromUrl;
+  const salonId = p.get('salonId') || p.get('salon') || 'S';
+  const dt = p.get('date') || p.get('dt') || new Date().toISOString();
+  const base = String(dt).replace(/[^0-9]/g,'').slice(0,12);
+  const rand = (()=>{ const s='23456789ABCDEFGHJKLMNPQRSTUVWXYZ'; return Array.from(crypto.getRandomValues(new Uint8Array(4))).map(b=>s[b%s.length]).join(''); })();
+  return [salonId, base, rand].filter(Boolean).join('-');
+}
+const BOOKING_ID = genBookingIdFromParams();
+
+// ===== customers シートへ upsert =====
+async function upsertCustomerRow({ email, name, customerId, paymentMethodId }){
+  if(!GAS_URL){ console.warn('GAS_URL not set'); return; }
+  const res = await fetch(GAS_URL, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      key: GAS_KEY, kind:'customer_upsert',
+      email, name, customerId, paymentMethodId
+    })
+  });
+  const j = await res.json().catch(()=>({}));
+  if(!j || !j.ok) throw new Error((j&&j.error)||'customer_upsert failed');
+}
+
+// ===== Save card flow =====
+$('#saveBtn').addEventListener('click', async () => {
+  const email = ($('#email').value||'').trim();
+  const name  = ($('#name').value||'').trim() || 'Guest';
   if (!email || !email.includes('@')) { setMsg('メールアドレスを入力してください。', true); return; }
 
-  $('#saveBtn').disabled = true;
-  show($('#spin'), true);
-  setMsg('通信中…');
-
+  $('#saveBtn').disabled = true; show($('#spin'), true); setMsg('通信中…');
   try{
-    const clientSecret = await getClientSecret(email, name);
-    const {setupIntent, error} = await stripe.confirmCardSetup(clientSecret, {
+    const {secret, customerId} = await getClientSecret(email, name);
+    const {setupIntent, error} = await stripe.confirmCardSetup(secret, {
       payment_method: { card: cardElement, billing_details: { email, name } }
     });
+    if (error) throw new Error(error.message || String(error));
 
-    if (error) throw new Error(error.message || 'カード保存に失敗しました。');
+    await upsertCustomerRow({
+      email, name, customerId, paymentMethodId: setupIntent.payment_method
+    });
 
-    setMsg(`カード保存が完了しました。 (status=${setupIntent.status})`);
+    // 予約IDがあれば bookings へも追記
+    try{ await recordBookingToSheet({ bookingId: BOOKING_ID, email }); }catch(e){ console.warn('booking_create failed', e); }
+
+    setMsg('カード情報を保存しました。後払いに利用できます。');
   }catch(e){
-    setMsg(`エラーが発生しました。\n${e.message || e}`, true);
+    setMsg('エラー: ' + (e.message || String(e)), true);
   }finally{
-    $('#saveBtn').disabled = false;
-    show($('#spin'), false);
+    $('#saveBtn').disabled = false; show($('#spin'), false);
   }
 });
 </script>

@@ -163,6 +163,22 @@ document.getElementById('btnConfirm').addEventListener('click', async ()=>{
     await recordBookingToSheet({ bookingId: bid, email });
     if(email) try{ localStorage.setItem('bl_email', email); }catch(e){}
     setMsg('予約を受け付けました。ご来店をお待ちしています！\\n予約ID: '+bid);
+    // ▼ 成功したらカード保存画面へ遷移（必要情報をクエリで引き継ぎ）
++   (function goCardSave(){
++     const dateText = document.getElementById('v_date').textContent || '';
++     const params = new URLSearchParams({
++       salonId: (salonId||''),
++       salonName: (salonName||''),
++       item: (itemName||''),
++       staffName: (staffName||'指名なし'),
++       date: dateText,
++       price_jpy: String(priceJPY||0),
++       // ↓必要なら引き継ぎ（無ければ空でOK。card_save側はデフォルトを持っています）
++       payServer: (p.get('payServer')||''),
++       pk: (p.get('pk')||'')
++     });
++     location.href = 'card_save.html?' + params.toString();
++   })();
   }catch(e){
     setMsg('予約は完了しましたが、シート反映に失敗しました。後で自動再送します。\\n'+(e.message||e), true);
   }finally{

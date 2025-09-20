@@ -217,7 +217,6 @@ async function recordBookingToSheet({ bookingId, email }){
       bookingId,
       email: email||''
     })
-  });
   const j = await res.json().catch(()=>({}));
   if(!j || !j.ok) throw new Error((j&&j.error)||'booking_create failed');
 }

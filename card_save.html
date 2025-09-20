@@ -211,12 +211,13 @@ async function recordBookingToSheet({ bookingId, email }){
   const res = await fetch(GAS_URL, {
     method:'POST',
     headers:{'Content-Type': 'text/plain;charset=utf-8'},
-     body: JSON.stringify({
+      body: JSON.stringify({
     key: GAS_KEY,
     kind: 'booking',
     data: { bookingId, email: email || '' }
   })
 });
+
 const j = await res.json().catch(()=>({}));
 if(!j || !j.ok) throw new Error((j&&j.error)||'booking_create failed');
 
@@ -245,7 +246,6 @@ async function upsertCustomerRow({ email, name, customerId, paymentMethodId }){
     kind: 'customer',
     data: { email, name, customerId, paymentMethodId }
   })
-});
   const j = await res.json().catch(()=>({}));
   if(!j || !j.ok) throw new Error((j&&j.error)||'customer_upsert failed');
 }

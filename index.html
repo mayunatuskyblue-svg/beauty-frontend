@@ -268,6 +268,8 @@ function fmtCurrencyFromJPY(jpy, cur){
   }catch(e){
     const symbols = {JPY:'¥', USD:'$', EUR:'€', LKR:'Rs '};
     return (symbols[cur]||'') + converted.toLocaleString();
+  }
+}
     
 const T = {
   ja: {
@@ -514,13 +516,16 @@ function initFilters(dataSource){
   const placeSel = document.getElementById('place');
   const typeSel  = document.getElementById('type');
 
-  const L = (window.BL_I18N && BL_I18N.getLang ? BL_I18N.getLang() : 'ja');
+    const L = (window.BL_I18N && BL_I18N.getLang ? BL_I18N.getLang() : 'ja');
   const build = (list)=> list.map(x=>`<option value="${x.code}">${L==='en'?x.en:x.ja}</option>`).join('');
 
-  // プレースホルダ + i18nマスタから生成（value は code）
-  placeSel.innerHTML = `<option value="" data-i18n="search.place">${T[L].place}</option>` + build(BL_I18N.AREAS || []);
-  typeSel.innerHTML  = `<option value="" data-i18n="search.type">${T[L].type}</option>`   + build(BL_I18N.CATEGORIES || []);
-　  document.getElementById('searchForm').addEventListener('submit', (ev)=>{
+  // ここを T 参照ではなく、言語で直接切替
+  const placeLabel = (L === 'en' ? 'Area'     : '場所');
+  const typeLabel  = (L === 'en' ? 'Category' : '種類');
+
+  placeSel.innerHTML = `<option value="" data-i18n="search.place">${placeLabel}</option>` + build((BL_I18N && BL_I18N.AREAS) || []);
+  typeSel.innerHTML  = `<option value="" data-i18n="search.type">${typeLabel}</option>`   + build((BL_I18N && BL_I18N.CATEGORIES) || []);
+ document.getElementById('searchForm').addEventListener('submit', (ev)=>{
     ev.preventDefault();
 
     const kw = (document.getElementById('kw').value||'').toLowerCase();

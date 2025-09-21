@@ -19,12 +19,6 @@ T.en.smartpay = {
   saved:'Card saved (Customer: )',
   not_saved:'No card on file'
 };
-window.BL_I18N.CATEGORY_KEYS = ['hair','nails','ayurveda','spa','lashes'];
-window.BL_I18N.AREA_KEYS = [
-  'colombo','negombo','galle','unawatuna','mirissa','matara','hikkaduwa',
-  'bentota','kalutara','kalpitiya','kandy','nuwara_eliya','ella',
-  'arugam_bay','trincomalee','jaffna','anuradhapura','polonnaruwa','sigiriya'
-];
   // ↓↓↓ ここから “代入あり” の形に直す
   T.ja = Object.assign({}, T.ja, {
     ui:{ phone:'電話番号', close:'閉じる', process:'処理中…', mypage:'マイページ', currency:'通貨', back_to_search:'検索に戻る', back:'← 戻る', toTop:'トップに戻る', show:'表示', your_name:'お名前', email:'メールアドレス', password:'パスワード', pay_with_card:'カードで支払う（PayPal）', pay_on_site:'現地で支払う（記録）', done:'完了', confirm:'確認', yourInfo:'予約者情報', notes:'要望・メモ（任意）', name:'お名前 / Name', phone:'電話番号 / Phone' },
@@ -261,5 +255,12 @@ terms_full_html: `
   
   global.BL_I18N = { T, getLang, setLang, i18nApply };
   // 例：lang.js のどこかの辞書に追加
+  window.BL_I18N.CATEGORY_KEYS = ['hair','nails','ayurveda','spa','lashes'];
+window.BL_I18N.AREA_KEYS = [
+  'colombo','negombo','galle','unawatuna','mirissa','matara','hikkaduwa',
+  'bentota','kalutara','kalpitiya','kandy','nuwara_eliya','ella',
+  'arugam_bay','trincomalee','jaffna','anuradhapura','polonnaruwa','sigiriya'
+];
+
 
 })(window);

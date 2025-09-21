@@ -7,7 +7,7 @@
     const cont = document.querySelector('.container');
     // ページごとにキーを変える（terms / privacy / cancel / contact）
     const pageKey = '___REPLACE___'; // 例: 'terms', 'privacy', 'cancel', 'contact'
-    cont.innerHTML = L(`legal.${pageKey}_full_html`);
+    cont.innerHTML = L(`legal.${contact}_full_html`);
     BL_I18N.i18nApply(cont);
   });
 </script>

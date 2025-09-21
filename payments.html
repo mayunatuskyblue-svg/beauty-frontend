@@ -105,23 +105,30 @@ const price     = Number(q.get('price') || 0);
 const timeISO   = q.get('time') || "";  // 予約日時（未指定でもOK）
 const salonName = q.get('salonName') || ""; // あれば表示に使う
 
-// 表示
-<div id="sum" class="card">
-  <div id="sumItem" style="font-weight:800;font-size:18px">-</div>
-  <div id="sumSalon" style="opacity:.85">-</div>
-  <div style="margin-top:6px">
-    <span data-i18n="pay.choose_method_label">支払い方法を選んでください：</span>
-    <span id="sumPrice">-</span>
-  </div>
-  <div id="sumTime" class="note" style="margin-top:6px"></div>
-</div>
-
-
 // 支払い導線
 const stripeUrl = STRIPE_LINKS[item] || "";
 const btnStripe = document.getElementById('btnStripe');
 const btnCash   = document.getElementById('btnCash');
 const btnCashOnly = document.getElementById('btnCashOnly');
+// ここから “2のJS” （sum の中身を埋める）
+const sumItem  = document.getElementById('sumItem');
+const sumSalon = document.getElementById('sumSalon');
+const sumPrice = document.getElementById('sumPrice');
+const sumTime  = document.getElementById('sumTime');
+
+if (sumItem && sumSalon && sumPrice && sumTime) {
+  sumItem.textContent  = item;
+  sumSalon.textContent = salonName ? salonName : ('Salon #' + salonId);
+  sumPrice.textContent = price
+    ? ('オンライン or 現地払い / $' + price.toFixed(2))
+    : '現地払いのみ';
+  sumTime.textContent  = timeISO
+    ? (BL_I18N.getLang()==='ja'
+        ? `予約希望：${new Date(timeISO).toLocaleString()}`
+        : `Requested: ${new Date(timeISO).toLocaleString()}`)
+    : '';
+}
+
 
 if (price > 0) {
   document.getElementById('pay').style.display = 'block';

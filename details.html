@@ -77,7 +77,7 @@
       <section class="card">
         <div class="section-title" data-i18n="details.menu">メニュー</div>
         <div id="menuList" class="list"></div>
-        <div id="menuEmpty" class="muted" data-i18n="details.coupon_empty">（準備中です。スプレッドシートにメニューを追加したら自動表示されます）</div>
+        <div id="menuEmpty" class="muted" data-i18n="details.menu_empty">（準備中です。スプレッドシートにメニューを追加したら自動表示されます）</div>
       </section>
 
       <div class="space"></div>
@@ -139,7 +139,7 @@
           <form class="rv-form" id="verifiedForm">
             <div class="row">
               <label class="muted" data-i18n="details.name_opt">お名前（任意）</label>
-              <input type="text" id="rvName" placeholder="例：M*** さん">
+              <input type="text" id="rvName" data-i18n-ph="details.rv_name_ph" placeholder="例：M*** さん">
             </div>
             <div class="row">
               <label class="muted" data-i18n="details.rating_lbl">評価</label>
@@ -153,7 +153,7 @@
             </div>
             <div class="row">
               <label class="muted" data-i18n="details.comment_lbl">コメント</label>
-              <textarea id="rvText" rows="4" placeholder="施術の感想を書いてください"></textarea>
+              <textarea id="rvText" rows="4" data-i18n-ph="details.rv_text_ph" placeholder="施術の感想を書いてください"></textarea>
             </div>
             <div class="row">
               <button class="btn" id="rvSubmit" data-i18n="details.submit_review">この内容で投稿</button>

@@ -107,10 +107,10 @@ body{ padding-bottom:60px; } /* avoid overlap */
       <div class="sec-title" id="uf_title" data-i18n="ui.yourInfo">予約者情報</div>
       <div class="sec-desc" id="uf_desc" data-i18n="confirm.uf_desc">連絡が取れるメールアドレスと電話番号をご入力ください。</div>
       <div class="form-row">
-        <input id="uf_name" class="input" data-i18n="ui.name" placeholder="お名前 / Name" autocomplete="name"/>
-        <input id="uf_email" class="input" data-i18n="ui.email" placeholder="メール / Email" autocomplete="email" inputmode="email"/>
-        <input id="uf_phone" class="input" data-i18n="ui.phone" placeholder="電話番号 / Phone" autocomplete="tel" inputmode="tel"/>
-        <textarea id="uf_note" class="input" data-i18n="ui.notes" placeholder="要望・メモ（任意）"></textarea>
+        <input id="uf_name" class="input" data-i18n-ph="ui.name" placeholder="お名前 / Name" autocomplete="name"/>
+        <input id="uf_email" class="input" data-i18n-ph="ui.email" placeholder="メール / Email" autocomplete="email" inputmode="email"/>
+        <input id="uf_phone" class="input" data-i18n-ph="ui.phone" placeholder="電話番号 / Phone" autocomplete="tel" inputmode="tel"/>
+        <textarea id="uf_note" class="input" data-i18n-ph="ui.notes" placeholder="要望・メモ（任意）"></textarea>
       </div>
     </div>
 
@@ -133,28 +133,6 @@ body{ padding-bottom:60px; } /* avoid overlap */
 
 
   <script>
-
-// i18n helper
-function getLang(){ try{ const pref=localStorage.getItem('bl_lang')||'auto'; if(pref==='auto'){ const ja=(navigator.language||'en').toLowerCase().startsWith('ja'); return ja?'ja':'en'; } return pref; }catch(e){ return 'ja'; } }
-
-
-document.addEventListener('DOMContentLoaded', ()=>{
-  if(getLang()==='en'){
-    document.querySelector('.h1').textContent = 'Review your reservation';
-    document.getElementById('uf_title').textContent = 'Your info';
-    document.getElementById('uf_desc').textContent = 'Enter an email and a phone number we can reach you at.';
-    const btns = document.querySelectorAll('.btn');
-    btns.forEach(b=>{
-      if(b.textContent.includes('カード')) b.textContent='Pay online (PayPal/Stripe)';
-      if(b.textContent.includes('現地で支払う')) b.textContent='Pay on site (record)';
-      if(b.textContent.includes('トップに戻る')) b.textContent='Back to top';
-    });
-    const sum = document.getElementById('sum');
-    // simple replacements for labels inside sum block
-    sum.innerHTML = sum.innerHTML.replace('時間 :','Time:').replace('支払い :','Payment:');
-  }
-});
-
   (function(){
     const nameEl = document.getElementById('uf_name');
     const mailEl = document.getElementById('uf_email');

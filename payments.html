@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title data-in18n="pay.title" data-i18n="pay.method">Stripe支払い</title>
+<title data-i18n="pay.title" data-i18n="pay.method">Stripe支払い</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Shippori+Mincho:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{ --red:#74070E; --bean:#310E10; --base:#F7F1E1; }
@@ -48,16 +48,16 @@ h1, h2, h3, .brand, .title, .h1, .sec-title {
 <div class="container">
   <div class="row">
     <a class="btn gray" href="./index.html">← Back to site</a>
-    <div class="h1" data-in18n="pay.method">Stripe 支払い</div>
+    <div class="h1" data-i18n="pay.method">Stripe 支払い</div>
   </div>
 
   <div id="sum" class="card">Loading…</div>
 
   <div id="pay" class="card" style="display:none">
-    <div style="font-weight:800;margin-bottom:8px" data-in18n="pay.method_title">お支払い方法</div>
+    <div style="font-weight:800;margin-bottom:8px" data-i18n="pay.method_title">お支払い方法</div>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <a id="btnStripe" class="btn red" href="#" target="_blank" rel="noopener" data-in18n="pay.pay_stripe">Stripeで支払う</a>
-      <a id="btnCash" class="btn gray" href="#" data-in18n="pay.pay_cash">現地支払いで続ける</a>
+      <a id="btnStripe" class="btn red" href="#" target="_blank" rel="noopener" data-i18n="pay.pay_stripe">Stripeで支払う</a>
+      <a id="btnCash" class="btn gray" href="#" data-i18n="pay.pay_cash">現地支払いで続ける</a>
     </div>
     <div class="note" style="margin-top:8px" data-i18n="pay.note_open_newtab">
       ※ Stripeボタンは新しいタブで開きます。決済後は自動でサイトに戻るように（成功URL/キャンセルURL）をPayment Link設定で指定してください。
@@ -65,10 +65,10 @@ h1, h2, h3, .brand, .title, .h1, .sec-title {
   </div>
 
   <div id="noLink" class="card" style="display:none">
-    <div style="font-weight:800;margin-bottom:6px" data-in18n="pay.nonlink_title">オンライン決済リンクが未設定</div>
+    <div style="font-weight:800;margin-bottom:6px" data-i18n="pay.nonlink_title">オンライン決済リンクが未設定</div>
     <div class="note" data-i18n="pay.nonlink_title">このメニュー/クーポンにはStripeのPayment Linkが未設定です。現地支払いでご予約を続けられます。</div>
     <div style="margin-top:10px">
-      <a id="btnCashOnly" class="btn gray" href="#" data-in18n="pay.pay_cash">現地支払いで続ける</a>
+      <a id="btnCashOnly" class="btn gray" href="#" data-i18n="pay.pay_cash">現地支払いで続ける</a>
     </div>
   </div>
 

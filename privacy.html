@@ -2,29 +2,15 @@
 <style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#F7F1E1;color:#2E1A16;margin:0}.container{max-width:900px;margin:40px auto;padding:0 16px}h1{font-size:28px;margin:0 0 12px}p{line-height:1.7}a{color:#06c}</style><script src="lang.js" defer></script>
 <script>document.addEventListener('DOMContentLoaded',()=>BL_I18N.i18nApply());</script>
 </head>
-<body><div class="container"><h1 data-i18n="footer.privacy">Privacy Policy / プライバシーポリシー</h1>
-
-<h2>Data we collect / 取得する情報</h2>
-<p>Name, email, phone (if provided), booking details, device info, and payment tokens handled by Stripe.<br>
-氏名・メール・電話番号（任意）・予約情報・端末情報・Stripe が取り扱う決済トークン等。</p>
-
-<h2>Purpose / 利用目的</h2>
-<p>To manage bookings, send notifications, process payments, improve quality, and prevent fraud.<br>
-予約管理・通知送信・決済処理・品質向上・不正防止のため。</p>
-
-<h2>Sharing / 共同利用・提供</h2>
-<p>We may share necessary data with service providers such as Stripe (payments), Firebase (authentication/emails), and WhatsApp/Twilio (notifications).<br>
-Stripe（決済）、Firebase（認証・メール送信）、WhatsApp/Twilio（通知）等の委託先と必要範囲で共有します。</p>
-
-<h2>Retention / 保存期間</h2>
-<p>We retain data as required by law and business needs, then delete or anonymize it.<br>
-法令及び業務上必要な期間保持し、不要となった情報は削除または匿名化します。</p>
-
-<h2>Security / セキュリティ</h2>
-<p>Data is encrypted in transit. Payment data is processed by PCI-compliant Stripe; we do not store full card numbers.<br>
-通信は暗号化され、決済データは PCI 準拠の Stripe が処理します。当社はカード番号を保持しません。</p>
-
-<h2>Contact / お問い合わせ</h2>
-<p>Email: your-support@example.com（差し替えてください）</p>
-<p><a href="index.html" data-i18n="ui.back">&larr; Back to home</a></p></div></body><script src="lang.js" defer></script>
+<body><div class="container"><script src="lang.js" defer></script>
+<script>
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const L = (k)=>k.split('.').reduce((o,p)=>o&&o[p], (window.BL_I18N?.T||{})[window.BL_I18N?.getLang?.()||'ja']) || k;
+    const cont = document.querySelector('.container');
+    // ページごとにキーを変える（terms / privacy / cancel / contact）
+    const pageKey = '___REPLACE___'; // 例: 'terms', 'privacy', 'cancel', 'contact'
+    cont.innerHTML = L(`legal.${privacy}_full_html`);
+    BL_I18N.i18nApply(cont);
+  });
+</script>
 </html>

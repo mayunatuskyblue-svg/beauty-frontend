@@ -39,10 +39,10 @@ body{ padding-bottom:60px; } /* avoid overlap */
 <div class="container">
   <div style="display:flex;justify-content:flex-end;gap:8px"><select id="langSelect" class="btn" style="height:38px"><option value="auto">Auto</option><option value="ja">日本語</option><option value="en">English</option></select></div>
   <div class="section">
-    <h1>ご予約ありがとうございます</h1>
-    <p id="msg">この店舗の口コミ投稿ができるようになりました。</p>
+    <h1 data-i18n="thanks.title">ご予約ありがとうございます</h1>
+    <p id="msg" data-i18n="thanks.msg">この店舗の口コミ投稿ができるようになりました。</p>
     <p class="small" id="conf"></p>
-    <p><button class="btn primary" onclick="go()">店舗ページへ戻る</button></p>
+    <p><button class="btn primary" onclick="go()" data-i18n="thanks.back_to_shop">店舗ページへ戻る</button></p>
   </div>
 </div>
 <script>

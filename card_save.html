@@ -163,9 +163,8 @@ const setMsg = (t, isErr=false)=>{ const m=$('#msg'); m.textContent=t||''; m.sty
   document.getElementById('ftBackdrop')?.addEventListener('click', close);
 })();
 </script>
-
-// ===== Stripe 初期化（同意前は表示しない） =====
 <script>
+// ===== Stripe 初期化（同意前は表示しない） =====
 let stripe, elements, cardElement, inited=false;
 function initStripe(){
   if(inited) return;

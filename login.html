@@ -42,7 +42,7 @@
     </select>
   </div>
 
-  <h1>ログイン</h1><h1 data-i18n="auth.login"></h1>
+  <h1 data-i18n="auth.login">ログイン</h1>
 
   <div class="form">
     <div style="display:flex;justify-content:center;gap:10px;margin-bottom:16px">
@@ -52,21 +52,21 @@
 
     <!-- パスワードログイン -->
     <div id="formPassword">
-      <label>メールアドレス</label>
+      <label data-in18n="auth.email">メールアドレス</label>
       <input id="emailPw" type="email" placeholder="you@example.com" autocomplete="email" required>
 
-      <label>パスワード</label>
+      <label data-in18n="auth.password">パスワード</label>
       <div class="row">
         <input id="passPw" type="password" placeholder="********" autocomplete="current-password" minlength="6" required>
         <button type="button" id="togglePass" class="btn" style="width:auto;height:40px;padding:0 10px;background:#fff;color:var(--teal)">表示</button>
       </div>
-      <button class="btn" id="loginPwBtn">ログイン</button>
-      <a class="link" href="signup.html">新規登録はこちら</a>
+      <button class="btn" id="loginPwBtn" data-in18n="auth.login">ログイン</button>
+      <a class="link" href="signup.html" data-in18n="auth.goto_signup">新規登録はこちら</a>
     </div>
 
     <!-- メールリンクログイン（最初は非表示） -->
     <div id="formMagic" style="display:none">
-      <label>メールアドレス</label>
+      <label data-in18n="auth.email">メールアドレス</label>
       <input id="emailMagic" type="email" placeholder="you@example.com" autocomplete="email" required>
       <button class="btn" id="loginMagicBtn">ログインリンクを送る</button>
       <p class="link" id="hintMagic" style="display:none">メール内のリンクを開くとログイン完了します。</p>

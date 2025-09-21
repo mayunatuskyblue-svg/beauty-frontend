@@ -128,7 +128,9 @@
 
   // パスワードでログイン
   document.getElementById('loginPwBtn').addEventListener('click', async ()=>{
-    const email = (document.getElementById('emailPw') as any).value.trim?.() || document.getElementById('emailPw').value.trim();
+    // OK（純粋なブラウザJS）
+  const email = document.getElementById('emailPw').value.trim();
+
     const pwd   = document.getElementById('passPw').value;
     if(!email || !pwd){ alert('メール/パスワードを入力してください'); return; }
     try{

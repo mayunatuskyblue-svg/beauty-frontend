@@ -26,6 +26,17 @@ T.en.smartpay = {
     auth:{ login:'ログイン', signup:'新規登録', goto_signup:'新規登録はこちら', signup_here:'新規登録はこちら', login_with_password:'パスワードでログイン', login_with_magic:'メールリンクでログイン', send_magic:'ログインリンクを送る/登録用リンクを送る', magic_hint:'メール内のリンクを開くと登録が完了します。', email:'メールアドレス', password:'パスワード' },
     search:{ ph_kw:'キーワード（例：まつ毛、スパ）', place:'場所', type:'種類', btn:'検索' },
     reserve:{ title:'予約の確認', salon:'サロン', menu:'メニュー', staff:'施術者', datetime:'日時', estimate:'目安金額', contactEmail:'予約連絡用メール', note:'※空でも予約はできます。メールを入れると bookings シートに反映されます。', submit:'この内容で予約する', backOnce:'一度戻る', process:'処理中…', select_dt:'日時を選択', prev:'‹ 前へ', next:'次へ ›', legend:'◯ 空き　× 予約不可' },
+        areas:{
+      colombo:'コロンボ', galle:'ゴール', kandy:'キャンディ', negombo:'ネゴンボ',
+      mirissa:'ミリッサ', weligama:'ウェリガマ', bentota:'ベントタ', hikkaduwa:'ヒッカドゥワ',
+      unawatuna:'ウナワトゥナ', koggala:'コッガラ', ella:'エッラ', nuwaraeliya:'ヌワラエリヤ',
+      trincomalee:'トリンコマリー', arugambay:'アルガンベイ', jaffna:'ジャフナ',
+      anuradhapura:'アヌラーダプラ', sigiriya:'シギリヤ', matara:'マータラ',
+      kalutara:'カルタラ', dehiwala:'デヒワラ'
+    },
+    categories:{
+      hair:'ヘア', nail:'ネイル', ayurveda:'アーユルヴェーダ', spa:'スパ・サロン', lashes:'まつ毛'
+    },
     pay:{ title:'Stripe支払い', method:'Stripe 支払い', method_title:'お支払い方法', pay_stripe:'Stripeで支払う', pay_cash:'現地支払いで続ける', note_open_newtab:'※ Stripeボタンは新しいタブで開きます。決済後は自動でサイトに戻るように（成功URL/キャンセルURL）をPayment Link設定で指定してください。', nonlink_title:'オンライン決済リンクが未設定', nonlink_desc:'このメニュー/クーポンにはStripeのPayment Linkが未設定です。現地支払いでご予約を続けられます。', choose_method_label:'支払い方法を選んでください：' },
     footer:{ terms:'Terms', privacy:'Privacy', cancel:'Cancel Policy', contact:'Contact' },
     mypage:{ title:'マイページ', favs:'お気に入り', search_history:'検索履歴', booking_history:'予約履歴', place:'場所', type:'種類', date:'日付', datetime:'日時', shop:'店舗', price_est:'料金目安', view_detail:'詳細を見る', unfav:'お気に入り解除' },
@@ -121,6 +132,17 @@ T.en.smartpay = {
     auth:{ login:'Log in', signup:'Sign up', goto_signup:'Create an account', signup_here:'Create an account', login_with_password:'Log in with password', login_with_magic:'Log in via email link', send_magic:'Send sign-up link', magic_hint:'Open the link in the email to complete sign-up.', email:'Email', password:'Password' },
     search:{ ph_kw:'Keyword (e.g., lashes, spa)', place:'Area', type:'Type', btn:'Search' },
     reserve:{ title:'Reservation confirmation', salon:'Salon', menu:'Menu', staff:'Staff', datetime:'Date & time', estimate:'Estimated price', contactEmail:'Contact email', note:'You can book without email. If provided, it will appear on the bookings sheet.', submit:'Confirm booking', backOnce:'Go back', process:'Processing…', select_dt:'Select date & time', prev:'‹ Prev', next:'Next ›', legend:'◯ Available  × Unavailable' },
+        areas:{
+      colombo:'Colombo', galle:'Galle', kandy:'Kandy', negombo:'Negombo',
+      mirissa:'Mirissa', weligama:'Weligama', bentota:'Bentota', hikkaduwa:'Hikkaduwa',
+      unawatuna:'Unawatuna', koggala:'Koggala', ella:'Ella', nuwaraeliya:'Nuwara Eliya',
+      trincomalee:'Trincomalee', arugambay:'Arugam Bay', jaffna:'Jaffna',
+      anuradhapura:'Anuradhapura', sigiriya:'Sigiriya', matara:'Matara',
+      kalutara:'Kalutara', dehiwala:'Dehiwala'
+    },
+    categories:{
+      hair:'Hair', nail:'Nail', ayurveda:'Ayurveda', spa:'Spa & Salon', lashes:'Lashes'
+    },
     pay:{ title:'Payment', method:'Payment', method_title:'Payment method', pay_stripe:'Pay with Stripe', pay_cash:'Continue with pay-on-site', note_open_newtab:'The Stripe button opens in a new tab. After payment, set success/cancel URLs in Payment Link to return here automatically.', nonlink_title:'Online payment link not set', nonlink_desc:'No Stripe Payment Link is set for this item. You can continue with pay-on-site.', choose_method_label:'Select a payment method: ' },
     footer:{ terms:'Terms', privacy:'Privacy', cancel:'Cancel Policy', contact:'Contact' },
     mypage:{ title:'My page', favs:'Favorites', search_history:'Search history', booking_history:'Bookings', place:'Place', type:'Type', date:'Date', datetime:'Date & time', shop:'Shop', price_est:'Est. price', view_detail:'View details', unfav:'Remove favorite' },
@@ -233,65 +255,7 @@ terms_full_html: `
     document.body.classList.toggle('ja', lang==='ja');
     document.body.classList.toggle('en', lang==='en');
   }
-  // === Area & Category master (JA/EN 統一マスター) ===
-const AREAS = [
-  { code:'colombo',    ja:'コロンボ',        en:'Colombo',        aliases:['colombo','コロンボ'] },
-  { code:'galle',      ja:'ゴール',          en:'Galle',          aliases:['galle','ゴール','ガール'] },
-  { code:'kandy',      ja:'キャンディ',      en:'Kandy',          aliases:['kandy','キャンディ'] },
-  { code:'negombo',    ja:'ネゴンボ',        en:'Negombo',        aliases:['negombo','ネゴンボ'] },
-  { code:'mirissa',    ja:'ミリッサ',        en:'Mirissa',        aliases:['mirissa','ミリッサ'] },
-  { code:'weligama',   ja:'ウェリガマ',      en:'Weligama',       aliases:['weligama','ウェリガマ'] },
-  { code:'bentota',    ja:'ベントタ',        en:'Bentota',        aliases:['bentota','ベントタ'] },
-  { code:'hikkaduwa',  ja:'ヒッカドゥワ',    en:'Hikkaduwa',      aliases:['hikkaduwa','ヒッカドゥワ'] },
-  { code:'unawatuna',  ja:'ウナワトゥナ',    en:'Unawatuna',      aliases:['unawatuna','ウナワトゥナ'] },
-  { code:'koggala',    ja:'コッガラ',        en:'Koggala',        aliases:['koggala','コッガラ'] },
-  { code:'ella',       ja:'エッラ',          en:'Ella',           aliases:['ella','エッラ','エラ'] },
-  { code:'nuwaraeliya',ja:'ヌワラエリヤ',    en:'Nuwara Eliya',   aliases:['nuwara eliya','nuwaraeliya','ヌワラエリヤ'] },
-  { code:'trincomalee',ja:'トリンコマリー',  en:'Trincomalee',    aliases:['trincomalee','トリンコマリー'] },
-  { code:'arugambay',  ja:'アルガンベイ',    en:'Arugam Bay',     aliases:['arugam','arugam bay','アルガンベイ'] },
-  { code:'jaffna',     ja:'ジャフナ',        en:'Jaffna',         aliases:['jaffna','ジャフナ'] },
-  { code:'anuradhapura',ja:'アヌラーダプラ', en:'Anuradhapura',   aliases:['anuradhapura','アヌラーダプラ'] },
-  { code:'sigiriya',   ja:'シギリヤ',        en:'Sigiriya',       aliases:['sigiriya','シギリヤ'] },
-  { code:'matara',     ja:'マータラ',        en:'Matara',         aliases:['matara','マータラ'] },
-  { code:'kalutara',   ja:'カルタラ',        en:'Kalutara',       aliases:['kalutara','カルタラ'] },
-  { code:'dehiwala',   ja:'デヒワラ',        en:'Dehiwala',       aliases:['dehiwala','デヒワラ'] },
-];
-
-const CATEGORIES = [
-  { code:'hair',     ja:'ヘア',          en:'Hair',          aliases:['ヘア','ヘアサロン','美容室','カット','hair'] },
-  { code:'nail',     ja:'ネイル',        en:'Nail',          aliases:['ネイル','nail','nails','ジェル'] },
-  { code:'ayurveda', ja:'アーユルヴェーダ', en:'Ayurveda',   aliases:['アーユルヴェーダ','アーユルベーダ','ayurveda'] },
-  { code:'spa',      ja:'スパ・サロン',  en:'Spa & Salon',   aliases:['スパ','マッサージ','スパ・サロン','spa','massage'] },
-  { code:'lashes',   ja:'まつ毛',        en:'Lashes',        aliases:['まつ毛','マツエク','まつエク','lash','lashes'] },
-];
-
-// 値 → code への正規化（ローマ字/日本語ゆらぎ吸収）
-function _normalize(s){
-  return String(s||'').toLowerCase()
-    .replace(/\s+/g,' ')
-    .replace(/[‐-–—ー−]/g,'-')
-    .trim();
-}
-function _mkIndex(list){
-  const m = new Map();
-  for(const row of list){
-    m.set(_normalize(row.ja), row.code);
-    m.set(_normalize(row.en), row.code);
-    for(const a of (row.aliases||[])) m.set(_normalize(a), row.code);
-    m.set(row.code, row.code);
-  }
-  return m;
-}
-const _AREA_INDEX = _mkIndex(AREAS);
-const _CAT_INDEX  = _mkIndex(CATEGORIES);
-
-// Data 側の「place/type（和英混在）」を code に寄せる
-function toCode(kind, value){
-  const v = _normalize(value);
-  if(kind==='area')     return _AREA_INDEX.get(v) || '';
-  if(kind==='category') return _CAT_INDEX.get(v)  || '';
-  return '';
-}
+  
 
   global.BL_I18N = { T, getLang, setLang, i18nApply, AREAS, CATEGORIES, toCode };
 

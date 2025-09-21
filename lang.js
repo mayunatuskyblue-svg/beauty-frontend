@@ -33,7 +33,9 @@ T.en.smartpay = {
     confirm:{ title:'予約内容の確認', uf_desc:'連絡が取れるメールアドレスと電話番号をご入力ください。', time_prefix:'時間 :', pay_prefix:'支払い :', staff_default:'指名なし', toast_missing:'未入力があります。', close:'閉じる', field_name:'お名前', field_email:'メール', field_phone:'電話番号', toast_prompt:'お支払いに進むには、{fields} を入力してください。' },
     card:{ card_no:'カード番号', save_btn:'カードを保存する', go_input:'カード情報の入力へ', title:'カード情報の保存（後払い用）', shop:'サロン', menu:'メニュー', staff:'施術者', when:'日時', price:'目安金額', i_agree:'利用規約に同意します', email:'メール', name:'お名前', check_then_go:'チェックしてから「カード情報の入力へ」を押してください。' },
     thanks:{ title:'ご予約ありがとうございます', msg:'この店舗の口コミ投稿ができるようになりました。', back_to_shop:'店舗ページへ戻る' },
-  　terms_full_html: `
+});
+  T.ja.legal = Object.assign({}, T.ja.legal, {
+　　terms_full_html: `
     <div class="container">
       <h1 data-i18n="footer.terms">利用規約</h1>
       <h2>1. サービス内容</h2>
@@ -114,8 +116,7 @@ T.en.smartpay = {
       <p><a href="index.html" data-i18n="ui.back">&larr; ホームへ戻る</a></p>
     </div>
   `
-});
-
+    });
   T.en = Object.assign({}, T.en, {
     ui:{ phone:'Phone', close:'Close', process:'Processing…', mypage:'My page', currency:'Currency', back_to_search:'Back to search', back:'← Back', toTop:'Back to top', show:'Show', your_name:'Your information', email:'Email', password:'Password', pay_with_card:'Pay with card (PayPal)', pay_on_site:'Pay at venue', done:'Done', confirm:'Confirm', yourInfo:'Your information', notes:'Notes', name:'Name', phone:'Phone' },
     auth:{ login:'Log in', signup:'Sign up', goto_signup:'Create an account', signup_here:'Create an account', login_with_password:'Log in with password', login_with_magic:'Log in via email link', send_magic:'Send sign-up link', magic_hint:'Open the link in the email to complete sign-up.', email:'Email', password:'Password' },
@@ -127,7 +128,9 @@ T.en.smartpay = {
     details:{ rv_name_ph:'e.g., M***', rv_text_ph:'Write your experience...', photos:'Photos', menu:'Menu', menu_empty:'(Coming soon. Once menus are added to the sheet, they will appear automatically.)', coupons:'Coupons', coupon_empty:'(Coming soon)', info:'Shop info', fallback:'Target not found; showing the first salon.', genre:'Genre', area:'Area', price:'Est. price', rating:'Rating', back_to_list:'Back to list', go_reserve:'Go to booking', map:'Map & route', route_google:'Directions on Google', reviews:'Reviews', loading:'(Loading...)', verified_note:'This form is only accessible via a special link after the service.', name_opt:'Name (optional)', rating_lbl:'Rating', comment_lbl:'Comment', submit_review:'Post review' },
     confirm:{ title:'Review your reservation', uf_desc:'Enter an email and a phone number we can reach you at.', time_prefix:'Time:', pay_prefix:'Payment:', staff_default:'No preference', toast_missing:'Some fields are missing.', close:'Close', field_name:'name', field_email:'email', field_phone:'phone number', toast_prompt:'To proceed to payment, please enter {fields}.' },
     card:{ card_no:'Card number', save_btn:'Save card', go_input:'Go to card input', title:'Save your card (pay later)', shop:'Shop', menu:'Menu', staff:'Staff', when:'Date & time', price:'Est. price', i_agree:'I agree to the Terms', email:'Email', name:'Name', check_then_go:'Please check the box, then press “Go to card input”.' },
-    terms_full_html: `
+});
+T.en.legal = Object.assign({}, T.en.legal, {
+terms_full_html: `
     <div class="container">
       <h1 data-i18n="footer.terms">Terms of Service</h1>
       <h2>1. Scope</h2>
@@ -208,8 +211,7 @@ T.en.smartpay = {
       <p><a href="index.html" data-i18n="ui.back">&larr; Back to home</a></p>
     </div>
   `
-});
-
+  });
   function getLang(){
   return localStorage.getItem('lang') || localStorage.getItem('bl_lang') || 'ja';
 }

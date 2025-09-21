@@ -173,14 +173,20 @@ body{ padding-bottom:60px; } /* avoid overlap */
       if(!a) return;
       a.addEventListener('click', (ev)=>{
         const {ok, miss} = validate();
-        if(!ok){
+        // 置き換え（クリックハンドラ内の該当部分）
+if(!ok){
   ev.preventDefault();
   showToast(promptText(miss), false);
-          // フォーカスを最初の未入力へ
-          if(miss.includes('お名前')) nameEl.focus();
-          else if(miss.includes('メール')) mailEl.focus();
-          else if(miss.includes('電話番号')) telEl.focus();
-        }else{
+  if(!nameEl.value.trim())      nameEl.focus();
+  else if(!mailEl.value.trim()) mailEl.focus();
+  else if(!telEl.value.trim())  telEl.focus();
+  return;
+}
+const L = (k)=>k.split('.').reduce((o,p)=>o&&o[p], BL_I18N.T[BL_I18N.getLang()]);
+if(elTime)  elTime.textContent  = `${L('confirm.time_prefix')} ${qs.get('time')||''}`;
+if(elPrice) elPrice.textContent = `${L('confirm.pay_prefix')} ${qs.get('price')||''}`;
+
+        else{
           ev.preventDefault();
           showToast('入力OK。お支払いに進みます…', true);
           (async ()=>{

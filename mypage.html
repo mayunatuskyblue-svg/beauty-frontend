@@ -82,7 +82,11 @@ const DATA=[
     tags:["ハーブ","リラク"], points:"自社ブレンドのハーブでリラックス。",
     photos:["assets/images/herbs_flatlay.jpg","assets/images/spa_massage.jpg","assets/images/lashes_b.jpg"]}
 ];
-  
+
+const L = (k)=>{
+  const lang = BL_I18N.getLang();
+  return k.split('.').reduce((o,p)=>o&&o[p], BL_I18N.T[lang]) || k;
+};
 function yen(n){return "¥"+(Number(n)||0).toLocaleString("ja-JP");}
 function fmt(ts){const d=new Date(ts);return d.toLocaleString();}
 function readJSON(k){try{return JSON.parse(localStorage.getItem(k)||'[]')}catch(e){return[]}}
@@ -99,19 +103,19 @@ function renderFavs(){
   if(!ids.length){ grid.innerHTML = '<div class="small" style="color:#7a6d66">（まだありません）</div>'; return; }
   grid.className = 'fav-grid';
   grid.innerHTML = ids.map(id=>{
-    const m = meta[id]||{};
-    const img = m.photo ? `<img src="${m.photo}" alt="${m.name||id}">` : '';
-    return `<div class="fav-card" data-id="${id}">
-      <a class="thumb" href="details.html?salonId=${encodeURIComponent(id)}">${img}</a>
-      <div class="meta">
-        <div class="name">${m.name||id}</div>
-        <div class="row">
-          <button class="btn" onclick="location.href='details.html?salonId=${encodeURIComponent(id)}'">詳細を見る</button>
-          <button class="btn" data-unfav="${id}">お気に入り解除</button>
-        </div>
+  const m = meta[id]||{};
+  const img = m.photo ? `<img src="${m.photo}" alt="${m.name||id}">` : '';
+  return `<div class="fav-card" data-id="${id}">
+    <a class="thumb" href="details.html?salonId=${encodeURIComponent(id)}">${img}</a>
+    <div class="meta">
+      <div class="name">${m.name||id}</div>
+      <div class="row">
+        <button class="btn" onclick="location.href='details.html?salonId=${encodeURIComponent(id)}'">${L('mypage.view_detail')}</button>
+        <button class="btn" data-unfav="${id}">${L('mypage.unfav')}</button>
       </div>
-    </div>`;
-  }).join('');
+    </div>
+  </div>`;
+}).join('');
 
   grid.querySelectorAll('[data-unfav]').forEach(b=>{
     b.onclick=()=>{

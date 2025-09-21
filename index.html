@@ -162,13 +162,13 @@ body.no-scroll{overflow:hidden}
     </a>
     <nav class="nav-right">
       <select id="langSelect" class="sel" title="Language"><option value="auto">Auto</option><option value="ja">日本語</option><option value="en">English</option></select>
-      <button class="btn reserve-btn" id="navLogin">ログイン</button>
-      <button class="btn primary reserve-btn" id="navSignup">新規登録</button>
-      <button class="btn reserve-btn" id="navMypage">マイページ</button>
+      <button class="btn reserve-btn" id="navLogin" data-i18n="auth.login">ログイン</button>
+      <button class="btn primary reserve-btn" id="navSignup" data-i18n="auth.signup">新規登録</button>
+      <button class="btn reserve-btn" id="navMypage" data-i18n="ui.mypage">マイページ</button>
     </nav>
   </div>
   <div class="header-controls container">
-    <label class="small" style="opacity:.7">Currency</label>
+    <label class="small" style="opacity:.7" data-i18n="ui.currency">Currency</label>
     <select id="currencySelect">
       <option value="USD">USD</option>
       <option value="JPY">JPY</option>
@@ -194,9 +194,9 @@ body.no-scroll{overflow:hidden}
 <div class="container">
   <section class="searchbar" aria-label="検索">
     <form id="searchForm">
-      <input id="kw" type="search" data-ph="ph_kw" placeholder="キーワード（例：まつ毛、スパ）">
-      <select id="place"><option value="">場所</option></select>
-      <select id="type"><option value="">種類</option></select>
+      <input id="kw" type="search" data-i18n="search.ph_kw" placeholder="キーワード（例：まつ毛、スパ）">
+      <select id="place"><option value="" data-i18n="search.place">場所</option></select>
+      <select id="type"><option value="" data-i18n="search.type">種類</option></select>
       <button class="btn primary reserve-btn" type="submit" data-i18n="search_btn">検索</button>
     </form>
   </section>

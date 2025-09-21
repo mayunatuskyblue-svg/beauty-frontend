@@ -207,7 +207,6 @@ body{ padding-bottom:60px; } /* avoid overlap */
     }
   }, {capture:true});
 });
-    });
   })();
   </script>
 
@@ -244,7 +243,9 @@ body{ padding-bottom:60px; } /* avoid overlap */
   const closeBtn = document.getElementById('ftClose');
   const backdrop = document.getElementById('ftBackdrop');
 
-  const L = (k)=> k.split('.').reduce((o,p)=>o&&o[p], (window.BL_I18N?.T||{})[window.BL_I18N?.getLang?.()||'ja']) || k;
+ const L = (k)=>k.split('.').reduce((o,p)=>o&&o[p], BL_I18N.T[BL_I18N.getLang()]);
+if(elTime)  elTime.textContent  = `${L('confirm.time_prefix')} ${qs.get('time')||''}`;
+if(elPrice) elPrice.textContent = `${L('confirm.pay_prefix')} ${qs.get('price')||''}`;
 
   function open(kind){
     // タイトル：footer.*、本文：legal.*_html から取得（HTML可）

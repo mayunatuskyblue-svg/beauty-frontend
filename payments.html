@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title data-i18n="pay.title" data-i18n="pay.method">Stripe支払い</title>
+<title data-i18n="pay.title">Stripe支払い</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Shippori+Mincho:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{ --red:#74070E; --bean:#310E10; --base:#F7F1E1; }
@@ -28,7 +28,7 @@ body, input, textarea, .meta, .note, .btn {
 </style>
 <link rel="stylesheet" href="assets/css/theme.css"/>
 <link rel="manifest" href="./manifest.json">
-<script src="assets/js/lang.js"></script>
+<script src="lang.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Shippori+Mincho:wght@600;700&display=swap" rel="stylesheet">
 
 <style>
@@ -66,7 +66,7 @@ h1, h2, h3, .brand, .title, .h1, .sec-title {
 
   <div id="noLink" class="card" style="display:none">
     <div style="font-weight:800;margin-bottom:6px" data-i18n="pay.nonlink_title">オンライン決済リンクが未設定</div>
-    <div class="note" data-i18n="pay.nonlink_title">このメニュー/クーポンにはStripeのPayment Linkが未設定です。現地支払いでご予約を続けられます。</div>
+    <div class="note" data-i18n="pay.nonlink_desc">このメニュー/クーポンにはStripeのPayment Linkが未設定です。現地支払いでご予約を続けられます。</div>
     <div style="margin-top:10px">
       <a id="btnCashOnly" class="btn gray" href="#" data-i18n="pay.pay_cash">現地支払いで続ける</a>
     </div>
@@ -93,12 +93,15 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const b2 = document.getElementById('btnCash'); if(b2) b2.textContent='Continue with pay-on-site';
     const b3 = document.getElementById('btnCashOnly'); if(b3) b3.textContent='Continue with pay-on-site';
     // Summary block keys
-    const sum = document.getElementById('sum');
-    sum.innerHTML = sum.innerHTML.replace('支払い方法を選んでください：','Select a payment method: ')
-                                 .replace('予約希望：','Requested: ');
-    const back = document.querySelector('a.btn.gray'); if(back) back.textContent='← Back to site';
-  }
-});
+    <div id="sum" class="card">
+  <div id="sumItem" style="font-weight:800;font-size:18px">-</div>
+  <div id="sumSalon" style="opacity:.85">-</div>
+  <div style="margin-top:6px">
+    <span data-i18n="pay.choose_method_label">支払い方法を選んでください：</span>
+    <span id="sumPrice">-</span>
+  </div>
+  <div id="sumTime" class="note" style="margin-top:6px"></div>
+</div>
 
 // ====== ここに Payment Link を登録する（商品名 or クーポン名 → Payment Link URL） ======
 // 例: "Abhyanga 90min": "https://buy.stripe.com/xxxxxx"

@@ -524,14 +524,16 @@ const DATA_FALLBACK=[
   {id:"S3", name:"Cinnamon Grow", type:"ハーブ", place:"キャンディ", lat:7.293, lng:80.641, price:5610, rating:4.5, tags:["ハーブ","リラク"], points:"自社ブレンドのハーブでリラックス。", photos:["/assets/img/herbs_flatlay.webp","/assets/img/spa_massage.webp","/assets/img/lashes_b.webp"]}
 ];
 
-// ==== Filters ====
-function initFilters(dataSource){
-  const major = ["コロンボ","ゴール","キャンディ","ヌワラエリヤ","ジャフナ","アルガンベイ","ミリッサ","ウナワトゥナ","トリンコマリー"];
-  const types  = Array.from(new Set(dataSource.map(x=>x.type))).sort();
-  const placeSel = document.getElementById('place');
-  const typeSel  = document.getElementById('type');
-  placeSel.insertAdjacentHTML('beforeend', major.map(p=>`<option>${p}</option>`).join(''));
-  typeSel.insertAdjacentHTML('beforeend', types.map(t=>`<option>${t}</option>`).join(''));
+ function initFilters(dataSource){
+   const placeSel = document.getElementById('place');
+   const typeSel  = document.getElementById('type');
+   const L = (window.BL_I18N && BL_I18N.getLang ? BL_I18N.getLang() : 'ja');
+   const build = (list)=> list.map(x=>`<option value="${x.code}">${L==='en'?x.en:x.ja}</option>`).join('');
+   const placeLabel = (L === 'en' ? 'Area'     : '場所');
+   const typeLabel  = (L === 'en' ? 'Category' : '種類');
+   placeSel.innerHTML = `<option value="">${placeLabel}</option>` + build((BL_I18N && BL_I18N.AREAS) || []);
+   typeSel.innerHTML  = `<option value="">${typeLabel}</option>`  + build((BL_I18N && BL_I18N.CATEGORIES) || []);
+
   document.getElementById('searchForm').addEventListener('submit', (ev)=>{
     ev.preventDefault();
     const kw = (document.getElementById('kw').value||'').toLowerCase();

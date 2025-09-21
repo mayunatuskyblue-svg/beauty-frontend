@@ -265,7 +265,7 @@ function fmtCurrencyFromJPY(jpy, cur){
     return new Intl.NumberFormat((getLang()==='ja'?'ja-JP':'en-US'), {
       style:'currency', currency: cur, maximumFractionDigits:0
     }).format(converted);
-  }catch(e){
+    }catch(e){
     const symbols = {JPY:'¥', USD:'$', EUR:'€', LKR:'Rs '};
     return (symbols[cur]||'') + converted.toLocaleString();
   }
@@ -330,7 +330,6 @@ function applyI18N(){
     signupBtn.onclick=()=>location.href='signup.html?redirect='+encodeURIComponent(location.href);
     myBtn.onclick=()=>location.href='mypage.html';
   }
-})();
 
 // ---------- Currency (list-level conversion live) ----------
 (function(){ const sel=document.getElementById('currencySelect'); sel.value=(localStorage.getItem('bl_currency')||'JPY'); sel.onchange=()=>{ localStorage.setItem('bl_currency', sel.value); updateCardCurrencies(); }; })();

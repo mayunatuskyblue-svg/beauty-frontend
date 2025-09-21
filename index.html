@@ -151,7 +151,7 @@ footer{color:#6b5e55;text-align:center;font-size:12px;margin:12px 0}
 body.no-scroll{overflow:hidden}
 
 </style>
-  <script src="lang.js"></script>
+  <script src="lang.js" defer></script>
 <script>document.addEventListener('DOMContentLoaded',()=>BL_I18N.i18nApply());</script>
 </head>
 <body>
@@ -301,11 +301,7 @@ const T = {
     price_hint: 'From', details:'Details', book:'Book', view_map:'View map', only_this_store:'(this shop only)', recommend_points:'Highlights: '
   }
 };
-function t(k){
-  const L = getLang();
-  const TT = (window.BL_I18N && BL_I18N.T) ? BL_I18N.T : T;
-  return (TT[L] && TT[L][k]) || k;
-}
+function t(k){ const L=getLang(); return (T[L]&&T[L][k])||k; }
 function applyI18N(){
   const L = getLang();
   document.querySelectorAll('[data-i18n]').forEach(el=>{ const k=el.dataset.i18n; if(T[L][k]) el.textContent=T[L][k]; });
@@ -316,34 +312,14 @@ function applyI18N(){
   const placeOpt=document.querySelector('#place option[value=""]'); if(placeOpt) placeOpt.textContent=T[L].place;
   const typeOpt=document.querySelector('#type option[value=""]'); if(typeOpt) typeOpt.textContent=T[L].type;
 }
-  // ---------- Currency helpers (JPY -> target) ----------
-const RATES = { JPY:1, USD:0.0067, EUR:0.0061, LKR:2.05 };
-function getCurrency(){ return (localStorage.getItem('bl_currency') || 'JPY'); }
-function fmtCurrencyFromJPY(jpy, cur){
-  const n = Math.max(0, Number(jpy)||0);
-  const rate = RATES[cur] || 1;
-  const converted = Math.round(n * rate);
-  try{
-    return new Intl.NumberFormat((getLang()==='ja'?'ja-JP':'en-US'), {
-      style:'currency', currency: cur, maximumFractionDigits:0
-    }).format(converted);
-  }catch(e){
-    const symbols = {JPY:'¥', USD:'$', EUR:'€', LKR:'Rs '};
-    return (symbols[cur]||'') + converted.toLocaleString();
-  }
-}
+  // ---------- Currency helpers (JPY -> target) ---------- const RATES = { JPY:1, USD:0.0067, EUR:0.0061, LKR:2.05 }; function getCurrency(){ return (localStorage.getItem('bl_currency') || 'JPY'); } function fmtCurrencyFromJPY(jpy, cur){ const n = Math.max(0, Number(jpy)||0); const rate = RATES[cur] || 1; const converted = Math.round(n * rate); try{ return new Intl.NumberFormat((getLang()==='ja'?'ja-JP':'en-US'), { style:'currency', currency: cur, maximumFractionDigits:0 }).format(converted); }catch(e){ const symbols = {JPY:'¥', USD:'$', EUR:'€', LKR:'Rs '}; return (symbols[cur]||'') + converted.toLocaleString(); } } // Robust photo resolver function resolvePhoto(src){ if(!src) return "/assets/img/placeholder.webp"; if(/^https?:\/\//i.test(src)) return src; let s = String(src).replace(/\\/g,'/').replace(/\\/{2,}/g,'/'); if(!s.startsWith('/')) s = '/' + s; return s; } function altCandidates(src){ const list = [src]; if(src.includes('/assets/img/')) list.push(src.replace('/assets/img/','/assets/images/')); if(src.includes('/assets/images/')) list.push(src.replace('/assets/images/','/assets/img/')); return Array.from(new Set(list)); }
 (function(){
   const sel = document.getElementById('langSelect');
-const pref = localStorage.getItem('bl_lang') || 'auto';
-sel.value = pref;
-sel.onchange = ()=>{
-  localStorage.setItem('bl_lang', sel.value);
-  if (window.BL_I18N?.setLang) BL_I18N.setLang(sel.value);
-  initFilters();      // ← optionを作り直す（data-i18n付きで再生成）
-  BL_I18N.i18nApply();        // ← 翻訳を当てる
-};
-BL_I18N.i18nApply();          // 初回
-initFilters();        // 初回
+  const pref = localStorage.getItem('bl_lang') || 'auto';
+  sel.value = pref;
+  sel.onchange = ()=>{ localStorage.setItem('bl_lang', sel.value); location.reload(); };
+  applyI18N();
+})();
 
 // header nav + user pill
 (function navInit(){
@@ -548,47 +524,71 @@ const DATA_FALLBACK=[
   {id:"S3", name:"Cinnamon Grow", type:"ハーブ", place:"キャンディ", lat:7.293, lng:80.641, price:5610, rating:4.5, tags:["ハーブ","リラク"], points:"自社ブレンドのハーブでリラックス。", photos:["/assets/img/herbs_flatlay.webp","/assets/img/spa_massage.webp","/assets/img/lashes_b.webp"]}
 ];
 
- function initFilters(){
-  const placeSel = document.getElementById('place');
-  const typeSel  = document.getElementById('type');
-  if(!placeSel || !typeSel) return;
+<script>
+// === i18n-driven Filters (Areas & Categories unified) ===
+// 既存の initFilters / refreshFiltersFrom などは全削除し、以下で置き換え
 
-  // data-i18n 用の <option> を作る（テキストは暫定、後で applyI18N が上書き）
-  const buildI18NOptions = (list, kind)=> (list||[]).map(x=>{
-    const key = (kind==='area' ? `areas.${x.code}` : `categories.${x.code}`);
-    // 一旦JAを入れておく（現在言語は後で applyI18N が反映）
-    const fallback = (kind==='area' ? x.ja : x.ja);
-    return `<option value="${x.code}" data-i18n="${key}">${fallback}</option>`;
-  }).join('');
+function buildOptionsFromKeys(sel, keys, dictPathPrefix, placeholderKey){
+  if(!sel) return;
+  const L = BL_I18N.getLang();
+  const dict = BL_I18N.T[L];
 
-  // 先頭のプレースホルダーも data-i18n で
-  placeSel.innerHTML = `<option value="" data-i18n="search.place">場所</option>` +
-                       buildI18NOptions((BL_I18N && BL_I18N.AREAS)||[], 'area');
+  // placeholder（例：search.place / search.type）
+  sel.innerHTML = `<option value="" data-i18n="${placeholderKey}"></option>`;
 
-  typeSel.innerHTML  = `<option value="" data-i18n="search.type">種類</option>` +
-                       buildI18NOptions((BL_I18N && BL_I18N.CATEGORIES)||[], 'category');
+  // option を i18n キーで並べる。value は「現在言語の表示文字列」にしておくとフィルタ処理がシンプル
+  keys.forEach(k=>{
+    // dictPathPrefix = 'areas' or 'categories'
+    const label = (dict && dict[dictPathPrefix] && dict[dictPathPrefix][k]) ? dict[dictPathPrefix][k] : k;
+    sel.insertAdjacentHTML('beforeend',
+      `<option value="${label}" data-i18n="${dictPathPrefix}.${k}"></option>`
+    );
+  });
 
-  // ここで辞書を適用して、option の表示語を現在言語に置換
-  if (window.BL_I18N?.i18nApply) BL_I18N.i18nApply();
+  // data-i18n を実際の文字列に反映
+  BL_I18N.i18nApply(sel);
 }
 
+function initFilters_i18n(){
+  const areaKeys = (window.BL_I18N && window.BL_I18N.AREA_KEYS) || [];
+  const catKeys  = (window.BL_I18N && window.BL_I18N.CATEGORY_KEYS) || [];
+
+  const placeSel = document.getElementById('place');
+  const typeSel  = document.getElementById('type');
+
+  buildOptionsFromKeys(placeSel, areaKeys, 'areas',  'search.place');
+  buildOptionsFromKeys(typeSel,  catKeys,  'categories','search.type');
+
+  // 検索 submit（既存の処理を言語一貫の値でシンプルに）
   document.getElementById('searchForm').addEventListener('submit', (ev)=>{
     ev.preventDefault();
-    const kw = (document.getElementById('kw').value||'').toLowerCase();
-    const place = placeSel.value;
-    const type  = typeSel.value;
+    const kw    = (document.getElementById('kw').value||'').toLowerCase();
+    const place = placeSel.value;   // 現在言語のラベル文字列
+    const type  = typeSel.value;    // 現在言語のラベル文字列
+
     const src = (_DATA_CURRENT && _DATA_CURRENT.length>0) ? _DATA_CURRENT : DATA_FALLBACK;
-    const items = src.filter(s=>
+
+    // normalizeForUI で place/type は “現在言語” の文字列が入ってくる想定
+    const items = src.filter(s =>
       (!place || s.place===place) &&
       (!type  || s.type===type) &&
-      (!kw || (String(s.name).toLowerCase().includes(kw) || String(s.points||'').toLowerCase().includes(kw) || (s.tags||[]).join(',').toLowerCase().includes(kw)))
+      (!kw || (String(s.name).toLowerCase().includes(kw)
+            || String(s.points||'').toLowerCase().includes(kw)
+            || (s.tags||[]).join(',').toLowerCase().includes(kw)))
     );
     render(items);
+
+    // 検索履歴の保存は既存ロジック踏襲
     const hist = readJSON('bl_search_history', []);
     hist.unshift({ place, type, date:'', guests:'', ts: Date.now() });
     writeJSON('bl_search_history', hist.slice(0,50));
   });
 }
+
+// 言語切替（#langSelect）は既存実装で reload されるので、再ロード時に再度 init でOK
+// 末尾の起動部分：既存の initFilters(DATA_FALLBACK) を、以下の1行に置き換え
+initFilters_i18n();
+</script>
 
 // ==== Splash (safer) ====
 (function splash(){
@@ -620,24 +620,7 @@ document.addEventListener('click', function(e){
 });
 
 
-// === i18n-aware Area/Category injection (added; no deletions) ===
-function fillSelect(sel, list, placeholderJa, placeholderEn){
-  if(!sel) return;
-  const L = getLang();
-  const placeholder = (L==='en' ? placeholderEn : placeholderJa);
-  const prev = sel.value;
-  sel.innerHTML = '';
-  const opt0 = document.createElement('option');
-  opt0.value = '';
-  opt0.textContent = placeholder;
-  sel.appendChild(opt0);
-  (list||[]).sort().forEach(v=>{
-    const o = document.createElement('option');
-    o.value = v; o.textContent = v;
-    sel.appendChild(o);
-  });
-  if(prev && Array.from(sel.options).some(o=>o.value===prev)) sel.value = prev;
-}
+
 function refreshFiltersFrom(items){
   try{
     const areas = new Set(), cats = new Set();

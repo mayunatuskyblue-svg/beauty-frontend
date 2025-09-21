@@ -524,31 +524,50 @@ const DATA_FALLBACK=[
   {id:"S3", name:"Cinnamon Grow", type:"ハーブ", place:"キャンディ", lat:7.293, lng:80.641, price:5610, rating:4.5, tags:["ハーブ","リラク"], points:"自社ブレンドのハーブでリラックス。", photos:["/assets/img/herbs_flatlay.webp","/assets/img/spa_massage.webp","/assets/img/lashes_b.webp"]}
 ];
 
-// ==== Filters ====
 function initFilters(dataSource){
-  const major = ["コロンボ","ゴール","キャンディ","ヌワラエリヤ","ジャフナ","アルガンベイ","ミリッサ","ウナワトゥナ","トリンコマリー"];
-  const types  = Array.from(new Set(dataSource.map(x=>x.type))).sort();
   const placeSel = document.getElementById('place');
   const typeSel  = document.getElementById('type');
-  placeSel.insertAdjacentHTML('beforeend', major.map(p=>`<option>${p}</option>`).join(''));
-  typeSel.insertAdjacentHTML('beforeend', types.map(t=>`<option>${t}</option>`).join(''));
-  document.getElementById('searchForm').addEventListener('submit', (ev)=>{
+
+  const L = (window.BL_I18N && BL_I18N.getLang ? BL_I18N.getLang() : 'ja');
+  const build = (list)=> list.map(x=>`<option value="${x.code}">${L==='en'?x.en:x.ja}</option>`).join('');
+
+  // プレースホルダ + i18nマスタから生成（value は code）
+  placeSel.innerHTML = `<option value="" data-i18n="search.place">${T[L].place}</option>` + build(BL_I18N.AREAS || []);
+  typeSel.innerHTML  = `<option value="" data-i18n="search.type">${T[L].type}</option>`   + build(BL_I18N.CATEGORIES || []);
+　  document.getElementById('searchForm').addEventListener('submit', (ev)=>{
     ev.preventDefault();
+
     const kw = (document.getElementById('kw').value||'').toLowerCase();
-    const place = placeSel.value;
-    const type  = typeSel.value;
+    const placeCode = placeSel.value;  // code or ''
+    const typeCode  = typeSel.value;   // code or ''
+
     const src = (_DATA_CURRENT && _DATA_CURRENT.length>0) ? _DATA_CURRENT : DATA_FALLBACK;
-    const items = src.filter(s=>
-      (!place || s.place===place) &&
-      (!type  || s.type===type) &&
-      (!kw || (String(s.name).toLowerCase().includes(kw) || String(s.points||'').toLowerCase().includes(kw) || (s.tags||[]).join(',').toLowerCase().includes(kw)))
-    );
+
+    const items = src.filter(s=>{
+      // データ側の和英ゆれ → code に正規化
+      const pCode = (BL_I18N && BL_I18N.toCode) ? BL_I18N.toCode('area',      s.place || s.place_en || s.place_ja) : '';
+      const tCode = (BL_I18N && BL_I18N.toCode) ? BL_I18N.toCode('category',  s.type  || s.type_en  || s.type_ja ) : '';
+
+      const placeOk = !placeCode || pCode===placeCode;
+      const typeOk  = !typeCode  || tCode===typeCode;
+
+      const kwOk = !kw || (
+        String(s.name||'').toLowerCase().includes(kw) ||
+        String(s.points||'').toLowerCase().includes(kw) ||
+        (Array.isArray(s.tags) ? s.tags.join(',').toLowerCase().includes(kw) : false)
+      );
+
+      return placeOk && typeOk && kwOk;
+    });
+
     render(items);
+
     const hist = readJSON('bl_search_history', []);
-    hist.unshift({ place, type, date:'', guests:'', ts: Date.now() });
+    hist.unshift({ place:placeCode, type:typeCode, date:'', guests:'', ts: Date.now() });
     writeJSON('bl_search_history', hist.slice(0,50));
   });
 }
+
 
 // ==== Splash (safer) ====
 (function splash(){
@@ -598,39 +617,7 @@ function fillSelect(sel, list, placeholderJa, placeholderEn){
   });
   if(prev && Array.from(sel.options).some(o=>o.value===prev)) sel.value = prev;
 }
-function refreshFiltersFrom(items){
-  try{
-    const areas = new Set(), cats = new Set();
-    (items||[]).forEach(s=>{ if(s.place) areas.add(s.place); if(s.type) cats.add(s.type); });
-    fillSelect(document.getElementById('place'), Array.from(areas), '場所', 'Area');
-    fillSelect(document.getElementById('type'),  Array.from(cats),  '種類', 'Category');
-  }catch(e){ console.warn('refreshFiltersFrom failed', e); }
-}
-// Wrap render so that every time list changes, selects are refreshed in the current language.
-if(typeof render==='function'){
-  const __renderOrig = render;
-  render = function(items){ __renderOrig(items); try{ refreshFiltersFrom(items); }catch(e){} };
-}
 
-// Improved submit handler that runs after the existing one, using current-language values in items.
-(function attachI18nSubmit(){
-  try{
-    const form = document.getElementById('searchForm');
-    form.addEventListener('submit', function(ev){
-      // Let the original handler run first (it was added earlier), then re-render with the same criteria but applied to the latest items.
-      const kw = (document.getElementById('kw').value||'').toLowerCase();
-      const placeSel = document.getElementById('place').value;
-      const typeSel  = document.getElementById('type').value;
-      const src = (typeof _DATA_CURRENT!=='undefined' && Array.isArray(_DATA_CURRENT) && _DATA_CURRENT.length>0) ? _DATA_CURRENT : DATA_FALLBACK;
-      const items = src.filter(s=>
-        (!placeSel || s.place===placeSel) &&
-        (!typeSel  || s.type===typeSel) &&
-        (!kw || (String(s.name).toLowerCase().includes(kw) || String(s.points||'').toLowerCase().includes(kw) || (s.tags||[]).join(',').toLowerCase().includes(kw)))
-      );
-      render(items);
-    });
-  }catch(e){ console.warn('attachI18nSubmit failed', e); }
-})();
 // Init filters with fallback, then fetch GAS catalog (will re-render on success)
 initFilters(DATA_FALLBACK);
 render(DATA_FALLBACK);

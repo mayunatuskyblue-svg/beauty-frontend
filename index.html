@@ -253,22 +253,30 @@ function getLang(){
   }
   return pref;
 }
-
 // ---------- Currency helpers (JPY -> target) ----------
 const RATES = { JPY:1, USD:0.0067, EUR:0.0061, LKR:2.05 };
-function getCurrency(){ return (localStorage.getItem('bl_currency') || 'JPY'); }
+
+function getCurrency(){
+  return (localStorage.getItem('bl_currency') || 'JPY');
+}
+
 function fmtCurrencyFromJPY(jpy, cur){
   const n = Math.max(0, Number(jpy)||0);
   const rate = RATES[cur] || 1;
   const converted = Math.round(n * rate);
   try{
     return new Intl.NumberFormat((getLang()==='ja'?'ja-JP':'en-US'), {
-      style:'currency', currency: cur, maximumFractionDigits:0
+      style:'currency',
+      currency: cur,
+      maximumFractionDigits: 0
     }).format(converted);
   }catch(e){
     const symbols = {JPY:'¥', USD:'$', EUR:'€', LKR:'Rs '};
     return (symbols[cur]||'') + converted.toLocaleString();
-    // L は getLang() の戻り ("en" or "ja")
+  }
+}
+
+  // L は getLang() の戻り ("en" or "ja")
     const areaSet = new Set();
     const catSet  = new Set();
     for (const r of items) {
@@ -524,7 +532,6 @@ const DATA_FALLBACK=[
   {id:"S3", name:"Cinnamon Grow", type:"ハーブ", place:"キャンディ", lat:7.293, lng:80.641, price:5610, rating:4.5, tags:["ハーブ","リラク"], points:"自社ブレンドのハーブでリラックス。", photos:["/assets/img/herbs_flatlay.webp","/assets/img/spa_massage.webp","/assets/img/lashes_b.webp"]}
 ];
 
-<script>
 // === i18n-driven Filters (Areas & Categories unified) ===
 // 既存の initFilters / refreshFiltersFrom などは全削除し、以下で置き換え
 
@@ -589,7 +596,7 @@ function initFilters_i18n(){
 // 末尾の起動部分：既存の initFilters(DATA_FALLBACK) を、以下の1行に置き換え
 initFilters_i18n();
 </script>
-
+<script>
 // ==== Splash (safer) ====
 (function splash(){
   try{
@@ -606,6 +613,7 @@ initFilters_i18n();
     skip.addEventListener('click', end);
   }catch(e){}
 })();
+</script>
 
 
 // Card click → details
@@ -620,42 +628,7 @@ document.addEventListener('click', function(e){
 });
 
 
-
-function refreshFiltersFrom(items){
-  try{
-    const areas = new Set(), cats = new Set();
-    (items||[]).forEach(s=>{ if(s.place) areas.add(s.place); if(s.type) cats.add(s.type); });
-    fillSelect(document.getElementById('place'), Array.from(areas), '場所', 'Area');
-    fillSelect(document.getElementById('type'),  Array.from(cats),  '種類', 'Category');
-  }catch(e){ console.warn('refreshFiltersFrom failed', e); }
-}
-// Wrap render so that every time list changes, selects are refreshed in the current language.
-if(typeof render==='function'){
-  const __renderOrig = render;
-  render = function(items){ __renderOrig(items); try{ refreshFiltersFrom(items); }catch(e){} };
-}
-
-// Improved submit handler that runs after the existing one, using current-language values in items.
-(function attachI18nSubmit(){
-  try{
-    const form = document.getElementById('searchForm');
-    form.addEventListener('submit', function(ev){
-      // Let the original handler run first (it was added earlier), then re-render with the same criteria but applied to the latest items.
-      const kw = (document.getElementById('kw').value||'').toLowerCase();
-      const placeSel = document.getElementById('place').value;
-      const typeSel  = document.getElementById('type').value;
-      const src = (typeof _DATA_CURRENT!=='undefined' && Array.isArray(_DATA_CURRENT) && _DATA_CURRENT.length>0) ? _DATA_CURRENT : DATA_FALLBACK;
-      const items = src.filter(s=>
-        (!placeSel || s.place===placeSel) &&
-        (!typeSel  || s.type===typeSel) &&
-        (!kw || (String(s.name).toLowerCase().includes(kw) || String(s.points||'').toLowerCase().includes(kw) || (s.tags||[]).join(',').toLowerCase().includes(kw)))
-      );
-      render(items);
-    });
-  }catch(e){ console.warn('attachI18nSubmit failed', e); }
-})();
 // Init filters with fallback, then fetch GAS catalog (will re-render on success)
-initFilters(DATA_FALLBACK);
 render(DATA_FALLBACK);
 updateCardCurrencies();
 initCatalog();

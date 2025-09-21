@@ -126,11 +126,6 @@ body{ padding-bottom:60px; } /* avoid overlap */
     <span id="toastMsg" data-i18n="confirm.toast_missing">未入力があります。</span>
     <button class="close" aria-label="閉じる" onclick="hideToast()" data-i18n="confirm.close">×</button>
   </div>
-  <section class="section">
-  <h2>カード情報の保存（後払い用）</h2>
-  <div id="bl-card-box"></div>
-</section>
-
 
   <script>
   (function(){
@@ -159,16 +154,19 @@ body{ padding-bottom:60px; } /* avoid overlap */
     }
 
     function validate(){
-      const name = nameEl.value.trim();
-      const email= mailEl.value.trim();
-      const phone= telEl.value.trim();
-      const miss = [];
-      if(!name) miss.push('お名前');
-      if(!email || !emailOK(email)) miss.push('メール');
-      if(!phone || !phoneOK(phone)) miss.push('電話番号');
-      return {ok: miss.length===0, miss};
-    }
-
+  const name = nameEl.value.trim();
+  const email= mailEl.value.trim();
+  const phone= telEl.value.trim();
+  const miss = [];
+  if(!name) miss.push(BL_I18N.T[BL_I18N.getLang()].confirm.field_name);
+  if(!email || !emailOK(email)) miss.push(BL_I18N.T[BL_I18N.getLang()].confirm.field_email);
+  if(!phone || !phoneOK(phone)) miss.push(BL_I18N.T[BL_I18N.getLang()].confirm.field_phone);
+  return {ok: miss.length===0, miss};
+}
+  function promptText(fields){
+  const { confirm } = BL_I18N.T[BL_I18N.getLang()];
+  return confirm.toast_prompt.replace('{fields}', fields.join('・'));
+}
     // Intercept payment clicks: warn if invalid, otherwise allow navigation
     ['btnPay','btnRecord'].forEach(id=>{
       const a = document.getElementById(id);
@@ -176,8 +174,8 @@ body{ padding-bottom:60px; } /* avoid overlap */
       a.addEventListener('click', (ev)=>{
         const {ok, miss} = validate();
         if(!ok){
-          ev.preventDefault();
-          showToast('お支払いに進むには、' + miss.join('・') + ' を入力してください。', false);
+  ev.preventDefault();
+  showToast(promptText(miss), false);
           // フォーカスを最初の未入力へ
           if(miss.includes('お名前')) nameEl.focus();
           else if(miss.includes('メール')) mailEl.focus();

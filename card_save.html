@@ -147,25 +147,25 @@ const $ = s => document.querySelector(s);
 const show = (el, on=true)=>el.classList[on?'remove':'add']('hidden');
 const setMsg = (t, isErr=false)=>{ const m=$('#msg'); m.textContent=t||''; m.style.color=isErr?'#b91c1c':'#374151' };
 
-// ===== Footer modal (inline content) =====
+<script>
+// ===== Footer modal (i18n)
 (function(){
-  const modal = $('#ftModal'), body=$('#ftBody'), title=$('#ftTitle');
-  const content = {
-    terms:{title:'Terms', html:'<p>Use of this service requires compliance with shop policies. By proceeding you agree to the terms.</p>'},
-    privacy:{title:'Privacy', html:'<p>We store minimal data (favorites, reservations, language) in your browser. We do not sell personal data.</p>'},
-    cancel:{title:'Cancel Policy', html:'<p>Free cancellation until 24 hours before appointment. Within 24 hours, please contact the shop directly.</p>'},
-    contact:{title:'Contact', html:'<p>Email: support@beautylanka.example</p>'}
-  };
-  function open(kind){ const c=content[kind]||content.terms; title.textContent=c.title; body.innerHTML=c.html; modal.style.display='flex'; }
+  const modal = document.getElementById('ftModal'), body=document.getElementById('ftBody'), title=document.getElementById('ftTitle');
+  const L = (k)=> k.split('.').reduce((o,p)=>o&&o[p], (window.BL_I18N?.T||{})[window.BL_I18N?.getLang?.()||'ja']) || k;
+
+  function open(kind){ title.textContent = L(`footer.${kind}`); body.innerHTML = L(`legal.${kind}_html`); modal.style.display='flex'; }
   function close(){ modal.style.display='none'; }
+
   document.addEventListener('click', (e)=>{
     const a = e.target.closest && e.target.closest('.ft-link');
     if(a){ e.preventDefault(); open(a.dataset.ft); }
   });
-  $('#openTerms').addEventListener('click', ()=>open('terms'));
-  $('#ftClose').addEventListener('click', close);
-  $('#ftBackdrop').addEventListener('click', close);
+  document.getElementById('openTerms')?.addEventListener('click', ()=>open('terms'));
+  document.getElementById('ftClose')?.setAttribute('data-i18n','ui.close');
+  document.getElementById('ftClose')?.addEventListener('click', close);
+  document.getElementById('ftBackdrop')?.addEventListener('click', close);
 })();
+</script>
 
 // ===== Stripe 初期化（同意前は表示しない） =====
 let stripe, elements, cardElement, inited=false;

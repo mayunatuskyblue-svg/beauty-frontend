@@ -19,6 +19,7 @@ T.en.smartpay = {
   saved:'Card saved (Customer: )',
   not_saved:'No card on file'
 };
+
   // ↓↓↓ ここから “代入あり” の形に直す
   T.ja = Object.assign({}, T.ja, {
     ui:{ phone:'電話番号', close:'閉じる', process:'処理中…', mypage:'マイページ', currency:'通貨', back_to_search:'検索に戻る', back:'← 戻る', toTop:'トップに戻る', show:'表示', your_name:'お名前', email:'メールアドレス', password:'パスワード', pay_with_card:'カードで支払う（PayPal）', pay_on_site:'現地で支払う（記録）', done:'完了', confirm:'確認', yourInfo:'予約者情報', notes:'要望・メモ（任意）', name:'お名前 / Name', phone:'電話番号 / Phone' },
@@ -33,16 +34,6 @@ T.en.smartpay = {
     card:{ card_no:'カード番号', save_btn:'カードを保存する', go_input:'カード情報の入力へ', title:'カード情報の保存（後払い用）', shop:'サロン', menu:'メニュー', staff:'施術者', when:'日時', price:'目安金額', i_agree:'利用規約に同意します', email:'メール', name:'お名前', check_then_go:'チェックしてから「カード情報の入力へ」を押してください。' },
     thanks:{ title:'ご予約ありがとうございます', msg:'この店舗の口コミ投稿ができるようになりました。', back_to_shop:'店舗ページへ戻る' },
 });
-  T.ja.categories = {
-  hair:'ヘア', nails:'ネイル', ayurveda:'アーユルヴェーダ', spa:'スパ・サロン', lashes:'まつ毛'
-};
-  T.ja.areas = {
-  colombo:'コロンボ', negombo:'ニゴンボ', galle:'ゴール', unawatuna:'ウナワトゥナ',
-  mirissa:'ミリッサ', matara:'マータラ', hikkaduwa:'ヒッカドゥワ', bentota:'ベントータ',
-  kalutara:'カルタラ', kalpitiya:'カルピティヤ', kandy:'キャンディ', nuwara_eliya:'ヌワラエリヤ',
-  ella:'エッラ', arugam_bay:'アルガンベイ', trincomalee:'トリンコマリー', jaffna:'ジャフナ',
-  anuradhapura:'アヌラーダプラ', polonnaruwa:'ポロンナルワ', sigiriya:'シギリヤ'
-};
   T.ja.legal = Object.assign({}, T.ja.legal, { terms_full_html: `
     <div class="container">
       <h1 data-i18n="footer.terms">利用規約</h1>
@@ -137,16 +128,6 @@ T.en.smartpay = {
     confirm:{ title:'Review your reservation', uf_desc:'Enter an email and a phone number we can reach you at.', time_prefix:'Time:', pay_prefix:'Payment:', staff_default:'No preference', toast_missing:'Some fields are missing.', close:'Close', field_name:'name', field_email:'email', field_phone:'phone number', toast_prompt:'To proceed to payment, please enter {fields}.' },
     card:{ card_no:'Card number', save_btn:'Save card', go_input:'Go to card input', title:'Save your card (pay later)', shop:'Shop', menu:'Menu', staff:'Staff', when:'Date & time', price:'Est. price', i_agree:'I agree to the Terms', email:'Email', name:'Name', check_then_go:'Please check the box, then press “Go to card input”.' },
 });
-  T.en.categories = {
-  hair:'Hair', nails:'Nails', ayurveda:'Ayurveda', spa:'Spa & Salon', lashes:'Lashes'
-};
-  T.en.areas = {
-  colombo:'Colombo', negombo:'Negombo', galle:'Galle', unawatuna:'Unawatuna',
-  mirissa:'Mirissa', matara:'Matara', hikkaduwa:'Hikkaduwa', bentota:'Bentota',
-  kalutara:'Kalutara', kalpitiya:'Kalpitiya', kandy:'Kandy', nuwara_eliya:'Nuwara Eliya',
-  ella:'Ella', arugam_bay:'Arugam Bay', trincomalee:'Trincomalee', jaffna:'Jaffna',
-  anuradhapura:'Anuradhapura', polonnaruwa:'Polonnaruwa', sigiriya:'Sigiriya'
-};
 T.en.legal = Object.assign({}, T.en.legal, {
 terms_full_html: `
     <div class="container">
@@ -255,12 +236,5 @@ terms_full_html: `
   
   global.BL_I18N = { T, getLang, setLang, i18nApply };
   // 例：lang.js のどこかの辞書に追加
-  window.BL_I18N.CATEGORY_KEYS = ['hair','nails','ayurveda','spa','lashes'];
-window.BL_I18N.AREA_KEYS = [
-  'colombo','negombo','galle','unawatuna','mirissa','matara','hikkaduwa',
-  'bentota','kalutara','kalpitiya','kandy','nuwara_eliya','ella',
-  'arugam_bay','trincomalee','jaffna','anuradhapura','polonnaruwa','sigiriya'
-];
-
 
 })(window);

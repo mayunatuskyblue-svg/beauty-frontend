@@ -214,10 +214,10 @@ a.addEventListener('click', (ev)=>{
   </script>
 
 <footer id="ft" style="margin:18px 0 40px;text-align:center;color:#6b5e55;font-size:12px">
-  <a href="terms.html" class="ft-link" data-ft="terms" style="margin:0 10px">Terms</a>·
-  <a href="privacy.html" class="ft-link" data-ft="privacy" style="margin:0 10px">Privacy</a>·
-  <a href="cancel.html" class="ft-link" data-ft="cancel" style="margin:0 10px">Cancel Policy</a>·
-  <a href="contact.html" class="ft-link" data-ft="contact" style="margin:0 10px">Contact</a>
+  <a href="terms.html" class="ft-link" data-ft="terms" style="margin:0 10px" data-i18n="footer.terms">Terms</a>·
+  <a href="privacy.html" class="ft-link" data-ft="privacy" style="margin:0 10px" data-i18n="footer.privacy">Privacy</a>·
+  <a href="cancel.html" class="ft-link" data-ft="cancel" style="margin:0 10px" data-i18n="footer.cancel">Cancel Policy</a>·
+  <a href="contact.html" class="ft-link" data-ft="contact" style="margin:0 10px" data-i18n="footer.contact">Contact</a>
 </footer>
 <div id="ftModal" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:9999">
   <div id="ftBackdrop" style="position:absolute;inset:0;background:rgba(0,0,0,.4)"></div>
@@ -225,9 +225,8 @@ a.addEventListener('click', (ev)=>{
        style="position:relative;background:#fff;border:1px solid #eadfca;border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,.18);
               width:min(92vw,720px);max-height:80vh;overflow:auto;padding:18px">
     <div style="display:flex;align-items:center;gap:8px;justify-content:space-between;margin-bottom:8px">
-      <div id="ftTitle" style="font-weight:900">Terms</div>
-      <button id="ftClose" style="border:none;background:#fff;border:1px solid #eadfca;border-radius:10px;padding:6px 10px;cursor:pointer">Close</button>
-    </div>
+      <div id="ftTitle" data-i18n="footer.terms" style="font-weight:900">Terms</div>
+      <button id="ftClose" data-i18n="ui.close" style="border:none;background:#fff;border:1px solid #eadfca;border-radius:10px;padding:6px 10px;cursor:pointer">Close</button>
     <div id="ftBody" style="line-height:1.7;color:#2E1A16;font-size:14px">
       <p>Loading…</p>
     </div>
@@ -237,7 +236,7 @@ a.addEventListener('click', (ev)=>{
 
 
 <script>
-// Footer modal (inline content, no fetch). Ensures single instance and prevents navigation.
+// Footer modal (i18n content)
 (function(){
   if(window.__ftModalInstalledInline) return; window.__ftModalInstalledInline = true;
   const modal = document.getElementById('ftModal');
@@ -246,17 +245,14 @@ a.addEventListener('click', (ev)=>{
   const closeBtn = document.getElementById('ftClose');
   const backdrop = document.getElementById('ftBackdrop');
 
-  const CONTENT = {
-    terms: {title:'Terms', html:'<p>Use of this site is subject to local laws and our booking guidelines. Users agree to provide accurate information and to comply with shop policies.</p>'},
-    privacy: {title:'Privacy', html:'<p>We store minimal data (e.g., favorites, reservations, language) in your browser. We do not sell personal data.</p>'},
-    cancel: {title:'Cancel Policy', html:'<p>Free cancellation until 24 hours before your appointment. Within 24 hours, please contact the shop directly.</p>'},
-    contact: {title:'Contact', html:'<p>Email: support@beautylanka.example<br>Phone: +94 11 000 0000</p>'}
-  };
+  const L = (k)=> k.split('.').reduce((o,p)=>o&&o[p], (window.BL_I18N?.T||{})[window.BL_I18N?.getLang?.()||'ja']) || k;
 
   function open(kind){
-    const c = CONTENT[kind] || CONTENT.terms;
-    title.textContent = c.title;
-    body.innerHTML = c.html;
+    // タイトル：footer.*、本文：legal.*_html から取得（HTML可）
+    const titleKey = `footer.${kind}`;
+    const htmlKey  = `legal.${kind}_html`;
+    title.textContent = L(titleKey);
+    body.innerHTML = L(htmlKey);
     modal.style.display = 'flex';
   }
   function close(){ modal.style.display='none'; }
@@ -269,6 +265,7 @@ a.addEventListener('click', (ev)=>{
   backdrop && backdrop.addEventListener('click', close);
 })();
 </script>
+
 
 <script>
 document.addEventListener('DOMContentLoaded', async ()=>{
@@ -435,7 +432,27 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   }
 })();
 </script>
-<!-- confirm.html の </body> 直前に追加 -->
+<!-- confirm.html の </body> 直前：SmartPayボックス（i18n対応版） -->
+<script>
+(function(){
+  const L = (k)=> k.split('.').reduce((o,p)=>o&&o[p], (window.BL_I18N?.T||{})[window.BL_I18N?.getLang?.()||'ja']) || k;
+
+  const p = new URLSearchParams(location.search);
+  const email = p.get('email')||'';
+  const cid   = p.get('customerId')||'';
+
+  const box = document.createElement('div');
+  box.style = 'margin:12px 0;padding:12px;border:1px solid #eadfca;border-radius:12px;background:#fff';
+  box.innerHTML = `
+    <div style="font-weight:700">${L('smartpay.title')}</div>
+    <div style="color:#6f5a54;margin-top:6px">
+      ${ email ? `${L('smartpay.email')}: <b>${email}</b><br>` : '' }
+      ${ cid ? `${L('smartpay.saved')} <code>${cid}</code>` : L('smartpay.not_saved') }
+    </div>`;
+  document.body.appendChild(box);
+})();
+</script>
+
 <script>
 (function(){
   const p = new URLSearchParams(location.search);

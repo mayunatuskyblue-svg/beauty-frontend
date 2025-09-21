@@ -6,6 +6,34 @@
   T.en.hero_title = 'Your beauty, your way — in Sri Lanka.';
   T.ja.hero_sub   = 'ヘア・ネイル・まつ毛・アーユルヴェーダ・マッサージ/スパ。口コミと写真で選べる予約サイト。';
   T.en.hero_sub   = 'Hair, lashes, nails, Ayurveda, spa & massage. Book with reviews and photos.';
+  // --- SmartPay box ---
+T.ja.smartpay = {
+  title:'SmartPay（後課金）',
+  email:'メール',
+  saved:'カード保存済み（Customer: ）',
+  not_saved:'カード未保存'
+};
+T.en.smartpay = {
+  title:'SmartPay (pay later)',
+  email:'Email',
+  saved:'Card saved (Customer: )',
+  not_saved:'No card on file'
+};
+
+// --- Footer modal bodies (HTML可) ---
+T.ja.legal = {
+  terms_html:   '<p>本サービスの利用は各地域の法令および当サイトの予約ガイドラインに従います。継続することで規約に同意したものとみなされます。</p>',
+  privacy_html: '<p>当サイトは最小限のデータ（お気に入り・予約・言語など）をブラウザに保存します。個人データの販売は行いません。</p>',
+  cancel_html:  '<p>予約の24時間前までは無料でキャンセル可能です。24時間以内の変更は店舗へ直接ご連絡ください。</p>',
+  contact_html: '<p>Email: support@beautylanka.example<br>Phone: +94 11 000 0000</p>'
+};
+T.en.legal = {
+  terms_html:   '<p>Use of this service is subject to local laws and our booking guidelines. By continuing, you agree to the terms.</p>',
+  privacy_html: '<p>We store minimal data (favorites, reservations, language) in your browser. We do not sell personal data.</p>',
+  cancel_html:  '<p>Free cancellation until 24 hours before your appointment. Within 24 hours, please contact the shop directly.</p>',
+  contact_html: '<p>Email: support@beautylanka.example<br>Phone: +94 11 000 0000</p>'
+};
+
 
   // ↓↓↓ ここから “代入あり” の形に直す
   T.ja = Object.assign({}, T.ja, {

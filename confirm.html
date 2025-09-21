@@ -174,54 +174,41 @@ body{ padding-bottom:60px; } /* avoid overlap */
       a.addEventListener('click', (ev)=>{
         const {ok, miss} = validate();
         // 置き換え（クリックハンドラ内の該当部分）
-if(!ok){
-  ev.preventDefault();
-  showToast(promptText(miss), false);
-  if(!nameEl.value.trim())      nameEl.focus();
-  else if(!mailEl.value.trim()) mailEl.focus();
-  else if(!telEl.value.trim())  telEl.focus();
-  return;
-}
-const L = (k)=>k.split('.').reduce((o,p)=>o&&o[p], BL_I18N.T[BL_I18N.getLang()]);
-if(elTime)  elTime.textContent  = `${L('confirm.time_prefix')} ${qs.get('time')||''}`;
-if(elPrice) elPrice.textContent = `${L('confirm.pay_prefix')} ${qs.get('price')||''}`;
+a.addEventListener('click', (ev)=>{
+  const {ok, miss} = validate();
 
-        else{
-          ev.preventDefault();
-          showToast('入力OK。お支払いに進みます…', true);
-          (async ()=>{
-            try{
-              const qs = new URLSearchParams(location.search);
-              const salonId   = qs.get('salonId') || '-';
-              const salonName = qs.get('salonName') || '';
-              const item  = (document.getElementById('s_item')?.textContent || qs.get('item') || 'Reservation').trim();
-              const price = Number(qs.get('price') || 0);
-              const timeISO = qs.get('time') || '';
-              const currency = (qs.get('currency') || 'usd').toLowerCase();
-              // 現地支払いボタンは既存の遷移を維持
-              if(ev.currentTarget && ev.currentTarget.id !== 'btnPay'){ location.href = ev.currentTarget.getAttribute('href') || './'; return; }
-              const resp = await fetch('https://backend-wwis.onrender.com/api/reservations', {
-                method:'POST', headers:{'Content-Type':'application/json'},
-                body: JSON.stringify({
-                  salonId, salonName, item, price, timeISO,
-                  contact: { name: nameEl.value.trim(), email: mailEl.value.trim(), phone: telEl.value.trim() },
-                  status:'pending_online'
-                })
-              });
-              const j = await resp.json();
-              const rid = j.id || String(Date.now());
-              const url = new URL('./payments.html', location.href);
-              url.searchParams.set('reservationId', rid);
-              url.searchParams.set('item', item);
-              url.searchParams.set('price', String(price));
-              url.searchParams.set('currency', currency);
-              location.href = url.toString();
-            }catch(e){
-              alert('予約の作成に失敗しました。もう一度お試しください。');
-            }
-          })();
+  if(!ok){
+    ev.preventDefault();
+    showToast(promptText(miss), false);
+    if(!nameEl.value.trim())      nameEl.focus();
+    else if(!mailEl.value.trim()) mailEl.focus();
+    else if(!telEl.value.trim())  telEl.focus();
+    return;
+  } else {
+    ev.preventDefault();
+    showToast('入力OK。お支払いに進みます…', true);
+    (async ()=>{
+      try{
+        const qs = new URLSearchParams(location.search);
+        const salonId   = qs.get('salonId') || '-';
+        const salonName = qs.get('salonName') || '';
+        const item  = (document.getElementById('s_item')?.textContent || qs.get('item') || 'Reservation').trim();
+        const price = Number(qs.get('price') || 0);
+        const timeISO = qs.get('time') || '';
+        const currency = (qs.get('currency') || 'usd').toLowerCase();
+
+        if(ev.currentTarget && ev.currentTarget.id !== 'btnPay'){
+          location.href = ev.currentTarget.getAttribute('href') || './';
+          return;
         }
-      }, {capture:true});
+
+        // …以降は既存の予約POST〜payments.html遷移のロジックをそのまま
+      }catch(e){
+        alert('予約の作成に失敗しました。もう一度お試しください。');
+      }
+    })();
+  }
+}, {capture:true});
     });
   })();
   </script>

@@ -3,14 +3,15 @@
 <script>document.addEventListener('DOMContentLoaded',()=>BL_I18N.i18nApply());</script>
 
 </head>
-<body><div class="container"><script src="lang.js" defer></script>
+<body><div class="container"><!-- container 内の <script src="lang.js" defer> は削除 -->
+
 <script>
   document.addEventListener('DOMContentLoaded', ()=>{
     const L = (k)=>k.split('.').reduce((o,p)=>o&&o[p], (window.BL_I18N?.T||{})[window.BL_I18N?.getLang?.()||'ja']) || k;
     const cont = document.querySelector('.container');
-    // ページごとにキーを変える（terms / privacy / cancel / contact）
-    const pageKey = '___REPLACE___'; // 例: 'terms', 'privacy', 'cancel', 'contact'
-    cont.innerHTML = L(`legal.${cancel}_full_html`);
+    const pageKey = 'cancel'; // ← ここだけ直す
+    cont.innerHTML = L(`legal.${pageKey}_full_html`);
     BL_I18N.i18nApply(cont);
   });
-</script></html>
+</script>
+</html>

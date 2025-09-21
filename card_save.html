@@ -80,10 +80,10 @@
   <div id="msg"></div>
 
   <footer class="ft-transparent">
-    <a href="#" class="ft-link" data-ft="terms">Terms</a>
-    <a href="#" class="ft-link" data-ft="privacy">Privacy</a>
-    <a href="#" class="ft-link" data-ft="cancel">Cancel Policy</a>
-    <a href="#" class="ft-link" data-ft="contact">Contact</a>
+    <a href="#" class="ft-link" data-ft="terms" data-i18n="footer.terms">Terms</a>
+    <a href="#" class="ft-link" data-ft="privacy" data-i18n="footer.privacy">Privacy</a>
+    <a href="#" class="ft-link" data-ft="cancel" data-i18n="footer.cancel">Cancel Policy</a>
+    <a href="#" class="ft-link" data-ft="contact" data-i18n="footer.contact">Contact</a>
   </footer>
 </div>
 
@@ -165,6 +165,7 @@ const setMsg = (t, isErr=false)=>{ const m=$('#msg'); m.textContent=t||''; m.sty
 </script>
 
 // ===== Stripe 初期化（同意前は表示しない） =====
+<script>
 let stripe, elements, cardElement, inited=false;
 function initStripe(){
   if(inited) return;

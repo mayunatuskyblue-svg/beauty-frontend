@@ -581,31 +581,60 @@ document.addEventListener('click', function(e){
 
 
 // === i18n-aware Area/Category injection (added; no deletions) ===
-function fillSelect(sel, list, placeholderJa, placeholderEn){
-  if(!sel) return;
-  const L = getLang();
-  const placeholder = (L==='en' ? placeholderEn : placeholderJa);
-  const prev = sel.value;
-  sel.innerHTML = '';
-  const opt0 = document.createElement('option');
-  opt0.value = '';
-  opt0.textContent = placeholder;
-  sel.appendChild(opt0);
-  (list||[]).sort().forEach(v=>{
-    const o = document.createElement('option');
-    o.value = v; o.textContent = v;
-    sel.appendChild(o);
-  });
-  if(prev && Array.from(sel.options).some(o=>o.value===prev)) sel.value = prev;
-}
-function refreshFiltersFrom(items){
-  try{
-    const areas = new Set(), cats = new Set();
-    (items||[]).forEach(s=>{ if(s.place) areas.add(s.place); if(s.type) cats.add(s.type); });
-    fillSelect(document.getElementById('place'), Array.from(areas), '場所', 'Area');
-    fillSelect(document.getElementById('type'),  Array.from(cats),  '種類', 'Category');
-  }catch(e){ console.warn('refreshFiltersFrom failed', e); }
-}
+  <!-- ▼▼ 追加：英語ラベル用マップ & 固定リスト ▼▼ -->
+<script>
+  const MAJOR_JA = ['コロンボ','ゴール','キャンディ','ヌワラエリヤ','ジャフナ','アルガンベイ','ミリッサ','ウナワトゥナ','トリンコマリー'];
+  const AREA_MAP = {
+    'コロンボ':'Colombo','ゴール':'Galle','キャンディ':'Kandy','ヌワラエリヤ':'Nuwara Eliya',
+    'ジャフナ':'Jaffna','アルガンベイ':'Arugam Bay','ミリッサ':'Mirissa','ウナワトゥナ':'Unawatuna','トリンコマリー':'Trincomalee'
+  };
+  const CATS_JA = ['ヘア','ネイル','まつ毛','アーユルヴェーダ','マッサージ/スパ'];
+  const CAT_MAP = {
+    'ヘア':'Hair','ネイル':'Nails','まつ毛':'Lashes','アーユルヴェーダ':'Ayurveda','マッサージ/スパ':'Massage/Spa'
+  };
+</script>
+
+<script>
+  function fillSelect(sel, list, placeholderJa, placeholderEn){
+    if(!sel) return;
+    const L = getLang();
+    const placeholder = (L==='en' ? placeholderEn : placeholderJa);
+    const prev = sel.value;
+    sel.innerHTML = '';
+
+    // 先頭プレースホルダー
+    const opt0 = document.createElement('option');
+    opt0.value = '';
+    opt0.textContent = placeholder;
+    sel.appendChild(opt0);
+
+    // value は “日本語” を保持、表示テキストだけ英語化
+    (list||[]).forEach(v=>{
+      const o = document.createElement('option');
+      o.value = v; // ← 既存のフィルタがこれで動く
+      if(L==='en'){
+        // セレクトの種類でマップを使い分け
+        if(sel.id === 'place') o.textContent = AREA_MAP[v] || v;
+        else                  o.textContent = CAT_MAP[v]  || v;
+      }else{
+        o.textContent = v;
+      }
+      sel.appendChild(o);
+    });
+
+    // 以前の選択を維持（可能なら）
+    if(prev && Array.from(sel.options).some(o=>o.value===prev)) sel.value = prev;
+  }
+
+  function refreshFiltersFrom(/* items */){
+    // items 由来ではなく、指定の固定リストで毎回上書き
+    try{
+      fillSelect(document.getElementById('place'), MAJOR_JA, '場所', 'Area');
+      fillSelect(document.getElementById('type'),  CATS_JA,  '種類', 'Category');
+    }catch(e){ console.warn('refreshFiltersFrom failed', e); }
+  }
+</script>
+
 // Wrap render so that every time list changes, selects are refreshed in the current language.
 if(typeof render==='function'){
   const __renderOrig = render;

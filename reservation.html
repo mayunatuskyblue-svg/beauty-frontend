@@ -64,19 +64,19 @@ footer{margin:12px 0 30px;color:var(--muted);font-size:12px}
 
   <div class="card">
     <label data-i18n="reserve.contactEmail">予約連絡用メール</label>
-    <input id="email" type="email" placeholder="you@example.com"/>
+    <input id="email" type="email" data-i18n-ph="ui.email" placeholder="you@example.com"/>
     <p class="small" data-i18n="reserve.note">※空でも予約はできます。メールを入れると <code>bookings</code> シートに反映されます。</p>
   </div>
 
   <div class="card" id="hpGridWrap">
-    <h2 style="margin:0 0 8px;font-size:18px">Select date &amp; time</h2>
+    <h2 data-i18n="reserve.select_dt" style="margin:0 0 8px;font-size:18px">Select date &amp; time</h2>
     <div class="headerbar">
-      <button id="hpPrev" class="btn ghost" type="button">‹ Prev</button>
+      <button id="hpPrev" class="btn ghost" type="button" data-i18n="reserve.prev">‹ Prev</button>
       <div id="hpWeekTitle" style="font-weight:800"></div>
-      <button id="hpNext" class="btn ghost" type="button">Next ›</button>
+      <button id="hpNext" class="btn ghost" type="button" data-i18n="reserve.next">Next ›</button>
     </div>
     <div id="hpGrid"></div>
-    <div class="small">◯ Available　× Unavailable</div>
+    <div class="small" data-i18n="reserve.legend">◯ Available　× Unavailable</div>
   </div>
 
   <div class="toolbar">

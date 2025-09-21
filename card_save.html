@@ -106,7 +106,11 @@ function fmtCurrencyFromJPY(jpy, cur){
   const converted = Math.round(n * (RATES[cur] || 1));
   try{
     // before: new Intl.NumberFormat(getLang()==='ja'?'ja-JP':'en-US', ...
-return new Intl.NumberFormat(BL_I18N.getLang()==='ja'?'ja-JP':'en-US', { ... }).format(converted);
+return new Intl.NumberFormat(
+  BL_I18N.getLang()==='ja' ? 'ja-JP' : 'en-US',
+  { style:'currency', currency: cur, maximumFractionDigits:0 }
+).format(converted);
+
       { style:'currency', currency: cur, maximumFractionDigits:0 }).format(converted);
   }catch(e){
     const symbols = {JPY:'¥', USD:'$', EUR:'€', LKR:'Rs '};

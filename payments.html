@@ -82,7 +82,7 @@ h1, h2, h3, .brand, .title, .h1, .sec-title {
 <script>
 
 // i18n helper
-function getLang(){ try{ const pref=localStorage.getItem('bl_lang')||'auto'; if(pref==='auto'){ const ja=(navigator.language||'en').toLowerCase().startsWith('ja'); return ja?'ja':'en'; } return pref; }catch(e){ return 'ja'; } }
+function getLang(){ try{ const pref=localStorage.getItem('lang')||'auto'; if(pref==='auto'){ const ja=(navigator.language||'en').toLowerCase().startsWith('ja'); return ja?'ja':'en'; } return pref; }catch(e){ return 'ja'; } }
 
 
 document.addEventListener('DOMContentLoaded', ()=>{

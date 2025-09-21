@@ -233,8 +233,68 @@ terms_full_html: `
     document.body.classList.toggle('ja', lang==='ja');
     document.body.classList.toggle('en', lang==='en');
   }
-  
-  global.BL_I18N = { T, getLang, setLang, i18nApply };
+  // === Area & Category master (JA/EN 統一マスター) ===
+const AREAS = [
+  { code:'colombo',    ja:'コロンボ',        en:'Colombo',        aliases:['colombo','コロンボ'] },
+  { code:'galle',      ja:'ゴール',          en:'Galle',          aliases:['galle','ゴール','ガール'] },
+  { code:'kandy',      ja:'キャンディ',      en:'Kandy',          aliases:['kandy','キャンディ'] },
+  { code:'negombo',    ja:'ネゴンボ',        en:'Negombo',        aliases:['negombo','ネゴンボ'] },
+  { code:'mirissa',    ja:'ミリッサ',        en:'Mirissa',        aliases:['mirissa','ミリッサ'] },
+  { code:'weligama',   ja:'ウェリガマ',      en:'Weligama',       aliases:['weligama','ウェリガマ'] },
+  { code:'bentota',    ja:'ベントタ',        en:'Bentota',        aliases:['bentota','ベントタ'] },
+  { code:'hikkaduwa',  ja:'ヒッカドゥワ',    en:'Hikkaduwa',      aliases:['hikkaduwa','ヒッカドゥワ'] },
+  { code:'unawatuna',  ja:'ウナワトゥナ',    en:'Unawatuna',      aliases:['unawatuna','ウナワトゥナ'] },
+  { code:'koggala',    ja:'コッガラ',        en:'Koggala',        aliases:['koggala','コッガラ'] },
+  { code:'ella',       ja:'エッラ',          en:'Ella',           aliases:['ella','エッラ','エラ'] },
+  { code:'nuwaraeliya',ja:'ヌワラエリヤ',    en:'Nuwara Eliya',   aliases:['nuwara eliya','nuwaraeliya','ヌワラエリヤ'] },
+  { code:'trincomalee',ja:'トリンコマリー',  en:'Trincomalee',    aliases:['trincomalee','トリンコマリー'] },
+  { code:'arugambay',  ja:'アルガンベイ',    en:'Arugam Bay',     aliases:['arugam','arugam bay','アルガンベイ'] },
+  { code:'jaffna',     ja:'ジャフナ',        en:'Jaffna',         aliases:['jaffna','ジャフナ'] },
+  { code:'anuradhapura',ja:'アヌラーダプラ', en:'Anuradhapura',   aliases:['anuradhapura','アヌラーダプラ'] },
+  { code:'sigiriya',   ja:'シギリヤ',        en:'Sigiriya',       aliases:['sigiriya','シギリヤ'] },
+  { code:'matara',     ja:'マータラ',        en:'Matara',         aliases:['matara','マータラ'] },
+  { code:'kalutara',   ja:'カルタラ',        en:'Kalutara',       aliases:['kalutara','カルタラ'] },
+  { code:'dehiwala',   ja:'デヒワラ',        en:'Dehiwala',       aliases:['dehiwala','デヒワラ'] },
+];
+
+const CATEGORIES = [
+  { code:'hair',     ja:'ヘア',          en:'Hair',          aliases:['ヘア','ヘアサロン','美容室','カット','hair'] },
+  { code:'nail',     ja:'ネイル',        en:'Nail',          aliases:['ネイル','nail','nails','ジェル'] },
+  { code:'ayurveda', ja:'アーユルヴェーダ', en:'Ayurveda',   aliases:['アーユルヴェーダ','アーユルベーダ','ayurveda'] },
+  { code:'spa',      ja:'スパ・サロン',  en:'Spa & Salon',   aliases:['スパ','マッサージ','スパ・サロン','spa','massage'] },
+  { code:'lashes',   ja:'まつ毛',        en:'Lashes',        aliases:['まつ毛','マツエク','まつエク','lash','lashes'] },
+];
+
+// 値 → code への正規化（ローマ字/日本語ゆらぎ吸収）
+function _normalize(s){
+  return String(s||'').toLowerCase()
+    .replace(/\s+/g,' ')
+    .replace(/[‐-–—ー−]/g,'-')
+    .trim();
+}
+function _mkIndex(list){
+  const m = new Map();
+  for(const row of list){
+    m.set(_normalize(row.ja), row.code);
+    m.set(_normalize(row.en), row.code);
+    for(const a of (row.aliases||[])) m.set(_normalize(a), row.code);
+    m.set(row.code, row.code);
+  }
+  return m;
+}
+const _AREA_INDEX = _mkIndex(AREAS);
+const _CAT_INDEX  = _mkIndex(CATEGORIES);
+
+// Data 側の「place/type（和英混在）」を code に寄せる
+function toCode(kind, value){
+  const v = _normalize(value);
+  if(kind==='area')     return _AREA_INDEX.get(v) || '';
+  if(kind==='category') return _CAT_INDEX.get(v)  || '';
+  return '';
+}
+
+  global.BL_I18N = { T, getLang, setLang, i18nApply, AREAS, CATEGORIES, toCode };
+
   // 例：lang.js のどこかの辞書に追加
 
 })(window);

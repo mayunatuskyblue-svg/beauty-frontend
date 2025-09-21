@@ -36,7 +36,7 @@
 <body>
 <div class="container">
   <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
-    <a class="link" href="javascript:history.back()">← 戻る</a>
+    <a class="link" href="javascript:history.back()" data-i18n="ui.back">← 戻る</a>
     <select id="langSelect" class="btn" style="height:34px;width:auto">
       <option value="auto">Auto</option><option value="ja">日本語</option><option value="en">English</option>
     </select>
@@ -46,27 +46,27 @@
 
   <div class="form">
     <div style="display:flex;justify-content:center;gap:10px;margin-bottom:16px">
-      <button type="button" id="tabPassword" class="btn" style="flex:1;background:#246A73">パスワードでログイン</button>
-      <button type="button" id="tabMagic" class="btn" style="flex:1;background:#999">メールリンクでログイン</button>
+      <button type="button" id="tabPassword" class="btn" style="flex:1;background:#246A73" data-i18n="auth/login_with_password">パスワードでログイン</button>
+      <button type="button" id="tabMagic" class="btn" style="flex:1;background:#999" data-i18n="auth.login_with_magic">メールリンクでログイン</button>
     </div>
 
     <!-- パスワードログイン -->
     <div id="formPassword">
-      <label data-in18n="auth.email">メールアドレス</label>
+      <label data-i18n="auth.email">メールアドレス</label>
       <input id="emailPw" type="email" placeholder="you@example.com" autocomplete="email" required>
 
-      <label data-in18n="auth.password">パスワード</label>
+      <label data-i18n="auth.password">パスワード</label>
       <div class="row">
         <input id="passPw" type="password" placeholder="********" autocomplete="current-password" minlength="6" required>
-        <button type="button" id="togglePass" class="btn" style="width:auto;height:40px;padding:0 10px;background:#fff;color:var(--teal)">表示</button>
+        <button type="button" id="togglePass" class="btn" style="width:auto;height:40px;padding:0 10px;background:#fff;color:var(--teal)" data-i18n="ui.show">表示</button>
       </div>
-      <button class="btn" id="loginPwBtn" data-in18n="auth.login">ログイン</button>
-      <a class="link" href="signup.html" data-in18n="auth.goto_signup">新規登録はこちら</a>
+      <button class="btn" id="loginPwBtn" data-i18n="auth.login">ログイン</button>
+      <a class="link" href="signup.html" data-i18n="auth.goto_signup">新規登録はこちら</a>
     </div>
 
     <!-- メールリンクログイン（最初は非表示） -->
     <div id="formMagic" style="display:none">
-      <label data-in18n="auth.email">メールアドレス</label>
+      <label data-i18n="auth.email">メールアドレス</label>
       <input id="emailMagic" type="email" placeholder="you@example.com" autocomplete="email" required>
       <button class="btn" id="loginMagicBtn">ログインリンクを送る</button>
       <p class="link" id="hintMagic" style="display:none">メール内のリンクを開くとログイン完了します。</p>

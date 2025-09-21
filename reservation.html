@@ -50,22 +50,22 @@ footer{margin:12px 0 30px;color:var(--muted);font-size:12px}
 <body>
 <div class="container">
   <a href="index.html" class="btn ghost">← 戻る</a>
-  <h1>予約の確認</h1>
+  <h1 data-i18n="reserve.title">予約の確認</h1>
 
   <div class="card">
     <dl class="row">
-      <dt>サロン</dt><dd id="v_salon">-</dd>
-      <dt>メニュー</dt><dd id="v_menu">-</dd>
-      <dt>施術者</dt><dd id="v_staff">-</dd>
-      <dt>日時</dt><dd id="v_date">-</dd>
-      <dt>目安金額</dt><dd id="v_price">-</dd>
+      <dt data-i18n="reserve.salon">サロン</dt><dd id="v_salon">-</dd>
+      <dt data-i18n="reserve.menu">メニュー</dt><dd id="v_menu">-</dd>
+      <dt data-i18n="data-i18n="reserve.staff">施術者</dt><dd id="v_staff">-</dd>
+      <dt data-i18n="reserve.datetime">日時</dt><dd id="v_date">-</dd>
+      <dt data-i18n="reserve.estimate">目安金額</dt><dd id="v_price">-</dd>
     </dl>
   </div>
 
   <div class="card">
-    <label>予約連絡用メール</label>
+    <label data-i18n="reserve.contactEmail">予約連絡用メール</label>
     <input id="email" type="email" placeholder="you@example.com"/>
-    <p class="small">※空でも予約はできます。メールを入れると <code>bookings</code> シートに反映されます。</p>
+    <p class="small" data-i18n="reserve.note">※空でも予約はできます。メールを入れると <code>bookings</code> シートに反映されます。</p>
   </div>
 
   <div class="card" id="hpGridWrap">
@@ -80,9 +80,9 @@ footer{margin:12px 0 30px;color:var(--muted);font-size:12px}
   </div>
 
   <div class="toolbar">
-    <button id="btnConfirm" class="btn primary">この内容で予約する</button>
-    <button id="btnCancel" class="btn ghost" onclick="history.back()">一度戻る</button>
-    <span id="spin" style="display:none">処理中…</span>
+    <button id="btnConfirm" class="btn primary" data-i18n="reserve.submit">この内容で予約する</button>
+    <button id="btnCancel" class="btn ghost" onclick="history.back()" data-i18n="reserve.backOnce">一度戻る</button>
+    <span id="spin" style="display:none" data-i18n="reserve.process">処理中…</span>
   </div>
 
   <div id="msg"></div>

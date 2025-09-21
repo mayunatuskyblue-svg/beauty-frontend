@@ -100,6 +100,47 @@ BL_I18N.dict.en = Object.assign(BL_I18N.dict.en||{}, {
   "footer.privacy": "Privacy",
   "footer.cancel": "Cancel Policy",
   "footer.contact": "Contact",
+  // 追記例（既存の T でも BL_I18N.dict.* でもOK、どちらかに寄せる）
+BL_I18N.dict = BL_I18N.dict || {};
+BL_I18N.dict.ja = Object.assign(BL_I18N.dict.ja || {}, {
+  "auth.login_with_password": "パスワードでログイン",
+  "auth.login_with_magic": "メールリンクでログイン",
+
+  "pay.title": "Stripe支払い",
+  "pay.method": "Stripe 支払い",
+  "pay.method_title": "お支払い方法",
+  "pay.pay_stripe": "Stripeで支払う",
+  "pay.pay_cash": "現地支払いで続ける",
+  "pay.note_open_newtab": "※ Stripeボタンは新しいタブで開きます。決済後は自動でサイトに戻るように（成功URL/キャンセルURL）をPayment Link設定で指定してください。",
+  "pay.nonlink_title": "オンライン決済リンクが未設定",
+  "pay.nonlink_desc": "このメニュー/クーポンにはStripeのPayment Linkが未設定です。現地支払いでご予約を続けられます。",
+
+  "reserve.title": "予約の確認",
+  "reserve.staff": "施術者",
+  "reserve.select_dt": "日時選択",
+  "reserve.prev": "‹ 前へ",
+  "reserve.next": "次へ ›",
+  "reserve.legend": "◯ 空き　× 予約不可",
+});
+BL_I18N.dict.en = Object.assign(BL_I18N.dict.en || {}, {
+  "auth.login_with_password": "Log in with password",
+  "auth.login_with_magic": "Log in via email link",
+
+  "pay.title": "Payment",
+  "pay.method": "Payment",
+  "pay.method_title": "Payment method",
+  "pay.pay_stripe": "Pay with Stripe",
+  "pay.pay_cash": "Continue with pay-on-site",
+  "pay.note_open_newtab": "The Stripe button opens in a new tab. After payment, set success/cancel URLs in Payment Link to return here automatically.",
+  "pay.nonlink_title": "Online payment link not set",
+  "pay.nonlink_desc": "No Stripe Payment Link is set for this item. You can continue with pay-on-site.",
+
+  "reserve.title": "Reservation confirmation",
+  "reserve.staff": "Staff",
+  "reserve.select_dt": "Select date & time",
+  "reserve.prev": "‹ Prev",
+  "reserve.next": "Next ›",
+  "reserve.legend": "◯ Available  × Unavailable",
 });
 
 })(window);

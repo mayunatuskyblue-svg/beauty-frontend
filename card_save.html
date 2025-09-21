@@ -91,7 +91,7 @@
 <div id="ftModal">
   <div id="ftBackdrop"></div>
   <div id="ftDlg" role="dialog" aria-modal="true" aria-labelledby="ftTitle">
-    <header><h3 id="ftTitle" data-i18n="footer.terms">Terms</h3><button id="ftClose">Close</button></header>
+    <header><h3 id="ftTitle" data-i18n="footer.terms">Terms</h3><button id="ftClose" data-i18n="ui.close">Close</button></header>
     <div id="ftBody">Loading…</div>
   </div>
 </div>
@@ -109,8 +109,6 @@ return new Intl.NumberFormat(
   BL_I18N.getLang()==='ja' ? 'ja-JP' : 'en-US',
   { style:'currency', currency: cur, maximumFractionDigits:0 }
 ).format(converted);
-
-      { style:'currency', currency: cur, maximumFractionDigits:0 }).format(converted);
   }catch(e){
     const symbols = {JPY:'¥', USD:'$', EUR:'€', LKR:'Rs '};
     return (symbols[cur]||'') + converted.toLocaleString();
@@ -147,7 +145,6 @@ const $ = s => document.querySelector(s);
 const show = (el, on=true)=>el.classList[on?'remove':'add']('hidden');
 const setMsg = (t, isErr=false)=>{ const m=$('#msg'); m.textContent=t||''; m.style.color=isErr?'#b91c1c':'#374151' };
 
-<script>
 // ===== Footer modal (i18n)
 (function(){
   const modal = document.getElementById('ftModal'), body=document.getElementById('ftBody'), title=document.getElementById('ftTitle');

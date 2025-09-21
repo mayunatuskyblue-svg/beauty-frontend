@@ -36,45 +36,45 @@
 <body>
 <div class="container">
   <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
-    <a class="link" href="javascript:history.back()">← 戻る</a>
+    <a class="link" href="javascript:history.back()" data-i18n="ui.back">← 戻る</a>
     <select id="langSelect" class="btn" style="height:34px;width:auto">
       <option value="auto">Auto</option><option value="ja">日本語</option><option value="en">English</option>
     </select>
   </div>
 
-  <h1>新規登録</h1>
+  <h1 data-i18n="auth.signup">新規登録</h1>
 
  <div class="form">
   <div style="display:flex;justify-content:center;gap:10px;margin-bottom:16px">
-    <button type="button" id="tabPassword" class="btn" style="flex:1;background:#246A73">パスワード登録</button>
-    <button type="button" id="tabMagic" class="btn" style="flex:1;background:#999">メールリンク登録</button>
+    <button type="button" id="tabPassword" class="btn" style="flex:1;background:#246A73" data-i18n="auth.login_with_password">パスワード登録</button>
+    <button type="button" id="tabMagic" class="btn" style="flex:1;background:#999" data-i18n="auth.login_with_magic">メールリンク登録</button>
   </div>
 
   <!-- パスワード登録フォーム -->
   <div id="formPassword">
-    <label>メールアドレス</label>
-    <input id="emailPw" type="email" placeholder="you@example.com" required>
-    <label>パスワード</label>
-    <input id="passPw" type="password" placeholder="********" required minlength="6">
-    <button class="btn" id="signupPwBtn">アカウント作成</button>
+    <label data-i18n="auth.email">メールアドレス</label>
+    <input id="emailPw" type="email" data-i18n-ph="ui.email" placeholder="you@example.com" required>
+    <label data-i18n="auth.password">パスワード</label>
+    <input id="passPw" type="password" data-i18n-ph="ui.password" placeholder="********" required minlength="6">
+    <button class="btn" id="signupPwBtn" data-i18n="auth.signup_here">アカウント作成</button>
   </div>
 
   <!-- Magic Link登録フォーム（最初は非表示） -->
   <div id="formMagic" style="display:none">
-    <label>メールアドレス</label>
-    <input id="emailMagic" type="email" placeholder="you@example.com" required>
-    <button class="btn" id="signupMagicBtn">登録用リンクを送る</button>
-    <p class="link" id="hintMagic" style="display:none">メール内のリンクを開くと登録完了します。</p>
+    <label data-i18n="auth.email">メールアドレス</label>
+    <input id="emailMagic" type="email" data-i18n-ph="ui.email" placeholder="you@example.com" required>
+    <button class="btn" id="signupMagicBtn" data-i18n="auth.send_magic">登録用リンクを送る</button>
+    <p class="link" id="hintMagic" style="display:none" data-i18n="auth.magic_hint">メール内のリンクを開くと登録完了します。</p>
   </div>
 </div>
  
 
 <!-- フッター（あなたの既存のモーダル実装はそのまま） -->
 <footer id="ft" style="margin:18px 0 40px;text-align:center;color:#6b5e55;font-size:12px">
-  <a href="terms.html" class="ft-link" data-ft="terms" style="margin:0 10px">Terms</a>·
-  <a href="privacy.html" class="ft-link" data-ft="privacy" style="margin:0 10px">Privacy</a>·
-  <a href="cancel.html" class="ft-link" data-ft="cancel" style="margin:0 10px">Cancel Policy</a>·
-  <a href="contact.html" class="ft-link" data-ft="contact" style="margin:0 10px">Contact</a>
+  <a href="terms.html" class="ft-link" data-ft="terms" style="margin:0 10px" data-i18n="footer.terms">Terms</a>·
+  <a href="privacy.html" class="ft-link" data-ft="privacy" style="margin:0 10px" data-i18n="footer.privacy">Privacy</a>·
+  <a href="cancel.html" class="ft-link" data-ft="cancel" style="margin:0 10px" data-i18n="footer.cancel">Cancel Policy</a>·
+  <a href="contact.html" class="ft-link" data-ft="contact" style="margin:0 10px" data-i18n="footer.contact">Contact</a>
 </footer>
 
   <script>
@@ -108,13 +108,25 @@
   // URLパラメータからリダイレクト先・メールのプリフィルを拾う
   const qs=new URLSearchParams(location.search);
   const redirect=qs.get('redirect')||'mypage.html';
-  const pre=qs.get('prefill'); if(pre) document.getElementById('email').value=pre;
+  const pre = qs.get('prefill');
+if(pre){
+  const pw = document.getElementById('emailPw');
+  const mg = document.getElementById('emailMagic');
+  if(pw) pw.value = pre;
+  if(mg) mg.value = pre;
+}
+
 </script>
 
 <!-- Firebase 認証（モジュール） -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
   import { getAuth, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
+  import {
+  getAuth, createUserWithEmailAndPassword, onAuthStateChanged,
+  sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink
+} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
+
 
   // ★ あなたの Firebase 設定
   const firebaseConfig = {

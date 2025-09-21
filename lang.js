@@ -1,12 +1,3 @@
-<div id="sum" class="card">
-  <div id="sumItem" style="font-weight:800;font-size:18px">-</div>
-  <div id="sumSalon" style="opacity:.85">-</div>
-  <div style="margin-top:6px">
-    <span data-i18n="pay.choose_method_label">支払い方法を選んでください：</span>
-    <span id="sumPrice">-</span>
-  </div>
-  <div id="sumTime" class="note" style="margin-top:6px"></div>
-</div>
 (function(global){
  T.ja = Object.assign({}, T.ja, {
       ui:{back:'← 戻る', toTop:'トップに戻る', show:'表示', your_name:'お名前', email:'メールアドレス', password:'パスワード',
@@ -45,6 +36,15 @@
     document.body.classList.toggle('ja', lang==='ja');
     document.body.classList.toggle('en', lang==='en');
   }
+  <div id="sum" class="card">
+  <div id="sumItem" style="font-weight:800;font-size:18px">-</div>
+  <div id="sumSalon" style="opacity:.85">-</div>
+  <div style="margin-top:6px">
+    <span data-i18n="pay.choose_method_label">支払い方法を選んでください：</span>
+    <span id="sumPrice">-</span>
+  </div>
+  <div id="sumTime" class="note" style="margin-top:6px"></div>
+</div>
   global.BL_I18N = { T, getLang, setLang, i18nApply };
   // 例：lang.js のどこかの辞書に追加
 

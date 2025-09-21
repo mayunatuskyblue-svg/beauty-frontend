@@ -321,9 +321,9 @@ sel.onchange = ()=>{
   localStorage.setItem('bl_lang', sel.value);
   if (window.BL_I18N?.setLang) BL_I18N.setLang(sel.value);
   initFilters();      // ← optionを作り直す（data-i18n付きで再生成）
-  applyI18N();        // ← 翻訳を当てる
+  BL_I18N.i18nApply();        // ← 翻訳を当てる
 };
-applyI18N();          // 初回
+BL_I18N.i18nApply();          // 初回
 initFilters();        // 初回
 
 // header nav + user pill

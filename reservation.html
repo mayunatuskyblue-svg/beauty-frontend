@@ -49,14 +49,14 @@ footer{margin:12px 0 30px;color:var(--muted);font-size:12px}
 </head>
 <body>
 <div class="container">
-  <a href="index.html" class="btn ghost">← 戻る</a>
+  <a href="index.html" class="btn ghost" data-i18n="ui.back">← 戻る</a>
   <h1 data-i18n="reserve.title">予約の確認</h1>
 
   <div class="card">
     <dl class="row">
       <dt data-i18n="reserve.salon">サロン</dt><dd id="v_salon">-</dd>
       <dt data-i18n="reserve.menu">メニュー</dt><dd id="v_menu">-</dd>
-      <dt data-i18n="data-i18n="reserve.staff">施術者</dt><dd id="v_staff">-</dd>
+      <dt data-i18n="reserve.staff">施術者</dt><dd id="v_staff">-</dd>
       <dt data-i18n="reserve.datetime">日時</dt><dd id="v_date">-</dd>
       <dt data-i18n="reserve.estimate">目安金額</dt><dd id="v_price">-</dd>
     </dl>
@@ -95,7 +95,7 @@ footer{margin:12px 0 30px;color:var(--muted);font-size:12px}
 <script>
 // ===== 通貨ユーティリティ（price_jpy を元に表示） =====
 const RATES = { JPY:1, USD:0.0067, EUR:0.0061, LKR:2.05 }; // 必要に応じて更新
-function getLang(){ try{ return (localStorage.getItem('bl_lang')||'auto')==='ja' ? 'ja' : 'en'; }catch(e){ return 'en'; } }
+function getLang(){ try{ return (localStorage.getItem('lang')||'auto')==='ja' ? 'ja' : 'en'; }catch(e){ return 'en'; } }
 function getCurrency(){ try{ return localStorage.getItem('bl_currency') || 'JPY'; }catch(e){ return 'JPY'; } }
 function fmtCurrencyFromJPY(jpy, cur){
   const n = Math.max(0, Number(jpy)||0);

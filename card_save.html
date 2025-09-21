@@ -43,37 +43,37 @@
 </head>
 <body>
 <div class="wrap">
-  <a class="btn" href="index.html">← 戻る</a>
-  <h1>カード情報の保存（後払い用）</h1>
+  <a class="btn" href="index.html" data-i18n="ui.back">← 戻る</a>
+  <h1 data-i18n="card.title">カード情報の保存（後払い用）</h1>
 
   <div class="card">
     <dl class="row">
-      <div><dt>サロン</dt><dd id="v_salon">-</dd></div>
-      <div><dt>メニュー</dt><dd id="v_menu">-</dd></div>
-      <div><dt>施術者</dt><dd id="v_staff">-</dd></div>
-      <div><dt>日時</dt><dd id="v_date">-</dd></div>
-      <div><dt>目安金額</dt><dd id="v_price">-</dd></div>
+      <div><dt data-i18n="card.shop">サロン</dt><dd id="v_salon">-</dd></div>
+      <div><dt data-i18n="card.menu">メニュー</dt><dd id="v_menu">-</dd></div>
+      <div><dt data-i18n="card.staff">施術者</dt><dd id="v_staff">-</dd></div>
+      <div><dt data-i18n="card.when">日時</dt><dd id="v_date">-</dd></div>
+      <div><dt data-i18n="card.price">目安金額</dt><dd id="v_price">-</dd></div>
     </dl>
   </div>
 
   <div class="card" id="stepAgree">
     <div class="inline">
-      <label class="chk"><input type="checkbox" id="agree"> I agree to the Terms</label>
-      <button class="btn" type="button" id="openTerms">Terms</button>
-      <button class="btn brand" type="button" id="goForm">カード情報の入力へ</button>
+      <label class="chk"><input type="checkbox" id="agree"><span data-i18n="card.i_agree">利用規約に同意します</span></label>
+      <button class="btn" type="button" id="openTerms" data-i18n="footer.terms">Terms</button>
+      <button class="btn brand" type="button" id="goForm" data-i18n="card.go_imput">カード情報の入力へ</button>
     </div>
-    <p class="inline" style="color:var(--muted);font-size:12px">チェックしてから「カード情報の入力へ」を押してください。</p>
+    <p class="inline" style="color:var(--muted);font-size:12px" data-i18n="card.check_then_go">チェックしてから「カード情報の入力へ」を押してください。</p>
   </div>
 
   <div class="card hidden" id="stepForm">
     <div class="row">
-      <dt>メール</dt><dd><input type="email" id="email" placeholder="you@example.com"></dd>
-      <dt>お名前</dt><dd><input type="text" id="name" placeholder="TARO YAMADA"></dd>
+      <dt data-i18n="card.email">メール</dt><dd><input type="email" id="email" data-i18n="ui.email" placeholder="you@example.com"></dd>
+      <dt data-i18n="card.name">お名前</dt><dd><input type="text" id="name" data-i18n="ui.name" placeholder="TARO YAMADA"></dd>
       <dt>カード番号</dt><dd><div id="card"></div></dd>
     </div>
     <div class="inline" style="margin-top:8px">
       <button id="saveBtn" class="btn brand">カードを保存する</button>
-      <span id="spin" class="hidden">処理中…</span>
+      <span id="spin" class="hidden" data-i18n="ui.process">処理中…</span>
     </div>
   </div>
 
@@ -91,7 +91,7 @@
 <div id="ftModal">
   <div id="ftBackdrop"></div>
   <div id="ftDlg" role="dialog" aria-modal="true" aria-labelledby="ftTitle">
-    <header><h3 id="ftTitle">Terms</h3><button id="ftClose">Close</button></header>
+    <header><h3 id="ftTitle" data-i18n="footer.terms">Terms</h3><button id="ftClose">Close</button></header>
     <div id="ftBody">Loading…</div>
   </div>
 </div>

@@ -99,7 +99,6 @@
 <script>
 // ===== 通貨ユーティリティ =====
 const RATES = { JPY:1, USD:0.0067, EUR:0.0061, LKR:2.05 };
-function getLang(){ try{ return (localStorage.getItem('bl_lang')||'auto')==='ja' ? 'ja' : 'en'; }catch(e){ return 'en'; } }
 function getCurrency(){ try{ return localStorage.getItem('bl_currency') || 'JPY'; }catch(e){ return 'JPY'; } }
 function fmtCurrencyFromJPY(jpy, cur){
   const n = Math.max(0, Number(jpy)||0);

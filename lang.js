@@ -34,8 +34,7 @@ T.en.smartpay = {
     card:{ card_no:'カード番号', save_btn:'カードを保存する', go_input:'カード情報の入力へ', title:'カード情報の保存（後払い用）', shop:'サロン', menu:'メニュー', staff:'施術者', when:'日時', price:'目安金額', i_agree:'利用規約に同意します', email:'メール', name:'お名前', check_then_go:'チェックしてから「カード情報の入力へ」を押してください。' },
     thanks:{ title:'ご予約ありがとうございます', msg:'この店舗の口コミ投稿ができるようになりました。', back_to_shop:'店舗ページへ戻る' },
 });
-  T.ja.legal = Object.assign({}, T.ja.legal, {
-　　terms_full_html: `
+  T.ja.legal = Object.assign({}, T.ja.legal, { terms_full_html: `
     <div class="container">
       <h1 data-i18n="footer.terms">利用規約</h1>
       <h2>1. サービス内容</h2>

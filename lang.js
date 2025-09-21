@@ -1,5 +1,57 @@
 (function(global){
   const T = global.BL_I18N && global.BL_I18N.T ? global.BL_I18N.T : { ja:{}, en:{} };
+// === Add: i18n master lists for Areas & Categories (code-based) ===
+(function (global) {
+  const AREAS = [
+    { code:'colombo', ja:'コロンボ', en:'Colombo' },
+    { code:'galle', ja:'ゴール', en:'Galle' },
+    { code:'kandy', ja:'キャンディ', en:'Kandy' },
+    { code:'nuwaraeliya', ja:'ヌワラエリヤ', en:'Nuwara Eliya' },
+    { code:'jaffna', ja:'ジャフナ', en:'Jaffna' },
+    { code:'arugambay', ja:'アルガンベイ', en:'Arugam Bay' },
+    { code:'mirissa', ja:'ミリッサ', en:'Mirissa' },
+    { code:'unawatuna', ja:'ウナワトゥナ', en:'Unawatuna' },
+    { code:'trincomalee', ja:'トリンコマリー', en:'Trincomalee' },
+    { code:'ella', ja:'エッラ', en:'Ella' },
+    { code:'sigiriya', ja:'シギリヤ', en:'Sigiriya' },
+    { code:'negombo', ja:'ニゴンボ', en:'Negombo' },
+    { code:'bentota', ja:'ベントータ', en:'Bentota' },
+  ];
+
+  const CATEGORIES = [
+    { code:'hair', ja:'ヘア', en:'Hair' },
+    { code:'lashes', ja:'まつ毛', en:'Lashes' },
+    { code:'nails', ja:'ネイル', en:'Nails' },
+    { code:'ayurveda', ja:'アーユルヴェーダ', en:'Ayurveda' },
+    { code:'spa', ja:'マッサージ/スパ', en:'Spa & Massage' },
+  ];
+
+  function getLang(){ return (global.BL_I18N?.getLang?.() || 'ja'); }
+
+  // code → 表示ラベル
+  function label(kind, code, lang){
+    const list = kind==='area' ? AREAS : CATEGORIES;
+    const item = list.find(x=>x.code===code);
+    const L = lang || getLang();
+    return item ? (L==='en' ? item.en : item.ja) : code;
+  }
+
+  // 任意の文字列（データ中の place/type）→ code を推定（和英どちらでもマッチ）
+  function toCode(kind, value){
+    if(!value) return '';
+    const s = String(value).trim().toLowerCase();
+    const list = kind==='area' ? AREAS : CATEGORIES;
+    const hit = list.find(x =>
+      x.code===s || x.ja.toLowerCase()===s || x.en.toLowerCase()===s
+    );
+    return hit ? hit.code : '';
+  }
+
+  // エクスポート
+  global.BL_I18N = Object.assign({}, global.BL_I18N, {
+    AREAS, CATEGORIES, label, toCode
+  });
+})(window);
 
   // ヒーロー文言（フラットキーのままでOK）
   T.ja.hero_title = 'スリランカで叶える、私だけの美しさ。';

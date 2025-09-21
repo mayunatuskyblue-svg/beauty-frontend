@@ -5,7 +5,7 @@
 T.en.hero_title = 'Your beauty, your way — in Sri Lanka.';
 T.ja.hero_sub   = 'ヘア・ネイル・まつ毛・アーユルヴェーダ・マッサージ/スパ。口コミと写真で選べる予約サイト。';
 T.en.hero_sub   = 'Hair, nails, lashes, Ayurveda, spa & massage. Book with reviews and photos.'; 
-  Object.assign({}, T.ja, {
+ T.ja = Object.assign({}, T.ja, {
       ui:{ phone:'電話番号', close:'閉じる', process:'処理中…' , mypage:'マイページ', currency:'通貨' , back_to_search:'検索に戻る' , back:'← 戻る', toTop:'トップに戻る', show:'表示', your_name:'お名前', email:'メールアドレス', password:'パスワード',
       pay_with_card:'カードで支払う（PayPal）', pay_on_site:'現地で支払う（記録）', done:'完了', confirm:'確認', yourInfo:'予約者情報', notes:'要望・メモ（任意）', name:'お名前 / Name', phone:'電話番号 / Phone' },
   auth:{ login:'ログイン', signup:'新規登録', goto_signup:'新規登録はこちら', signup_here:'新規登録はこちら', login_with_password:'パスワードでログイン', login_with_magic:'メールリンクでログイン', send_magic:'ログインリンクを送る/登録用リンクを送る', magic_hint:'メール内のリンクを開くと登録が完了します。', email:'メールアドレス', password:'パスワード' },

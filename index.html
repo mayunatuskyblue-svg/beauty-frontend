@@ -262,25 +262,30 @@ function fmtCurrencyFromJPY(jpy, cur){
   const rate = RATES[cur] || 1;
   const converted = Math.round(n * rate);
   try{
-    return new Intl.NumberFormat((getLang()==='ja'?'ja-JP':'en-US'), {
+    return new Intl.NumberFormat(getLang()==='ja' ? 'ja-JP':'en-US', {
       style:'currency', currency: cur, maximumFractionDigits:0
     }).format(converted);
   }catch(e){
     const symbols = {JPY:'¥', USD:'$', EUR:'€', LKR:'Rs '};
     return (symbols[cur]||'') + converted.toLocaleString();
-    // L は getLang() の戻り ("en" or "ja")
-    const areaSet = new Set();
-    const catSet  = new Set();
-    for (const r of items) {
-      const area = (L==='en' ? (r.place_en||r.place_ja) : (r.place_ja||r.place_en));
-      const cat  = (L==='en' ? (r.type_en ||r.type_ja)  : (r.type_ja ||r.type_en ));
-      if (area) areaSet.add(area);
-      if (cat)  catSet.add(cat);
-    }
-    const AREAS = Array.from(areaSet);
-    const CATS  = Array.from(catSet);
   }
 }
+
+// Robust photo resolver
+function resolvePhoto(src){
+  if(!src) return "/assets/img/placeholder.webp";
+  if(/^https?:\/\//i.test(src)) return src;
+  let s = String(src).replace(/\\/g,'/').replace(/\/{2,}/g,'/');
+  if(!s.startsWith('/')) s = '/' + s;
+  return s;
+}
+function altCandidates(src){
+  const list = [src];
+  if(src.includes('/assets/img/')) list.push(src.replace('/assets/img/','/assets/images/'));
+  if(src.includes('/assets/images/')) list.push(src.replace('/assets/images/','/assets/img/'));
+  return Array.from(new Set(list));
+}
+
 const T = {
   ja: {
     hero_title: 'スリランカで叶える、私だけの美しさ。',
@@ -594,56 +599,43 @@ document.addEventListener('click', function(e){
 
 
 // === i18n-aware Area/Category injection (added; no deletions) ===
-  const MAJOR_JA = ['コロンボ','ゴール','キャンディ','ヌワラエリヤ','ジャフナ','アルガンベイ','ミリッサ','ウナワトゥナ','トリンコマリー'];
-  const AREA_MAP = {
-    'コロンボ':'Colombo','ゴール':'Galle','キャンディ':'Kandy','ヌワラエリヤ':'Nuwara Eliya',
-    'ジャフナ':'Jaffna','アルガンベイ':'Arugam Bay','ミリッサ':'Mirissa','ウナワトゥナ':'Unawatuna','トリンコマリー':'Trincomalee'
-  };
-  const CATS_JA = ['ヘア','ネイル','まつ毛','アーユルヴェーダ','マッサージ/スパ'];
-  const CAT_MAP = {
-    'ヘア':'Hair','ネイル':'Nails','まつ毛':'Lashes','アーユルヴェーダ':'Ayurveda','マッサージ/スパ':'Massage/Spa'
-  };
+  // 英語ラベル用マップ & 固定リスト
+const MAJOR_JA = ['コロンボ','ゴール','キャンディ','ヌワラエリヤ','ジャフナ','アルガンベイ','ミリッサ','ウナワトゥナ','トリンコマリー'];
+const AREA_MAP = {
+  'コロンボ':'Colombo','ゴール':'Galle','キャンディ':'Kandy','ヌワラエリヤ':'Nuwara Eliya',
+  'ジャフナ':'Jaffna','アルガンベイ':'Arugam Bay','ミリッサ':'Mirissa','ウナワトゥナ':'Unawatuna','トリンコマリー':'Trincomalee'
+};
+const CATS_JA = ['ヘア','ネイル','まつ毛','アーユルヴェーダ','マッサージ/スパ'];
+const CAT_MAP = {
+  'ヘア':'Hair','ネイル':'Nails','まつ毛':'Lashes','アーユルヴェーダ':'Ayurveda','マッサージ/スパ':'Massage/Spa'
+};
 
-<script>
-  function fillSelect(sel, list, placeholderJa, placeholderEn){
-    if(!sel) return;
-    const L = getLang();
-    const placeholder = (L==='en' ? placeholderEn : placeholderJa);
-    const prev = sel.value;
-    sel.innerHTML = '';
+function fillSelect(sel, list, placeholderJa, placeholderEn){
+  if(!sel) return;
+  const L = getLang();
+  const placeholder = (L==='en' ? placeholderEn : placeholderJa);
+  const prev = sel.value;
+  sel.innerHTML = '';
+  const opt0 = document.createElement('option');
+  opt0.value = ''; opt0.textContent = placeholder; sel.appendChild(opt0);
+  (list||[]).forEach(v=>{
+    const o = document.createElement('option');
+    o.value = v; // ← 値は日本語のまま（既存フィルタ互換）
+    o.textContent = (L==='en'
+      ? (sel.id==='place' ? (AREA_MAP[v]||v) : (CAT_MAP[v]||v))
+      : v);
+    sel.appendChild(o);
+  });
+  if(prev && Array.from(sel.options).some(o=>o.value===prev)) sel.value = prev;
+}
 
-    // 先頭プレースホルダー
-    const opt0 = document.createElement('option');
-    opt0.value = '';
-    opt0.textContent = placeholder;
-    sel.appendChild(opt0);
+function refreshFiltersFrom(){
+  try{
+    fillSelect(document.getElementById('place'), MAJOR_JA, '場所', 'Area');
+    fillSelect(document.getElementById('type'),  CATS_JA,  '種類', 'Category');
+  }catch(e){ console.warn('refreshFiltersFrom failed', e); }
+}
 
-    // value は “日本語” を保持、表示テキストだけ英語化
-    (list||[]).forEach(v=>{
-      const o = document.createElement('option');
-      o.value = v; // ← 既存のフィルタがこれで動く
-      if(L==='en'){
-        // セレクトの種類でマップを使い分け
-        if(sel.id === 'place') o.textContent = AREA_MAP[v] || v;
-        else                  o.textContent = CAT_MAP[v]  || v;
-      }else{
-        o.textContent = v;
-      }
-      sel.appendChild(o);
-    });
-
-    // 以前の選択を維持（可能なら）
-    if(prev && Array.from(sel.options).some(o=>o.value===prev)) sel.value = prev;
-  }
-
-  function refreshFiltersFrom(/* items */){
-    // items 由来ではなく、指定の固定リストで毎回上書き
-    try{
-      fillSelect(document.getElementById('place'), MAJOR_JA, '場所', 'Area');
-      fillSelect(document.getElementById('type'),  CATS_JA,  '種類', 'Category');
-    }catch(e){ console.warn('refreshFiltersFrom failed', e); }
-  }
-</script>
 
 // Wrap render so that every time list changes, selects are refreshed in the current language.
 if(typeof render==='function'){

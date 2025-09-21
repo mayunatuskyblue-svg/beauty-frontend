@@ -47,18 +47,6 @@ body{ padding-bottom:60px; } /* avoid overlap */
 </div>
 <script>
 
-// i18n helper
-function getLang(){ try{ const pref=localStorage.getItem('bl_lang')||'auto'; if(pref==='auto'){ const ja=(navigator.language||'en').toLowerCase().startsWith('ja'); return ja?'ja':'en'; } return pref; }catch(e){ return 'ja'; } }
-
-
-document.addEventListener('DOMContentLoaded', ()=>{
-  if(getLang()==='en'){
-    document.querySelector('h1').textContent = 'Thank you for your reservation';
-    document.getElementById('msg').textContent = 'You can now post a review for this shop.';
-    document.querySelector('.btn.primary').textContent = 'Back to shop page';
-  }
-});
-
 function getAuth(){ try{ return JSON.parse(localStorage.getItem('bl_auth')||'null'); }catch(e){ return null; } }
 
 const p=new URLSearchParams(location.search); const id=p.get('salonId')||'S1';

@@ -63,7 +63,9 @@ T.en.legal = {
     card:{ card_no:'Card number', save_btn:'Save card', go_input:'Go to card input', title:'Save your card (pay later)', shop:'Shop', menu:'Menu', staff:'Staff', when:'Date & time', price:'Est. price', i_agree:'I agree to the Terms', email:'Email', name:'Name', check_then_go:'Please check the box, then press “Go to card input”.' }
   });
 
-  function getLang(){ return localStorage.getItem('lang') || 'ja'; }
+  function getLang(){
+  return localStorage.getItem('lang') || localStorage.getItem('bl_lang') || 'ja';
+}
   function setLang(l){ try{ localStorage.setItem('lang', l);}catch(e){} }
   function i18nApply(root){
     const lang = getLang();

@@ -60,19 +60,19 @@
     <div class="inline">
       <label class="chk"><input type="checkbox" id="agree"><span data-i18n="card.i_agree">利用規約に同意します</span></label>
       <button class="btn" type="button" id="openTerms" data-i18n="footer.terms">Terms</button>
-      <button class="btn brand" type="button" id="goForm" data-i18n="card.go_imput">カード情報の入力へ</button>
+      <button class="btn brand" type="button" id="goForm" data-i18n="card.go_input">カード情報の入力へ</button>
     </div>
     <p class="inline" style="color:var(--muted);font-size:12px" data-i18n="card.check_then_go">チェックしてから「カード情報の入力へ」を押してください。</p>
   </div>
 
   <div class="card hidden" id="stepForm">
     <div class="row">
-      <dt data-i18n="card.email">メール</dt><dd><input type="email" id="email" data-i18n="ui.email" placeholder="you@example.com"></dd>
+      <dt data-i18n="card.email">メール</dt><dd><input type="email" id="email" data-i18n-ph="ui.email" placeholder="you@example.com"></dd>
       <dt data-i18n="card.name">お名前</dt><dd><input type="text" id="name" data-i18n="ui.name" placeholder="TARO YAMADA"></dd>
-      <dt>カード番号</dt><dd><div id="card"></div></dd>
+      <dt data-i18n="card.card_no">カード番号</dt><dd><div id="card"></div></dd>
     </div>
     <div class="inline" style="margin-top:8px">
-      <button id="saveBtn" class="btn brand">カードを保存する</button>
+      <button id="saveBtn" class="btn brand" data-i18n="card.save_btn">カードを保存する</button>
       <span id="spin" class="hidden" data-i18n="ui.process">処理中…</span>
     </div>
   </div>

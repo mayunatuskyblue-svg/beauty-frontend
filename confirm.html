@@ -169,46 +169,44 @@ body{ padding-bottom:60px; } /* avoid overlap */
 }
     // Intercept payment clicks: warn if invalid, otherwise allow navigation
     ['btnPay','btnRecord'].forEach(id=>{
-      const a = document.getElementById(id);
-      if(!a) return;
-      a.addEventListener('click', (ev)=>{
-        const {ok, miss} = validate();
-        // 置き換え（クリックハンドラ内の該当部分）
-a.addEventListener('click', (ev)=>{
-  const {ok, miss} = validate();
+  const a = document.getElementById(id);
+  if(!a) return;
+  a.addEventListener('click', (ev)=>{
+    const {ok, miss} = validate();
 
-  if(!ok){
-    ev.preventDefault();
-    showToast(promptText(miss), false);
-    if(!nameEl.value.trim())      nameEl.focus();
-    else if(!mailEl.value.trim()) mailEl.focus();
-    else if(!telEl.value.trim())  telEl.focus();
-    return;
-  } else {
-    ev.preventDefault();
-    showToast('入力OK。お支払いに進みます…', true);
-    (async ()=>{
-      try{
-        const qs = new URLSearchParams(location.search);
-        const salonId   = qs.get('salonId') || '-';
-        const salonName = qs.get('salonName') || '';
-        const item  = (document.getElementById('s_item')?.textContent || qs.get('item') || 'Reservation').trim();
-        const price = Number(qs.get('price') || 0);
-        const timeISO = qs.get('time') || '';
-        const currency = (qs.get('currency') || 'usd').toLowerCase();
+    if(!ok){
+      ev.preventDefault();
+      showToast(promptText(miss), false);
+      if(!nameEl.value.trim())      nameEl.focus();
+      else if(!mailEl.value.trim()) mailEl.focus();
+      else if(!telEl.value.trim())  telEl.focus();
+      return;
+    } else {
+      ev.preventDefault();
+      showToast('入力OK。お支払いに進みます…', true);
+      (async ()=>{
+        try{
+          const qs = new URLSearchParams(location.search);
+          const salonId   = qs.get('salonId') || '-';
+          const salonName = qs.get('salonName') || '';
+          const item  = (document.getElementById('s_item')?.textContent || qs.get('item') || 'Reservation').trim();
+          const price = Number(qs.get('price') || 0);
+          const timeISO = qs.get('time') || '';
+          const currency = (qs.get('currency') || 'usd').toLowerCase();
 
-        if(ev.currentTarget && ev.currentTarget.id !== 'btnPay'){
-          location.href = ev.currentTarget.getAttribute('href') || './';
-          return;
+          if(ev.currentTarget && ev.currentTarget.id !== 'btnPay'){
+            location.href = ev.currentTarget.getAttribute('href') || './';
+            return;
+          }
+
+          // ここから先は既存の予約POST→payments.html遷移ロジックを継続
+        }catch(e){
+          alert('予約の作成に失敗しました。もう一度お試しください。');
         }
-
-        // …以降は既存の予約POST〜payments.html遷移のロジックをそのまま
-      }catch(e){
-        alert('予約の作成に失敗しました。もう一度お試しください。');
-      }
-    })();
-  }
-}, {capture:true});
+      })();
+    }
+  }, {capture:true});
+});
     });
   })();
   </script>
@@ -227,6 +225,7 @@ a.addEventListener('click', (ev)=>{
     <div style="display:flex;align-items:center;gap:8px;justify-content:space-between;margin-bottom:8px">
       <div id="ftTitle" data-i18n="footer.terms" style="font-weight:900">Terms</div>
       <button id="ftClose" data-i18n="ui.close" style="border:none;background:#fff;border:1px solid #eadfca;border-radius:10px;padding:6px 10px;cursor:pointer">Close</button>
+      </div>
     <div id="ftBody" style="line-height:1.7;color:#2E1A16;font-size:14px">
       <p>Loading…</p>
     </div>
@@ -453,22 +452,6 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 })();
 </script>
 
-<script>
-(function(){
-  const p = new URLSearchParams(location.search);
-  const email = p.get('email')||'';
-  const cid   = p.get('customerId')||'';
-  const box = document.createElement('div');
-  box.style = 'margin:12px 0;padding:12px;border:1px solid #eadfca;border-radius:12px;background:#fff';
-  box.innerHTML = `
-    <div style="font-weight:700">SmartPay（後課金）</div>
-    <div style="color:#6f5a54;margin-top:6px">
-      ${ email ? `Email: <b>${email}</b><br>` : '' }
-      ${ cid ? `カード保存済み（Customer: <code>${cid}</code>）` : 'カード未保存' }
-    </div>`;
-  document.body.appendChild(box);
-})();
-</script>
 <!-- ↓↓↓ ここからを confirm.html の </body> の直前に貼る ↓↓↓ -->
 <script>
   // ① GAS へ送る関数（まだ無ければこのまま使う）

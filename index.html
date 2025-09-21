@@ -312,7 +312,20 @@ function applyI18N(){
   const placeOpt=document.querySelector('#place option[value=""]'); if(placeOpt) placeOpt.textContent=T[L].place;
   const typeOpt=document.querySelector('#type option[value=""]'); if(typeOpt) typeOpt.textContent=T[L].type;
 }
-  // ---------- Currency helpers (JPY -> target) ---------- const RATES = { JPY:1, USD:0.0067, EUR:0.0061, LKR:2.05 }; function getCurrency(){ return (localStorage.getItem('bl_currency') || 'JPY'); } function fmtCurrencyFromJPY(jpy, cur){ const n = Math.max(0, Number(jpy)||0); const rate = RATES[cur] || 1; const converted = Math.round(n * rate); try{ return new Intl.NumberFormat((getLang()==='ja'?'ja-JP':'en-US'), { style:'currency', currency: cur, maximumFractionDigits:0 }).format(converted); }catch(e){ const symbols = {JPY:'¥', USD:'$', EUR:'€', LKR:'Rs '}; return (symbols[cur]||'') + converted.toLocaleString(); } } // Robust photo resolver function resolvePhoto(src){ if(!src) return "/assets/img/placeholder.webp"; if(/^https?:\/\//i.test(src)) return src; let s = String(src).replace(/\\/g,'/').replace(/\\/{2,}/g,'/'); if(!s.startsWith('/')) s = '/' + s; return s; } function altCandidates(src){ const list = [src]; if(src.includes('/assets/img/')) list.push(src.replace('/assets/img/','/assets/images/')); if(src.includes('/assets/images/')) list.push(src.replace('/assets/images/','/assets/img/')); return Array.from(new Set(list)); }
+  // Robust photo resolver（ここから下を差し込み）
+function resolvePhoto(src){
+  if(!src) return "/assets/img/placeholder.webp";
+  if(/^https?:\/\//i.test(src)) return src;
+  let s = String(src).replace(/\\/g,'/').replace(/\/{2,}/g,'/');
+  if(!s.startsWith('/')) s = '/' + s;
+  return s;
+}
+function altCandidates(src){
+  const list = [src];
+  if(src.includes('/assets/img/')) list.push(src.replace('/assets/img/','/assets/images/'));
+  if(src.includes('/assets/images/')) list.push(src.replace('/assets/images/','/assets/img/'));
+  return Array.from(new Set(list));
+}
 (function(){
   const sel = document.getElementById('langSelect');
   const pref = localStorage.getItem('bl_lang') || 'auto';
@@ -581,8 +594,6 @@ document.addEventListener('click', function(e){
 
 
 // === i18n-aware Area/Category injection (added; no deletions) ===
-  <!-- ▼▼ 追加：英語ラベル用マップ & 固定リスト ▼▼ -->
-<script>
   const MAJOR_JA = ['コロンボ','ゴール','キャンディ','ヌワラエリヤ','ジャフナ','アルガンベイ','ミリッサ','ウナワトゥナ','トリンコマリー'];
   const AREA_MAP = {
     'コロンボ':'Colombo','ゴール':'Galle','キャンディ':'Kandy','ヌワラエリヤ':'Nuwara Eliya',
@@ -592,7 +603,6 @@ document.addEventListener('click', function(e){
   const CAT_MAP = {
     'ヘア':'Hair','ネイル':'Nails','まつ毛':'Lashes','アーユルヴェーダ':'Ayurveda','マッサージ/スパ':'Massage/Spa'
   };
-</script>
 
 <script>
   function fillSelect(sel, list, placeholderJa, placeholderEn){

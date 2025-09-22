@@ -91,14 +91,25 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
 .bl-steps .dot{width:8px;height:8px;border-radius:50%;background:var(--teal);opacity:.35}
 .bl-steps .on{opacity:1}
 </style>
+<style>
+/* 画像が落ちた時のフォールバック背景（薄くでもロゴが出るように） */
+.logo-box{
+  background:#fff url("/assets/images/logo_mark.png") center/contain no-repeat;
+}
+.logo-box img{
+  width:100%; height:120%; object-fit:cover; object-position:50% 20%; display:block;
+}
+</style>
+<link rel="preload" as="image" href="/assets/images/logo_mark.png">
 
 </head>
 <body>
 <header>
   <div class="container hwrap">
-   <a class="brand-left" href="./index.html">
-  <div class="logo-box"><img src="/assets/images/logo_mark.png" alt="BeautyLanka"></div>
+   <a class="brand-left" href="./index.html" aria-label="BeautyLanka">
+  <div class="logo-box"><img src="/assets/images/logo_mark.png" alt=""></div>
 </a>
+
     <nav class="nav-right"><button class="btn" onclick="location.href='index.html'" data-i18n="ui.back_to_search">検索に戻る</button></nav>
   </div>
 </header>

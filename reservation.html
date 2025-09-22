@@ -48,6 +48,23 @@ footer{margin:12px 0 30px;color:var(--muted);font-size:12px}
 .headerbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .headerbar .btn{height:36px;padding:0 12px;font-weight:700}
 .small{font-size:12px;color:var(--muted)}
+  /* === modal (footer links) === */
+#blModal::backdrop{ background: rgba(0,0,0,.35); }
+#blModal{
+  border:none; padding:0; width: min(920px, 92vw); height: min(80vh, 720px);
+  border-radius:16px; overflow:hidden; box-shadow: 0 20px 50px rgba(0,0,0,.25);
+}
+#blModal header{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 14px; background:#fff; border-bottom:1px solid var(--stroke);
+  font-weight:800;
+}
+#blModal header .title{ font-size:14px }
+#blModal button.close{
+  border:none; background:#fff; cursor:pointer; font-weight:800; padding:6px 10px; border-radius:10px;
+}
+#blModal iframe{ width:100%; height: calc(100% - 48px); border:0; display:block; background:#fff }
+
 </style>
   <script src="lang.js" defer></script>
 <script>document.addEventListener('DOMContentLoaded',()=>BL_I18N.i18nApply());</script>
@@ -94,6 +111,15 @@ footer{margin:12px 0 30px;color:var(--muted);font-size:12px}
 
   <footer>
     <a href="terms.html">Terms</a> ・ <a href="privacy.html">Privacy</a> ・ <a href="cancel_policy.html">Cancel Policy</a> ・ <a href="contact.html">Contact</a>
+ <!-- Footer Modal -->
+<dialog id="blModal">
+  <header>
+    <span class="title">Loading…</span>
+    <button class="close" type="button" aria-label="Close">✕</button>
+  </header>
+  <iframe id="blModalFrame" src="about:blank" loading="lazy"></iframe>
+</dialog>
+
   </footer>
 </div>
 
@@ -304,7 +330,47 @@ if (takenMap[ymd] && takenMap[ymd].has(hhmm)) {
   btnNext.addEventListener('click', ()=>{ weekOffset++; buildWeek(weekOffset); });
 })();
 </script>
-  
+ <script>
+(function(){
+  const footer = document.querySelector('footer');
+  if(!footer) return;
+
+  const dlg   = document.getElementById('blModal');
+  const frame = document.getElementById('blModalFrame');
+  const title = dlg?.querySelector('.title');
+  const btnX  = dlg?.querySelector('button.close');
+
+  // フッター内リンクのクリックを横取りしてモーダルで表示
+  footer.addEventListener('click', (ev)=>{
+    const a = ev.target.closest('a');
+    if(!a) return;
+    // 同一ページ内のフッターリンクのみを対象
+    const href = a.getAttribute('href');
+    if(!href || !/\.html?$/i.test(href)) return; // 外部や#などはスルー
+    ev.preventDefault();
+
+    if(title) title.textContent = a.textContent.trim() || 'Info';
+    if(frame) frame.src = href;
+
+    // 表示
+    if(typeof dlg?.showModal === 'function') dlg.showModal();
+
+    // 読み込み後にタイトルをページタイトルへ更新（任意）
+    frame?.addEventListener('load', ()=>{
+      try{
+        const doc = frame.contentDocument || frame.contentWindow?.document;
+        const t = doc?.title?.trim();
+        if(t && title) title.textContent = t;
+      }catch(_e){}
+    }, { once:true });
+  });
+
+  // 閉じる
+  btnX?.addEventListener('click', ()=> dlg?.close());
+  dlg?.addEventListener('close', ()=> { if(frame) frame.src='about:blank'; });
+})();
+</script>
+ 
 
 </body>
 </html>

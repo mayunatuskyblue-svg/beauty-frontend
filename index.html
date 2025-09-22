@@ -176,7 +176,7 @@ body.hero-header .hero-head{ padding-top:96px; }
 body.hero-header .header-controls{
   position:absolute;
   left:16px;                 /* ロゴの近くに */
-  top:88px;                  /* 数値は好みで微調整：70–110pxあたり */
+  top:112px;                  /* 数値は好みで微調整：70–110pxあたり */
   display:flex !important;   /* 非表示ルールが残っていても出す */
   gap:8px;
   align-items:center;
@@ -205,12 +205,36 @@ body.hero-header .header-controls select{
     top:76px;
   }
 }
+/* primaryは白で上書きしない：常にティール背景＋白文字 */
+body.hero-header .nav-right .btn.primary{
+  background:var(--teal) !important;
+  border-color:var(--teal) !important;
+  color:#fff !important;
+}
+/* 言語セレクトをロゴのちょい下へ */
+body.hero-header #langSelect{
+  position:absolute;
+  left:16px;      /* ロゴの左揃えに合わせる */
+  top:72px;       /* 好みで 64–90px 程度で微調整 */
+  z-index:6;
+  background:rgba(255,255,255,.92);
+  border:1px solid rgba(0,0,0,.06);
+  border-radius:12px;
+  height:36px;
+  padding:0 10px;
+  font-weight:700;
+}
+
+/* スマホ時は右上へ逃がす */
+@media (max-width:820px){
+  body.hero-header #langSelect{ left:auto; right:12px; top:72px; }
+}
 
 </style>
   <script src="lang.js" defer></script>
 <script>document.addEventListener('DOMContentLoaded',()=>BL_I18N.i18nApply());</script>
 </head>
-<body><body class="hero-header">
+<body class="hero-header">
 
 <header>
   <div class="container hwrap">

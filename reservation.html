@@ -69,9 +69,12 @@ footer{margin:12px 0 30px;color:var(--muted);font-size:12px}
   </div>
 
   <script>
+// ← この関数を丸ごと差し替え
 async function fetchTaken(salonId, ymd){
-  const url = `${GAS_BASE}?kind=bookings.range&key=${GAS_KEY}&salonId=${encodeURIComponent(salonId)}&date=${ymd}`;
-  const res = await fetch(url); const j = await res.json();
+  // GAS_URL は同ページで定義済み（meta or URL引数から来る）
+  const url = `${GAS_URL}?kind=bookings.range&key=${encodeURIComponent(GAS_KEY)}&salonId=${encodeURIComponent(salonId)}&date=${encodeURIComponent(ymd)}`;
+  const res = await fetch(url);
+  const j = await res.json();
   return (j.ok && Array.isArray(j.items)) ? new Set(j.items) : new Set();
 }
 </script>
@@ -252,7 +255,7 @@ document.getElementById('btnConfirm').addEventListener('click', async ()=>{
   function getWeekStart(d){ const dt = new Date(d); const day=(dt.getDay()+6)%7; dt.setDate(dt.getDate()-day); dt.setHours(0,0,0,0); return dt; }
   function fmtHm(h,m){ return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); }
 
-  function buildWeek(offset){
+  async function buildWeek(offset){
     const today = new Date();
     const ws = getWeekStart(addDays(today, offset*7));
     const we = addDays(ws, 6);
@@ -266,6 +269,17 @@ document.getElementById('btnConfirm').addEventListener('click', async ()=>{
       }
     }
     const days = Array.from({length:7},(_,i)=>addDays(ws,i));
+　  // 各日の “予約済みHH:mm” セットを事前取得
+const toYmd = d => new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString().slice(0,10);
+// salonId は同ページ上部で URL から取得済み（未指定なら空文字）
+const takenMap = new Map();
+await Promise.all(
+  days.map(async d => {
+    const ymd = toYmd(d);
+    const set = await fetchTaken(salonId || '', ymd);
+    takenMap.set(ymd, set);
+  })
+);
 
     const table = document.createElement('table');
     const thead=document.createElement('thead'), tbody=document.createElement('tbody');
@@ -287,6 +301,15 @@ document.getElementById('btnConfirm').addEventListener('click', async ()=>{
         const btn=document.createElement('button');
         btn.className='timebtn';
         btn.textContent='◯';
+        // 予約済みなら “×” かつ disabled
+const ymd = (new Date(d.getFullYear(), d.getMonth(), d.getDate())).toISOString().slice(0,10);
+const hhmm = fmtHm(h,m);
+const takenSet = takenMap.get(ymd);
+if (takenSet && takenSet.has(hhmm)) {
+  btn.textContent = '×';
+  btn.disabled = true;
+  btn.setAttribute('aria-disabled','true');
+}
         btn.addEventListener('click', ()=>{
           const dt = new Date(d); dt.setHours(h,m,0,0);
           const iso = dt.toISOString();

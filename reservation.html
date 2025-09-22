@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:wght@500;600&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
 
 <!-- Google Apps Script WebApp URL をここに（なければ URL 引数 ?gas=...&key=... を使用） -->
-<meta name="bl-sheet-hook" content="">
+<meta name="bl-sheet-hook" content="https://script.google.com/macros/s/AKfycbwWRpfcZMsGxNqGJ5aNjRT1Y1PChDTqtQE3e0S7sUDAMei8s1wOr6lpKMnOaI1Z-6o/exec">
 <style>
 /* Elegant timetable typography */
 #hpWeekTitle{font-family:'Playfair Display','Shippori Mincho',serif;font-weight:600;letter-spacing:.02em}
@@ -69,15 +69,27 @@ footer{margin:12px 0 30px;color:var(--muted);font-size:12px}
   </div>
 
   <script>
-// ← この関数を丸ごと差し替え
 async function fetchTaken(salonId, ymd){
-  // GAS_URL は同ページで定義済み（meta or URL引数から来る）
-  const url = `${GAS_URL}?kind=bookings.range&key=${encodeURIComponent(GAS_KEY)}&salonId=${encodeURIComponent(salonId)}&date=${encodeURIComponent(ymd)}`;
-  const res = await fetch(url);
-  const j = await res.json();
-  return (j.ok && Array.isArray(j.items)) ? new Set(j.items) : new Set();
+  try {
+    // GASの設定がまだなら、空集合を返して「とりあえず表示だけ」続行
+    if (!GAS_URL || !GAS_KEY) return new Set();
+
+    const url = `${GAS_URL}?kind=bookings.range`
+              + `&key=${encodeURIComponent(GAS_KEY)}`
+              + `&salonId=${encodeURIComponent(salonId||'')}`
+              + `&date=${encodeURIComponent(ymd)}`;
+
+    const res = await fetch(url, { credentials: 'omit' });
+    if (!res.ok) return new Set();          // 404/500でも描画は継続
+
+    const j = await res.json().catch(()=>({}));
+    return (j.ok && Array.isArray(j.items)) ? new Set(j.items) : new Set();
+  } catch (_e) {
+    return new Set(); // 例外が出ても空集合で続行
+  }
 }
 </script>
+
 
   <div class="card" id="hpGridWrap">
     <h2 data-i18n="reserve.select_dt" style="margin:0 0 8px;font-size:18px">Select date &amp; time</h2>

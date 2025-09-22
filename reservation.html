@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:wght@500;600&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
 
 <!-- Google Apps Script WebApp URL をここに（なければ URL 引数 ?gas=...&key=... を使用） -->
-<meta name="bl-sheet-hook" content="https://script.google.com/macros/s/AKfycbwWRpfcZMsGxNqGJ5aNjRT1Y1PChDTqtQE3e0S7sUDAMei8s1wOr6lpKMnOaI1Z-6o/exec">
+<meta name="bl-sheet-hook" content="">
 <style>
 /* Elegant timetable typography */
 #hpWeekTitle{font-family:'Playfair Display','Shippori Mincho',serif;font-weight:600;letter-spacing:.02em}
@@ -32,6 +32,11 @@ input[type="email"]{height:40px;border-radius:12px;border:1px solid var(--stroke
 #msg{white-space:pre-line}
 footer{margin:12px 0 30px;color:var(--muted);font-size:12px}
 /* weekly timetable */
+/* disabled slot */
+.timebtn[aria-disabled="true"]{
+  color:#bbb; border-color:#eee; background:#f7f7f7;
+  cursor:not-allowed; box-shadow:none;
+}
 #hpGridWrap{max-width:860px;margin:16px auto;background:#fff;border:1px solid var(--stroke);border-radius:14px;box-shadow:0 10px 24px rgba(49,14,16,.08);padding:14px 16px}
 #hpGrid{overflow:auto}
 #hpGrid table{width:auto;border-collapse:separate;border-spacing:0;display:table;margin:0 auto}
@@ -44,7 +49,7 @@ footer{margin:12px 0 30px;color:var(--muted);font-size:12px}
 .headerbar .btn{height:36px;padding:0 12px;font-weight:700}
 .small{font-size:12px;color:var(--muted)}
 </style>
-  <script defer src="/lang.js"></script>
+  <script src="lang.js" defer></script>
 <script>document.addEventListener('DOMContentLoaded',()=>BL_I18N.i18nApply());</script>
 </head>
 <body>
@@ -67,29 +72,6 @@ footer{margin:12px 0 30px;color:var(--muted);font-size:12px}
     <input id="email" type="email" data-i18n-ph="ui.email" placeholder="you@example.com"/>
     <p class="small" data-i18n="reserve.note">※空でも予約はできます。メールを入れると <code>bookings</code> シートに反映されます。</p>
   </div>
-
-  <script>
-async function fetchTaken(salonId, ymd){
-  try {
-    // GASの設定がまだなら、空集合を返して「とりあえず表示だけ」続行
-    if (!GAS_URL || !GAS_KEY) return new Set();
-
-    const url = `${GAS_URL}?kind=bookings.range`
-              + `&key=${encodeURIComponent(GAS_KEY)}`
-              + `&salonId=${encodeURIComponent(salonId||'')}`
-              + `&date=${encodeURIComponent(ymd)}`;
-
-    const res = await fetch(url, { credentials: 'omit' });
-    if (!res.ok) return new Set();          // 404/500でも描画は継続
-
-    const j = await res.json().catch(()=>({}));
-    return (j.ok && Array.isArray(j.items)) ? new Set(j.items) : new Set();
-  } catch (_e) {
-    return new Set(); // 例外が出ても空集合で続行
-  }
-}
-</script>
-
 
   <div class="card" id="hpGridWrap">
     <h2 data-i18n="reserve.select_dt" style="margin:0 0 8px;font-size:18px">Select date &amp; time</h2>
@@ -151,49 +133,28 @@ document.getElementById('v_price').textContent = priceJPY ? fmtCurrencyFromJPY(p
 const GAS_URL = document.querySelector('meta[name=bl-sheet-hook]')?.content || p.get('gas') || '';
 const GAS_KEY = p.get('key') || localStorage.getItem('bl_gas_key') || '';
 
-
 // ===== シート反映（bookings 追記） =====
-  // 追加する2行（下の完成版ハンドラの先頭、email取得直後に）
-if (priceJPY && Number(priceJPY) > 20000) {
-  alert(`金額が上限 (20,000 JPY) を超えています。別メニューをご検討ください。`);
-  return;
-}
-
-async function recordBookingToSheet({ bookingId, email, dateText }) {
+async function recordBookingToSheet({ bookingId, email }){
   if(!GAS_URL){ console.warn('GAS_URL not set'); return; }
-  const payload = {
-    key: GAS_KEY,
-    kind: 'booking',               // ← 既存の doPost に合わせて 'booking' を使う
-    data: {
-      bookingId,                   // 予約ID
-      date: dateText || '',        // 予約日時（文字列）
-      menu:  itemName || '',       // ← 画面上のメニュー名
-      minutes: 0,                  // （必要なら予約時間を入れる）
-      amountJPY: priceJPY || 0,    // 目安金額（数値）
-      email: email || '',
-      name:  '',                   // 予約者名（未入力なら空）
-      customerId: '',              // 後から埋まる想定なら空でOK
-      status: 'reserved'           // 初期ステータス
-    }
-  };
   const res = await fetch(GAS_URL, {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
-    body: JSON.stringify(payload)
+    body: JSON.stringify({
+      key: GAS_KEY,
+      kind: 'booking_create',
+      bookingId,
+      email
+    })
   });
   const j = await res.json().catch(()=>({}));
-  if(!j || !j.ok) throw new Error((j&&j.error)||'booking failed');
+  if(!j || !j.ok) throw new Error((j&&j.error)||'booking_create failed');
 }
-</script>
 
-<script>
 // ===== UI 操作 =====
 function setMsg(t, isErr=false){ const el=document.getElementById('msg'); el.textContent=t||''; el.style.color=isErr?'#74070E':'#2E1A16'; }
 function uid(n=8){ const s='23456789ABCDEFGHJKLMNPQRSTUVWXYZ'; return Array.from(crypto.getRandomValues(new Uint8Array(n))).map(b=>s[b%s.length]).join(''); }
-</script>
-  
 
-<script>
+
 document.getElementById('btnConfirm').addEventListener('click', async ()=>{
   const email = (document.getElementById('email').value||'').trim();
   const dtIso = localStorage.getItem('reserve_selected') || '';
@@ -248,6 +209,21 @@ document.getElementById('btnConfirm').addEventListener('click', async ()=>{
   const btnPrev = document.getElementById('hpPrev');
   const btnNext = document.getElementById('hpNext');
   const startHour = 9, endHour = 18, stepMin = 30;
+// 予約済みタイムスロットを取得（実装がまだ無い場合は空セットを返す）
+// ymd = '2025-09-22' / hhmm = '09:30'
+async function fetchTakenSlots(salonId, ymd){
+  // ▼バックエンドと繋ぐまでは空（＝全部 ◯）
+  return new Set();
+
+  // 例）GASに作った /?kind=taken&salonId=S1&ymd=2025-09-22 を叩く想定
+  // const url = `${GAS_URL}?key=${encodeURIComponent(GAS_KEY)}&kind=taken&salonId=${encodeURIComponent(salonId)}&ymd=${encodeURIComponent(ymd)}`;
+  // const j = await fetch(url).then(r=>r.json()).catch(()=>({ok:false,items:[]}));
+  // if(!j.ok) return new Set();
+  // return new Set(j.items); // ["09:00","09:30",...]
+}
+function fmtYmd(d){ return d.toISOString().slice(0,10); }
+function hhmmOf(h,m){ return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); }
+
   let weekOffset = 0;
 
   function addDays(d, n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
@@ -268,17 +244,12 @@ document.getElementById('btnConfirm').addEventListener('click', async ()=>{
       }
     }
     const days = Array.from({length:7},(_,i)=>addDays(ws,i));
-　  // 各日の “予約済みHH:mm” セットを事前取得
-const toYmd = d => new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString().slice(0,10);
-// salonId は同ページ上部で URL から取得済み（未指定なら空文字）
-const takenMap = new Map();
-await Promise.all(
-  days.map(async d => {
-    const ymd = toYmd(d);
-    const set = await fetchTaken(salonId || '', ymd);
-    takenMap.set(ymd, set);
-  })
-);
+    // 各日ごとの予約済み集合を取得
+const takenMap = {};
+for (const d of days){
+  const ymd = fmtYmd(d);
+  takenMap[ymd] = await fetchTakenSlots(salonId, ymd);
+}
 
     const table = document.createElement('table');
     const thead=document.createElement('thead'), tbody=document.createElement('tbody');
@@ -300,15 +271,15 @@ await Promise.all(
         const btn=document.createElement('button');
         btn.className='timebtn';
         btn.textContent='◯';
-        // 予約済みなら “×” かつ disabled
-const ymd = (new Date(d.getFullYear(), d.getMonth(), d.getDate())).toISOString().slice(0,10);
-const hhmm = fmtHm(h,m);
-const takenSet = takenMap.get(ymd);
-if (takenSet && takenSet.has(hhmm)) {
+// その日のその時刻が満枠なら × で無効化
+const ymd = fmtYmd(d);
+const hhmm = hhmmOf(h,m);
+if (takenMap[ymd] && takenMap[ymd].has(hhmm)) {
   btn.textContent = '×';
   btn.disabled = true;
   btn.setAttribute('aria-disabled','true');
 }
+
         btn.addEventListener('click', ()=>{
           const dt = new Date(d); dt.setHours(h,m,0,0);
           const iso = dt.toISOString();
@@ -334,9 +305,6 @@ if (takenSet && takenSet.has(hhmm)) {
 })();
 </script>
   
-<script src="lang.js"></script>
-<script>document.addEventListener('DOMContentLoaded',()=>BL_I18N.i18nApply());</script>
-
 
 </body>
 </html>

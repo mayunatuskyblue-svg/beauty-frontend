@@ -49,6 +49,64 @@
   </style>
  <script src="lang.js" defer></script>
 <script>document.addEventListener('DOMContentLoaded',()=>BL_I18N.i18nApply());</script>
+  <style>
+/* --- BeautyLanka UI Booster (non-breaking) --- */
+:root{
+  --base:#F7F1E1; --ink:#2E1A16; --stroke:#eadfca; --teal:#246A73; --muted:#6f5a54; --blue:#0A66FF;
+  --accent-1:#8AD5CD; --accent-2:#F9C6B8; --accent-3:#E9D7A5; --accent-4:#B6E3FF;
+  --glass-bg:rgba(255,255,255,.72); --glass-brd:rgba(0,0,0,.06);
+}
+body{background:var(--base);color:var(--ink)}
+/* 背景の装飾（描画のみ。レイアウトに影響なし） */
+.bg-radials:before,.bg-radials:after{content:"";position:fixed;inset:auto;z-index:-2;pointer-events:none;filter:blur(40px);opacity:.38}
+.bg-radials:before{left:-120px;top:-120px;width:420px;height:420px;background:
+  radial-gradient(120px 120px at 40% 40%, var(--accent-1), transparent 70%),
+  radial-gradient(160px 160px at 70% 60%, var(--accent-2), transparent 72%)}
+.bg-radials:after{right:-120px;bottom:-120px;width:460px;height:460px;background:
+  radial-gradient(140px 140px at 30% 40%, var(--accent-4), transparent 70%),
+  radial-gradient(180px 180px at 70% 60%, var(--accent-3), transparent 72%)}
+.grain{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.07;mix-blend-mode:multiply;
+  background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140" viewBox="0 0 140 140"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="table" tableValues="0 0 0 .55 .15 0"/></feComponentTransfer></filter><rect width="100%" height="100%" filter="url(%23n)"/></svg>');
+  background-size:160px 160px}
+
+/* ボタン/入力：既存 .btn や button に上書き“しすぎない”控えめ装飾 */
+.btn, button, a.btn, input[type="button"].btn, input[type="submit"].btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:.4em;
+  height:40px;border-radius:12px;border:1px solid var(--stroke);
+  background:#fff;padding:0 12px;font-weight:800;cursor:pointer;
+  box-shadow:0 6px 14px rgba(0,0,0,.06); transition:.15s ease-in-out;
+}
+.btn.primary{background:var(--teal);border-color:var(--teal);color:#fff;box-shadow:0 10px 24px rgba(36,106,115,.18)}
+.btn:hover{transform:translateY(-1px)}
+/* カード風の箱（既存の .card があるページはそちら優先。無いページ用の汎用クラス） */
+.bl-card{background:#fff;border:1px solid var(--stroke);border-radius:16px;box-shadow:0 12px 28px rgba(0,0,0,.08);padding:16px}
+
+/* 入力類の小綺麗化（既存の幅やIDは触らない） */
+input[type="text"],input[type="email"],input[type="tel"],input[type="password"],select,textarea{
+  border:1px solid var(--stroke);border-radius:12px;padding:10px 12px;background:#fff;font:inherit
+}
+input:focus,select:focus,textarea:focus{outline:none;border-color:color-mix(in oklab,var(--teal) 55%,white);
+  box-shadow:0 0 0 3px color-mix(in oklab,var(--teal) 20%, transparent)}
+
+/* テーブルの視認性（ゼブラは .zebra を付けた時だけ有効） */
+table.zebra tbody tr:nth-child(even){background:#faf6ef}
+table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
+
+/* 小さめのタグチップ（表示用。機能なし） */
+.tag{padding:6px 10px;border-radius:999px;border:1px solid var(--stroke);font-size:12px;background:#fff}
+
+/* ステップ風パンくず（必要なページだけHTMLを足せば見栄えUP） */
+.bl-steps{display:flex;gap:8px;align-items:center;color:var(--muted);font-weight:700}
+.bl-steps .dot{width:8px;height:8px;border-radius:50%;background:var(--teal);opacity:.35}
+.bl-steps .on{opacity:1}
+</style>
+<style>
+.form{
+  background:var(--glass-bg); border:1px solid var(--glass-brd);
+  backdrop-filter:blur(8px);
+}
+</style>
+
 </head>
 <body>
 <div class="container">
@@ -249,6 +307,9 @@ if(pre){
   dlg?.addEventListener('close', ()=> { if(frame) frame.src='about:blank'; });
 })();
 </script>
+<!-- decorative background (purely visual) -->
+<div class="bg-radials"></div>
+<div class="grain"></div>
 
 </body>
 </html>

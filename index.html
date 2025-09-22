@@ -111,6 +111,12 @@ footer{color:#6b5e55;text-align:center;font-size:12px;margin:12px 0}
 .splash .sri-between-splash img{width:120px;opacity:.9;filter:drop-shadow(0 4px 8px rgba(0,0,0,.4))}
 @media(max-width:820px){.splash .sri-between-splash img{width:72px}}
 @media(max-width:820px){ .splash .headline h1{font-size:40px} }
+  /* make headline (line art + title) always appear above the video */
+.splash .headline { position: relative; z-index: 1; }
+/* the inline image class actually used in HTML is .sri-center */
+.splash .sri-center { display:block; width:120px; margin:10px auto 12px; opacity:.9;
+  filter:drop-shadow(0 4px 8px rgba(0,0,0,.4));
+}
 
 /* second Sri outline (page decoration) */
 .sri2{position:fixed;left:3%;bottom:3%;width:140px;opacity:.12;pointer-events:none;filter:drop-shadow(0 6px 10px rgba(0,0,0,.2));animation:floaty 10s ease-in-out infinite}
@@ -226,7 +232,7 @@ body.hero-header .header-controls{ position:absolute; left:16px; top:158px; z-in
 <!-- fullscreen intro splash (first visit per session) -->
 <div id="splash" class="splash" role="dialog" aria-label="Intro video">
   <video id="splashVid" playsinline autoplay muted>
-    <source id="splashSrc" src.src='./hero.mp4' type="video/mp4" />
+    <source id="splashSrc" src="/assets/video/hero.mp4" type="video/mp4" />
   </video>
   <div class="headline">
     <img class="sri-center" src="/assets/img/sri-outline.svg" alt="Sri Lanka line art">

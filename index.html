@@ -211,12 +211,22 @@ body.hero-header .nav-right .btn.primary{
   border-color:var(--teal) !important;
   color:#fff !important;
 }
-/* 言語セレクトをロゴのちょい下へ */
+/* ロゴを左端に寄せる */
+body.hero-header .logo-img{
+  position:absolute;
+  top:16px;
+  left:16px;   /* ← 左端に固定 */
+  width:120px; /* サイズはそのまま */
+  height:auto;
+  z-index:10;
+}
+
+/* 言語セレクト：ロゴの下 */
 body.hero-header #langSelect{
   position:absolute;
-  left:16px;      /* ロゴの左揃えに合わせる */
-  top:72px;       /* 好みで 64–90px 程度で微調整 */
-  z-index:6;
+  left:16px;   /* ロゴと縦ラインを揃える */
+  top:100px;   /* ロゴのすぐ下（好みで調整） */
+  z-index:9;
   background:rgba(255,255,255,.92);
   border:1px solid rgba(0,0,0,.06);
   border-radius:12px;
@@ -225,10 +235,36 @@ body.hero-header #langSelect{
   font-weight:700;
 }
 
-/* スマホ時は右上へ逃がす */
-@media (max-width:820px){
-  body.hero-header #langSelect{ left:auto; right:12px; top:72px; }
+/* 通貨セレクト：言語の下 */
+body.hero-header .header-controls{
+  position:absolute;
+  left:16px;
+  top:150px;   /* 言語より下げる。数値は調整可 */
+  display:flex !important;
+  align-items:center;
+  gap:8px;
+  padding:6px 10px;
+  background:rgba(255,255,255,.92);
+  border:1px solid rgba(0,0,0,.06);
+  border-radius:12px;
+  box-shadow:0 2px 10px rgba(0,0,0,.06);
+  z-index:8;
 }
+
+/* スマホ時は右上にまとめて逃がす */
+@media (max-width:820px){
+  body.hero-header .logo-img{
+    position:static;   /* モバイル時は崩れ防止で通常配置 */
+    width:100px;
+  }
+  body.hero-header #langSelect{
+    left:auto; right:12px; top:76px;
+  }
+  body.hero-header .header-controls{
+    left:auto; right:12px; top:120px;
+  }
+}
+
 
 </style>
   <script src="lang.js" defer></script>

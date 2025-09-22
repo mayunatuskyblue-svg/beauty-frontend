@@ -139,8 +139,14 @@ document.getElementById('v_price').textContent = priceJPY ? fmtCurrencyFromJPY(p
 const GAS_URL = document.querySelector('meta[name=bl-sheet-hook]')?.content || p.get('gas') || '';
 const GAS_KEY = p.get('key') || localStorage.getItem('bl_gas_key') || '';
 
-<script>
+
 // ===== シート反映（bookings 追記） =====
+  // 追加する2行（下の完成版ハンドラの先頭、email取得直後に）
+if (priceJPY && Number(priceJPY) > 20000) {
+  alert(`金額が上限 (20,000 JPY) を超えています。別メニューをご検討ください。`);
+  return;
+}
+
 async function recordBookingToSheet({ bookingId, email, dateText }) {
   if(!GAS_URL){ console.warn('GAS_URL not set'); return; }
   const payload = {
@@ -174,26 +180,7 @@ function setMsg(t, isErr=false){ const el=document.getElementById('msg'); el.tex
 function uid(n=8){ const s='23456789ABCDEFGHJKLMNPQRSTUVWXYZ'; return Array.from(crypto.getRandomValues(new Uint8Array(n))).map(b=>s[b%s.length]).join(''); }
 </script>
   
-<script>
-const FRONT_MAX_JPY = 20000;  // ← 好きな上限に
 
-document.getElementById('btnConfirm').addEventListener('click', async ()=>{
-  const email = (document.getElementById('email').value||'').trim();
-
-  // ← ここで上限チェック
-  if (priceJPY && Number(priceJPY) > FRONT_MAX_JPY) {
-    alert(`金額が上限 (${FRONT_MAX_JPY.toLocaleString()} JPY) を超えています。別メニューをご検討ください。`);
-    return;
-  }
-
-  const dtIso = localStorage.getItem('reserve_selected') || '';
-  const dateText = dtIso ? new Date(dtIso).toLocaleString() : (dateTextParam || '');
-  ...
-  // シート送信も上で置き換えた関数に合わせ、第三引数 dateText を渡す
-  await recordBookingToSheet({ bookingId: bid, email, dateText });
-  ...
-});
-</script>
 <script>
 document.getElementById('btnConfirm').addEventListener('click', async ()=>{
   const email = (document.getElementById('email').value||'').trim();

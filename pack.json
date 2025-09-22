@@ -1,0 +1,9 @@
+{
+  "type": "module",
+  "dependencies": {
+    "express": "^4"
+  },
+  "scripts": {
+    "start": "node server.mjs"
+  }
+}

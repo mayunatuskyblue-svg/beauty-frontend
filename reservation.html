@@ -128,27 +128,60 @@ document.getElementById('v_price').textContent = priceJPY ? fmtCurrencyFromJPY(p
 const GAS_URL = document.querySelector('meta[name=bl-sheet-hook]')?.content || p.get('gas') || '';
 const GAS_KEY = p.get('key') || localStorage.getItem('bl_gas_key') || '';
 
+<script>
 // ===== シート反映（bookings 追記） =====
-async function recordBookingToSheet({ bookingId, email }){
+async function recordBookingToSheet({ bookingId, email, dateText }) {
   if(!GAS_URL){ console.warn('GAS_URL not set'); return; }
+  const payload = {
+    key: GAS_KEY,
+    kind: 'booking',               // ← 既存の doPost に合わせて 'booking' を使う
+    data: {
+      bookingId,                   // 予約ID
+      date: dateText || '',        // 予約日時（文字列）
+      menu:  itemName || '',       // ← 画面上のメニュー名
+      minutes: 0,                  // （必要なら予約時間を入れる）
+      amountJPY: priceJPY || 0,    // 目安金額（数値）
+      email: email || '',
+      name:  '',                   // 予約者名（未入力なら空）
+      customerId: '',              // 後から埋まる想定なら空でOK
+      status: 'reserved'           // 初期ステータス
+    }
+  };
   const res = await fetch(GAS_URL, {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({
-      key: GAS_KEY,
-      kind: 'booking_create',
-      bookingId,
-      email
-    })
+    body: JSON.stringify(payload)
   });
   const j = await res.json().catch(()=>({}));
-  if(!j || !j.ok) throw new Error((j&&j.error)||'booking_create failed');
+  if(!j || !j.ok) throw new Error((j&&j.error)||'booking failed');
 }
+</script>
+
 
 // ===== UI 操作 =====
 function setMsg(t, isErr=false){ const el=document.getElementById('msg'); el.textContent=t||''; el.style.color=isErr?'#74070E':'#2E1A16'; }
 function uid(n=8){ const s='23456789ABCDEFGHJKLMNPQRSTUVWXYZ'; return Array.from(crypto.getRandomValues(new Uint8Array(n))).map(b=>s[b%s.length]).join(''); }
 
+<script>
+const FRONT_MAX_JPY = 20000;  // ← 好きな上限に
+
+document.getElementById('btnConfirm').addEventListener('click', async ()=>{
+  const email = (document.getElementById('email').value||'').trim();
+
+  // ← ここで上限チェック
+  if (priceJPY && Number(priceJPY) > FRONT_MAX_JPY) {
+    alert(`金額が上限 (${FRONT_MAX_JPY.toLocaleString()} JPY) を超えています。別メニューをご検討ください。`);
+    return;
+  }
+
+  const dtIso = localStorage.getItem('reserve_selected') || '';
+  const dateText = dtIso ? new Date(dtIso).toLocaleString() : (dateTextParam || '');
+  ...
+  // シート送信も上で置き換えた関数に合わせ、第三引数 dateText を渡す
+  await recordBookingToSheet({ bookingId: bid, email, dateText });
+  ...
+});
+</script>
 
 document.getElementById('btnConfirm').addEventListener('click', async ()=>{
   const email = (document.getElementById('email').value||'').trim();

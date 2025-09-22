@@ -106,6 +106,11 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
   backdrop-filter:blur(8px);
 }
 </style>
+<style>
+.btn{ color: var(--ink); }
+.btn.primary{ color:#fff; }
+select.btn { color: var(--ink); } /* 言語セレクトの見え方安定化 */
+</style>
 
 </head>
 <body>
@@ -121,8 +126,10 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
 
  <div class="form">
   <div style="display:flex;justify-content:center;gap:10px;margin-bottom:16px">
-    <button type="button" id="tabPassword" class="btn" style="flex:1;background:#246A73" data-i18n="auth.login_with_password">パスワード登録</button>
-    <button type="button" id="tabMagic" class="btn" style="flex:1;background:#999" data-i18n="auth.login_with_magic">メールリンク登録</button>
+    <button type="button" id="tabPassword" class="btn" style="flex:1;background:#246A73"
+        data-i18n="auth.login_with_password" data-i18n-fallback="パスワード登録">パスワード登録</button>
+<button type="button" id="tabMagic" class="btn" style="flex:1;background:#999"
+        data-i18n="auth.login_with_magic" data-i18n-fallback="メールリンク登録">メールリンク登録</button>
   </div>
 
   <!-- パスワード登録フォーム -->
@@ -310,6 +317,16 @@ if(pre){
 <!-- decorative background (purely visual) -->
 <div class="bg-radials"></div>
 <div class="grain"></div>
+<script>
+document.addEventListener('DOMContentLoaded', ()=>{
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    if((el.textContent||'').trim()===''){
+      const fb = el.getAttribute('data-i18n-fallback');
+      if(fb && fb.trim()!=='') el.textContent = fb;
+    }
+  });
+});
+</script>
 
 </body>
 </html>

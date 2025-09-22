@@ -113,6 +113,11 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
 .thumbs img{transition:transform .12s ease, box-shadow .2s}
 .thumbs img:hover{transform:translateY(-2px); box-shadow:0 8px 18px rgba(0,0,0,.12)}
 </style>
+<style>
+/* ensure button label visible */
+.btn{ color: var(--ink); }
+.btn.primary{ color:#fff; }
+</style>
 
 </head>
 <body>
@@ -165,9 +170,11 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
 
         <div class="space"></div>
         <div>
-          <a href="#" class="btn secondary" id="btnBack" data-i18n="details.back_to_list">一覧に戻る</a>
-          <a href="#" class="btn" id="btnBook" data-i18n="details.go_reserve">予約へ進む</a>
-        </div>
+          <a href="#" class="btn secondary" id="btnBack"
+   data-i18n="details.back_to_list" data-i18n-fallback="一覧に戻る">一覧に戻る</a>
+<a href="#" class="btn" id="btnBook"
+   data-i18n="details.go_reserve" data-i18n-fallback="予約へ進む">予約へ進む</a>
+ </div>
 
         <div class="space"></div>
         <div id="points" class="muted"></div>
@@ -582,6 +589,17 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
   <!-- decorative background (purely visual) -->
 <div class="bg-radials"></div>
 <div class="grain"></div>
+<script>
+/* i18nの保険：翻訳が空なら、元のテキスト or data-i18n-fallback を維持 */
+document.addEventListener('DOMContentLoaded', ()=>{
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    if((el.textContent||'').trim()===''){
+      const fb = el.getAttribute('data-i18n-fallback');
+      if(fb && fb.trim()!=='') el.textContent = fb;
+    }
+  });
+});
+</script>
 
 </body>
 </html>

@@ -68,6 +68,14 @@ footer{margin:12px 0 30px;color:var(--muted);font-size:12px}
     <p class="small" data-i18n="reserve.note">※空でも予約はできます。メールを入れると <code>bookings</code> シートに反映されます。</p>
   </div>
 
+  <script>
+async function fetchTaken(salonId, ymd){
+  const url = `${GAS_BASE}?kind=bookings.range&key=${GAS_KEY}&salonId=${encodeURIComponent(salonId)}&date=${ymd}`;
+  const res = await fetch(url); const j = await res.json();
+  return (j.ok && Array.isArray(j.items)) ? new Set(j.items) : new Set();
+}
+</script>
+
   <div class="card" id="hpGridWrap">
     <h2 data-i18n="reserve.select_dt" style="margin:0 0 8px;font-size:18px">Select date &amp; time</h2>
     <div class="headerbar">
@@ -182,7 +190,7 @@ document.getElementById('btnConfirm').addEventListener('click', async ()=>{
   ...
 });
 </script>
-
+<script>
 document.getElementById('btnConfirm').addEventListener('click', async ()=>{
   const email = (document.getElementById('email').value||'').trim();
   const dtIso = localStorage.getItem('reserve_selected') || '';

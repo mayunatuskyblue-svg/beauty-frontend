@@ -76,9 +76,19 @@ body{background:var(--base);color:var(--ink)}
 /* 共通カード（既存 .card があるページはそのまま強化） */
 .card{ background:#fff; border:1px solid var(--stroke); border-radius:16px; box-shadow:0 10px 24px rgba(49,14,16,.08) }
 </style>
+<style>
+/* 旧ロゴ枠を完全に隠す＆スペースも詰める */
+.brand-left, .logo-box { display:none !important; }
+.hwrap { justify-content: flex-end; } /* 左が空くのを回避 */
+</style>
 
 </head><body>
-<header><div class="hwrap" style="max-width:760px;margin:0 auto;"><a class="brand-left" href="./index.html"><div class="logo-box"><img src="assets/images/logo_mark.png" alt=""></div></a><div></div></div></header>
+  <header>
+  <div class="hwrap" style="max-width:760px;margin:0 auto;justify-content:flex-end">
+    <!-- ロゴ枠を撤去。右側スペースだけ残す -->
+  </div>
+</header>
+
   <div class="badge" aria-hidden="true" style="margin-bottom:10px">
   <span class="dot"></span><span data-i18n="thanks.badge">予約が確定しました</span>
 </div>

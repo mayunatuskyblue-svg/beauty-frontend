@@ -165,11 +165,12 @@ async function recordBookingToSheet({ bookingId, email, dateText }) {
 }
 </script>
 
-
+<script>
 // ===== UI 操作 =====
 function setMsg(t, isErr=false){ const el=document.getElementById('msg'); el.textContent=t||''; el.style.color=isErr?'#74070E':'#2E1A16'; }
 function uid(n=8){ const s='23456789ABCDEFGHJKLMNPQRSTUVWXYZ'; return Array.from(crypto.getRandomValues(new Uint8Array(n))).map(b=>s[b%s.length]).join(''); }
-
+</script>
+  
 <script>
 const FRONT_MAX_JPY = 20000;  // ← 好きな上限に
 

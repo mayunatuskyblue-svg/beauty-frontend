@@ -100,6 +100,17 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
   width:100%; height:120%; object-fit:cover; object-position:50% 20%; display:block;
 }
 </style>
+  <style>
+/* 画像が落ちた時の背景フォールバック（絶対/相対の両方） */
+.logo-box{
+  background:#fff url("/assets/images/logo_mark.png") center/contain no-repeat;
+}
+@supports (background: url("./assets/images/logo_mark.png")){
+  .logo-box{ background-image:url("./assets/images/logo_mark.png"); }
+}
+.logo-box img{ width:100%; height:120%; object-fit:cover; object-position:50% 20%; display:block; }
+</style>
+
 <link rel="preload" as="image" href="/assets/images/logo_mark.png">
 
 </head>
@@ -107,7 +118,25 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
 <header>
   <div class="container hwrap">
    <a class="brand-left" href="./index.html" aria-label="BeautyLanka">
-  <div class="logo-box"><img src="/assets/images/logo_mark.png" alt=""></div>
+  <a class="brand-left" href="./index.html" aria-label="BeautyLanka">
+  <div class="logo-box">
+    <img id="logoImg"
+         src="/assets/images/logo_mark.png"
+         srcset="/assets/images/logo_mark.png 1x, ./assets/images/logo_mark.png 1x"
+         alt="BeautyLanka"
+         onerror="(function(img){
+           img.onerror=null;
+           // 相対パスに切替
+           img.src='./assets/images/logo_mark.png';
+           // それも失敗したら背景に描画（白四角回避）
+           img.addEventListener('error', function(){
+             img.style.display='none';
+             var box = img.closest('.logo-box');
+             if(box){ box.style.backgroundImage='url(./assets/images/logo_mark.png)'; }
+           }, {once:true});
+         })(this)">
+  </div>
+</a>
 </a>
 
     <nav class="nav-right"><button class="btn" onclick="location.href='index.html'" data-i18n="ui.back_to_search">検索に戻る</button></nav>

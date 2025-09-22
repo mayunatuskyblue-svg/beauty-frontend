@@ -149,12 +149,69 @@ footer{color:#6b5e55;text-align:center;font-size:12px;margin:12px 0}
 }
 .hero-head .container{ position:relative; z-index:1; }  /* ← 文字を前面に */
 body.no-scroll{overflow:hidden}
+/* === HERO HEADER MODE (overlay) === */
+body.hero-header header{
+  position:absolute;            /* ヒーロー上に重ねる */
+  top:8px; left:0; right:0;
+  background:transparent;       /* 白帯を消す */
+  border:0;
+  backdrop-filter:none;
+  box-shadow:none;
+}
+body.hero-header .hwrap{ padding:0 0; }
+body.hero-header .logo-img{ width:120px; border-radius:12px; box-shadow:none; } /* 好みで微調整 */
+body.hero-header .nav-right .btn,
+body.hero-header .nav-right .sel{
+  background:rgba(255,255,255,.92);  /* 青の上でも視認性◎ */
+  border-color:rgba(0,0,0,.08);
+}
+
+/* ヘッダーを上に重ねる分、ヒーローに少し上余白を追加 */
+body.hero-header .hero-head{ padding-top:96px; }
+@media (max-width:820px){
+  body.hero-header .hero-head{ padding-top:80px; }
+  body.hero-header .logo-img{ width:100px; }
+}
+/* Currency をヒーロー上に下げて表示 */
+body.hero-header .header-controls{
+  position:absolute;
+  left:16px;                 /* ロゴの近くに */
+  top:88px;                  /* 数値は好みで微調整：70–110pxあたり */
+  display:flex !important;   /* 非表示ルールが残っていても出す */
+  gap:8px;
+  align-items:center;
+  padding:6px 10px;
+  background:rgba(255,255,255,.92);
+  border:1px solid rgba(0,0,0,.06);
+  border-radius:12px;
+  box-shadow:0 2px 10px rgba(0,0,0,.06);
+  z-index:5;                 /* ヒーロー画像より手前に */
+}
+body.hero-header .header-controls label{
+  margin:0;
+  font-size:12px;
+  opacity:.8;
+}
+body.hero-header .header-controls select{
+  height:32px;
+  padding:0 8px;
+}
+
+/* 画面が狭い時は右上寄せに逃がす */
+@media (max-width:820px){
+  body.hero-header .header-controls{
+    left:auto;
+    right:12px;
+    top:76px;
+  }
+}
 
 </style>
   <script src="lang.js" defer></script>
 <script>document.addEventListener('DOMContentLoaded',()=>BL_I18N.i18nApply());</script>
 </head>
-<body>
+<body><body class="hero-header">
+
 <header>
   <div class="container hwrap">
     <a class="brand-left" href="./index.html" aria-label="BeautyLanka">

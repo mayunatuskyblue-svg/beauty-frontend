@@ -1,6 +1,15 @@
 <!doctype html>
 <html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Thank You | BeautyLanka</title><link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet"><style>:root{
+<title>Thank You | BeautyLanka</title><link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet"><style>
+h1{ font-family:"Shippori Mincho",serif; letter-spacing:.02em; font-weight:800 }
+.badge{
+  display:inline-flex; align-items:center; gap:.5em;
+  padding:10px 14px; border-radius:999px; border:1px solid var(--glass-brd);
+  background:var(--glass-bg); box-shadow:0 6px 14px rgba(0,0,0,.06); font-weight:800;
+}
+.badge .dot{width:8px;height:8px;border-radius:50%;background:var(--teal)}
+</style>
+<style>:root{
   --base:#F7F1E1; --ink:#2E1A16; --stroke:#eadfca; --teal:#246A73; --muted:#6f5a54; --blue:#0A66FF; --chip:#fff8ef;
 }
 *{box-sizing:border-box} body{margin:0;background:var(--base);color:var(--ink);font-family:"Zen Kaku Gothic New","Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
@@ -34,8 +43,46 @@ body{ padding-bottom:60px; } /* avoid overlap */
 </style>
   <script src="lang.js" defer></script>
 <script>document.addEventListener('DOMContentLoaded',()=>BL_I18N.i18nApply());</script>
+  <style>
+/* === BeautyLanka UI Booster (non-breaking) === */
+:root{
+  --base:#F7F1E1; --ink:#2E1A16; --stroke:#eadfca; --teal:#246A73; --muted:#6f5a54; --blue:#0A66FF;
+  --accent-1:#8AD5CD; --accent-2:#F9C6B8; --accent-3:#E9D7A5; --accent-4:#B6E3FF;
+  --glass-bg:rgba(255,255,255,.72); --glass-brd:rgba(0,0,0,.06);
+}
+body{background:var(--base);color:var(--ink)}
+/* 背景の装飾（描画のみ。レイアウト非干渉） */
+.bg-radials:before,.bg-radials:after{content:"";position:fixed;inset:auto;z-index:-2;pointer-events:none;filter:blur(40px);opacity:.38}
+.bg-radials:before{left:-120px;top:-120px;width:420px;height:420px;background:
+  radial-gradient(120px 120px at 40% 40%, var(--accent-1), transparent 70%),
+  radial-gradient(160px 160px at 70% 60%, var(--accent-2), transparent 72%)}
+.bg-radials:after{right:-120px;bottom:-120px;width:460px;height:460px;background:
+  radial-gradient(140px 140px at 30% 40%, var(--accent-4), transparent 70%),
+  radial-gradient(180px 180px at 70% 60%, var(--accent-3), transparent 72%)}
+.grain{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.07;mix-blend-mode:multiply;
+  background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140" viewBox="0 0 140 140"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="table" tableValues="0 0 0 .55 .15 0"/></feComponentTransfer></filter><rect width="100%" height="100%" filter="url(%23n)"/></svg>');
+  background-size:160px 160px}
+
+/* ボタン・入力（既存 .btn を壊さず上書き） */
+.btn, button, a.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:.4em;
+  height:40px; border-radius:12px; border:1px solid var(--stroke);
+  background:#fff; padding:0 12px; font-weight:800; cursor:pointer;
+  box-shadow:0 6px 14px rgba(0,0,0,.06); transition:.15s ease-in-out; color:var(--ink);
+}
+.btn.primary{ background:var(--teal); border-color:var(--teal); color:#fff; box-shadow:0 10px 24px rgba(36,106,115,.18) }
+.btn:hover{ transform:translateY(-1px) }
+
+/* 共通カード（既存 .card があるページはそのまま強化） */
+.card{ background:#fff; border:1px solid var(--stroke); border-radius:16px; box-shadow:0 10px 24px rgba(49,14,16,.08) }
+</style>
+
 </head><body>
 <header><div class="hwrap" style="max-width:760px;margin:0 auto;"><a class="brand-left" href="./index.html"><div class="logo-box"><img src="assets/images/logo_mark.png" alt=""></div></a><div></div></div></header>
+  <div class="badge" aria-hidden="true" style="margin-bottom:10px">
+  <span class="dot"></span><span data-i18n="thanks.badge">予約が確定しました</span>
+</div>
+
 <div class="container">
   <div style="display:flex;justify-content:flex-end;gap:8px"><select id="langSelect" class="btn" style="height:38px"><option value="auto">Auto</option><option value="ja">日本語</option><option value="en">English</option></select></div>
   <div class="section">
@@ -232,4 +279,8 @@ const sel=document.getElementById('langSelect'); if(sel){ sel.value=localStorage
   if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', finalize); } else { finalize(); }
 })();
 </script>
+  <!-- Decorative layers -->
+<div class="bg-radials" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
+
 </body></html>

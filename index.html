@@ -1275,6 +1275,18 @@ initCatalog();
   });
 })();
 </script>
+<script>
+// --- 種類セレクト変更で自動検索 ---
+(function enableTypeAutoSearch(){
+  try{
+    const form = document.getElementById('searchForm');
+    const typeSel = document.getElementById('type');
+    if(form && typeSel){
+      typeSel.addEventListener('change', () => form.requestSubmit());
+    }
+  }catch(e){ console.warn('type autosubmit patch failed', e); }
+})();
+</script>
 
 <footer>Build v2025-09-18i • Visual refresh add‑on v1</footer>
 </body>

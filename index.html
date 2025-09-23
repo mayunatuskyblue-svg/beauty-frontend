@@ -237,6 +237,11 @@ body.hero-header .header-controls{ position:absolute; left:16px; top:158px; z-in
 .searchwrap .searchbar{
   margin: 8px 0 0;
 }
+  /* 追加：スマホ幅ではchipbarを隠す */
+@media (max-width: 680px){
+  .chipbar{ display:none; }
+}
+
 /* ==== Hero/chip/search spacing fix ==== */
 .hero-head{ padding: 96px 0 40px; }         /* 下方向の余白を増やす */
 .chipbar{ margin: 10px auto 8px; }          /* チップ列 */
@@ -946,6 +951,14 @@ initCatalog();
     });
   }
   refreshChipLabels();
+　  // 追加：セレクト変更→チップのactive状態を同期
+  typeSel.addEventListener('change', ()=>{
+    const val = typeSel.value || '';
+    el.querySelectorAll('.chip').forEach(ch=>{
+      const ja = ch.getAttribute('data-cat-ja')||'';
+      ch.classList.toggle('active', val && ja===val);
+    });
+  });
 
   // クリックで#type選択 → すぐ検索。再クリックで解除。
   el.addEventListener('click', (e)=>{

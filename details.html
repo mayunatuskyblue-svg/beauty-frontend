@@ -406,8 +406,8 @@ function suggestCultureTags(ctx){
 
 <!-- ▼▼ 必ずあなたの /exec とキーに置換してください ▼▼ -->
 <script>
-  window.__GAS_URL = 'https://script.google.com/macros/s/AKfycbxQHByDLRu-QlfAyRRMdM0-pGskH9Ka7IcFs9NeV2NB3DyDWhaLgvv8Hain_l9nZGvk/exec';
-  window.__GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
+  window.__GAS_URL = 'https://script.google.com/macros/s/AKfycbwWRpfcZMsGxNqGJ5aNjRT1Y1PChDTqtQE3e0S7sUDAMei8s1wOr6lpKMnOaI1Z-6o/exec';
+  window.__GAS_KEY = 'bl_gas_key_bR6ZXWwu6kM_nrK25geP97Cs5qCX3auxugX_IUGlg90';
 </script>
 <!-- ▲▲ ここまで ▲▲ -->
 
@@ -499,6 +499,8 @@ function suggestCultureTags(ctx){
     root.innerHTML = `<span class="bg">★★★★★</span><span class="fg" style="width:${pct}%">★★★★★</span>`;
     return root;
   }
+  //フィルタ用スクリプトからも使えるように公開
+  window.starsEl = starsEl;
 
   function renderInfo(it){
   const L = getLang();
@@ -671,8 +673,6 @@ function suggestCultureTags(ctx){
     });
   }
 
-  
-  <script>
 /* これ、IIFEの中（GAS と starsEl が見えるスコープ）に置いてOK */
 function renderReviews(it, res){
   const box = document.querySelector('#reviewsList');
@@ -802,7 +802,7 @@ function renderReviews(it, res){
 
 <script>
 async function translateText(text, target='en'){
-  const url = `${GAS.url}?key=${encodeURIComponent(GAS.key)}&kind=translate&text=${encodeURIComponent(text)}&target=${encodeURIComponent(target)}`;
+  const url = `${window._GAS_url}?key=${encodeURIComponent(window._GAS_key)}&kind=translate&text=${encodeURIComponent(text)}&target=${encodeURIComponent(target)}`;
   const res = await fetch(url);
   const j = await res.json();
   if (!j.ok) throw new Error(j.error||'translate failed');
@@ -866,9 +866,6 @@ refreshTagSuggest();
       const nation = ($('#rvNation') && $('#rvNation').value) || '';
       const ageGroup = ($('#rvAge') && $('#rvAge').value) || '';
       const visitedYM = ($('#rvVisit') && $('#rvVisit').value) || ''; // 例: "2025-09"
-      // ▼ 文化タグ（選択＋カスタム）
-payload.cultureTags = collectSelectedTags();
-// ▲ 文化タグ
 
       // メニュー名：予約リンクから item パラメータが来ている場合に拾う（無ければ空のまま）
       // ※ 今回の「施術後リンク」には普通は含まれていない想定なので、空で送ってGAS側で予約IDから補完するのが本線

@@ -545,170 +545,102 @@ const fmtLKR = v => v ? ('Rs ' + Math.round(Number(v) * JPY_TO_LKR).toLocaleStri
   };
 }
 
-function renderGallery(it){
-  const main = document.querySelector('#gMain');
-  const thumbs = document.querySelector('#gThumbs');
-  main.innerHTML = ''; thumbs.innerHTML = '';
-
-  // 1) 値のゆらぎ吸収（配列 or 文字列 -> 配列）
-  let raw = Array.isArray(it.photos) ? it.photos :
-            String(it.photos||'').replace(/[\r\n]+/g, ',').replace(/，/g, ',').split(',');
-  raw = raw.map(s => String(s||'').trim()).filter(Boolean);
-
-  // 2) 裸ファイル名は /assets/images/ を補完。先頭スラッシュが無ければ付与。
-  raw = raw.map(p => {
-    if (!p.includes('/')) p = '/assets/images/' + p;
-    if (!p.startsWith('/')) p = '/' + p;
-    return p;
-  });
-
-  // 3) images / img の両候補を用意し、必ず ASSET_BASE を付与（GAS 上でも破綻しない）
-  const pairs = raw.map(p => {
-    const a = p.replace('/assets/images/','/assets/img/');
-    const b = p.replace('/assets/img/','/assets/images/');
-    // images 優先で [images版, img版] の順
-    const c1 = p.includes('/assets/images/') ? p : b;
-    const c2 = p.includes('/assets/images/') ? a : p;
-    return [ toAbs(c1), toAbs(c2) ];
-  });
-
-  if (!pairs.length){
-    main.innerHTML = '<div class="notice">写真が未登録です（catalog の photos 列）</div>';
-    return;
-  }
-
-  // 最初の1枚：ロード成功まで候補を順番に試す
-  (function showFirst(list){
-    const img = new Image();
-    let i = 0;
-    img.onload  = () => { main.innerHTML=''; main.appendChild(img); };
-    img.onerror = () => { if (++i < list.length) img.src = list[i]; else main.innerHTML='<div class="notice">画像が見つかりません</div>'; };
-    img.src = list[i];
-  })(pairs[0]);
-
-  // サムネ：成功したものだけ並べる（クリックでメインも同じ候補順に再試行）
-  pairs.forEach(alts => {
-    const t = new Image();
-    t.loading = 'lazy';
-    let i = 0;
-    t.onerror = () => { if (++i < alts.length) t.src = alts[i]; else t.remove(); };
-    t.onload  = () => {
-      t.onclick = () => {
-        (function show(list){
-          const big = new Image();
-          let j = 0;
-          big.onload  = () => { main.innerHTML=''; main.appendChild(big); };
-          big.onerror = () => { if (++j < list.length) big.src = list[j]; else main.innerHTML='<div class="notice">画像が見つかりません</div>'; };
-          big.src = list[j];
-        })(alts);
-      };
-    };
-    t.src = alts[i];
-    thumbs.appendChild(t);
-  });
-}
-  function renderMap(it){
-    const lat = Number(it.lat), lng = Number(it.lng);
-    const map = $('#map'), route = $('#route');
-    if (Number.isFinite(lat)&&Number.isFinite(lng)&&!(lat===0&&lng===0)){
-      map.src = `https://www.google.com/maps?q=${lat},${lng}&z=15&hl=ja&output=embed`;
-      route.disabled = false;
-      route.onclick = ()=> window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving&hl=ja`,'_blank');
-    }else{
-      map.remove(); route.disabled = true;
-      $('#mapSection').insertAdjacentHTML('beforeend','<div class="notice">地図は未設定です。catalog の lat / lng を入れてね。</div>');
+<!-- ===== ギャラリー ===== -->
+<script>
+  // 写真（it.photos が配列 or 逗点区切り文字列想定）
+  function renderGallery(it) {
+    const box = document.querySelector('#gallery');
+    if (!box) return;
+    // 文字列だったら配列化
+    let photos = Array.isArray(it.photos) ? it.photos : (it.photos || '').split(',').map(s=>s.trim()).filter(Boolean);
+    // パス整形（相対/絶対どちらでもOKに）
+    const ASSET_BASE = (location.protocol === 'file:' ? '' : '');
+    if (!photos.length) {
+      box.innerHTML = '<div class="muted">（写真はまだありません）</div>';
+      return;
     }
+    box.innerHTML = photos.map((url,i) => {
+      const src = /^https?:\/\//.test(url) ? url : ASSET_BASE + url;
+      return `<img class="thumb" alt="photo${i+1}" loading="lazy" src="${src}" />`;
+    }).join('');
+  }  // ←←← これが無いと全滅（**重要**）
+
+  /* ===== 地図 ===== */
+  function renderMap(it) {
+    const wrap = document.querySelector('#mapbox');
+    if (!wrap) return;
+    const lat = Number(it.lat), lng = Number(it.lng);
+    if (!isFinite(lat) || !isFinite(lng)) {
+      wrap.innerHTML = '<div class="muted">（地図は準備中です）</div>';
+      return;
+    }
+    const q = encodeURIComponent(`${lat},${lng}`);
+    const g = `https://www.google.com/maps/search/?api=1&query=${q}`;
+    wrap.innerHTML = `
+      <div id="mapPlaceholder" class="mapph"></div>
+      <a class="gmaps-btn" target="_blank" rel="noopener" href="${g}">Googleで道順</a>
+    `;
+    // ここで実地図を入れたい時は任意の地図ライブラリ呼び出し
   }
 
-  function renderMenus(items){
-  const box = document.querySelector('#menuList');
-  const empty = document.querySelector('#menuEmpty');
-  box.innerHTML = '';
+  /* ===== メニュー ===== */
+  function renderMenus(it) {
+    const box = document.querySelector('#menus');
+    if (!box) return;
+    const menus = it.menus || [];
+    if (!menus.length) {
+      box.innerHTML = '<div class="muted">（準備中です。スプレッドシートにメニューを追加したら自動表示されます）</div>';
+      return;
+    }
+    box.innerHTML = menus.map(m => `
+      <div class="menu">
+        <div class="menu-name">${m.name || ''}</div>
+        <div class="menu-price">${m.price || ''}</div>
+        <div class="menu-desc">${m.desc || ''}</div>
+      </div>
+    `).join('');
+  }
 
-  if (!items.length){ empty.style.display=''; return; }
-  empty.style.display='none';
+  /* ===== クーポン ===== */
+  function renderCoupons(it) {
+    const box = document.querySelector('#coupons');
+    if (!box) return;
+    const cps = it.coupons || [];
+    if (!cps.length) {
+      box.innerHTML = '<div class="muted">（準備中です）</div>';
+      return;
+    }
+    box.innerHTML = cps.map(c => `
+      <div class="coupon">
+        <div class="cp-title">${c.title || ''}</div>
+        <div class="cp-body">${c.body || ''}</div>
+        <div class="cp-exp">${c.exp || ''}</div>
+      </div>
+    `).join('');
+  }
 
-  // サロン情報（予約に渡す）
-  const salonId   = (window.__currentSalon && window.__currentSalon.id) || '';
-  const salonName = (window.__currentSalon && (window.__currentSalon.name_ja || window.__currentSalon.name_en)) || salonId;
-
-  items.forEach(m=>{
-    const name = m.name_ja || m.name_en || '-';
-    const desc = m.desc_ja || m.desc_en || '';
-    const dur  = m.duration_min || '';
-    const price= m.price_jpy ? fmtLKR(m.price_jpy) : '';
-    const el = document.createElement('div');
-    el.className='card';
-    el.innerHTML = `
-      <div style="display:flex;gap:12px;align-items:flex-start;justify-content:space-between">
-        <div style="flex:1 1 auto;min-width:0">
-          <div class="section-title" style="font-size:16px;margin:0 0 6px">${name}</div>
-          <div class="muted" style="white-space:pre-wrap">${desc||''}</div>
-          <div class="space"></div>
-          <div>
-            ${dur?`<span class="chip">${dur}分</span>`:''}
-           ${price?`<span class="chip chip-price">${price}</span>`:''}
-          </div>
+  /* ===== レビュー ===== */
+  function renderReviews(it) {
+    const box = document.querySelector('#reviews');
+    if (!box) return;
+    const rvs = it.reviews || [];
+    if (!rvs.length) {
+      box.innerHTML = '<div class="muted">（レビューはまだありません）</div>';
+      return;
+    }
+    box.innerHTML = rvs.map(r => `
+      <div class="review">
+        <div class="rv-head">
+          <span class="rv-stars">${'★'.repeat(Number(r.star)||0)}</span>
+          <span class="rv-meta">${r.age || ''} / ${r.nat || ''}</span>
         </div>
-        <div style="flex:0 0 auto;display:flex;align-items:center">
-          <a class="btn" style="white-space:nowrap"
-             href="${ASSET_BASE}/reservation.html?${new URLSearchParams({
-               salonId,
-               salonName,
-               item: name,
-               price_lkr: String(Math.round((m.price_jpy||0) * JPY_TO_LKR))
-             }).toString()}">
-             予約へ
-          </a>
-        </div>
-      </div>`;
-    box.appendChild(el);
-  });
-}
-
-
-  function renderCoupons(items){
-    const box = $('#couponList'); const empty = $('#couponEmpty');
-    box.innerHTML = '';
-    if (!items.length){ empty.style.display=''; return; }
-    empty.style.display='none';
-    items.forEach(c=>{
-      const el = document.createElement('div'); el.className='card';
-      el.innerHTML = `<div class="section-title" style="font-size:16px">${c.name_ja||c.name_en||'-'}</div>
-        <div class="muted">${c.desc_ja||c.desc_en||''}</div>`;
-      box.appendChild(el);
-    });
+        <div class="rv-body">${r.body || ''}</div>
+        <div class="rv-tags">${(r.tags||[]).map(t=>`<span class="tag">#${t}</span>`).join('')}</div>
+      </div>
+    `).join('');
   }
+</script>
 
-/* これ、IIFEの中（GAS と starsEl が見えるスコープ）に置いてOK */
-function renderReviews(it, res){
-  const box = document.querySelector('#reviewsList');
-  const sum = (res.summary && res.summary[it.id]) || { avg:0, count:0 };
-
-  // サマリ行（平均★ / 件数）
-  const sumLine = document.createElement('div');
-  sumLine.innerHTML = '';
-  const s = starsEl(sum.avg);
-  const meta = document.createElement('span');
-  meta.className = 'muted';
-  meta.style.marginLeft = '8px';
-  meta.textContent = `平均 ${sum.avg || 0} / 5（${sum.count || 0}件）`;
-  sumLine.appendChild(s);
-  sumLine.appendChild(meta);
-  document.querySelector('#reviewsSummary').innerHTML = '';
-  document.querySelector('#reviewsSummary').appendChild(sumLine);
-
-  // 最新5件
-  box.innerHTML = '';
-  const items = (res.items || [])
-    .filter(x => String(x.salonId) === String(it.id))
-    .sort((a,b) => String(b.ts).localeCompare(String(a.ts)))
-    .slice(0,5);
-
-  if (!items.length){
-    box.innerHTML = '<div class="muted">まだレビューはありません。施術完了後に届く専用リンクから投稿できます。</div>';
-    return;
-  }
 
   // フィルタ用に保持
   window.__allReviews = items;

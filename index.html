@@ -291,6 +291,55 @@ body.hero-header .header-controls{ position:absolute; left:16px; top:158px; z-in
 }
 /* Keep code but hide currency picker (LKR fixed) */
 #currencySelect{ display:none; }
+/* === Searchバーのピル高さを統一 === */
+:root{
+  --pill-h: 56px;         /* ← ここを 52–60px くらいで好み調整 */
+}
+
+/* ピル本体 */
+.pill{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--pill-h);
+  padding: 0 16px;
+  border-radius: calc(var(--pill-h)/2);
+  box-sizing: border-box;
+}
+
+/* アイコンだけの丸ピル（虫眼鏡など） */
+.pill.is-icon{
+  min-width: var(--pill-h);
+  justify-content: center;
+  padding: 0;             /* 正円にする */
+}
+
+/* ピル内の form 要素を高さ合わせ & 文字を上下中央に */
+.pill input,
+.pill select,
+.pill button{
+  height: calc(var(--pill-h) - 12px);   /* 内側余白分だけ少し小さく */
+  line-height: 1.2;
+  padding-block: 0;                      /* UAの上下余白を消す */
+  box-sizing: border-box;
+}
+
+/* date / search の挙動差吸収（Chrome系） */
+.pill input[type="date"]::-webkit-datetime-edit { padding: 0; line-height: 1.2; }
+.pill input[type="search"] { -webkit-appearance: none; }
+
+/* 送信ボタン（右の大きいボタン）も高さ合わせ */
+.search-button,                 /* 使っているクラス名に合わせてどれかを残す */
+button.search-btn,
+.search-bar button[type="submit"]{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--pill-h);
+  padding: 0 28px;
+  border-radius: calc(var(--pill-h)/2);
+  box-sizing: border-box;
+}
 
 </style>
   <script src="lang.js" defer></script>

@@ -429,6 +429,25 @@ body.hero-header .nav-right .btn.primary{ background:transparent; border:0; box-
     height: 56px;
   }
 }
+/* === Cute round "US" language pill === */
+.lang-pill{
+  position:relative;
+  display:inline-flex; align-items:center; gap:10px;
+  height:44px; padding:0 14px 0 12px;
+  border-radius:999px;
+  background:#fff; border:1px solid var(--stroke);
+  box-shadow:0 8px 20px rgba(0,0,0,.08);
+  font-weight:800;
+}
+.lang-pill .flag{ font-size:18px; line-height:1 }
+.lang-pill .abbr{ font-size:16px; letter-spacing:.02em }
+.lang-pill .caret{ width:16px; height:16px; opacity:.6 }
+
+/* ネイティブselectは pill 全体に透明で被せて操作だけ担当 */
+.langSel{
+  position:absolute; inset:0; width:100%; height:100%;
+  opacity:0; appearance:none; border:0; background:transparent; cursor:pointer;
+}
 
 </style>
   <script src="lang.js" defer></script>
@@ -446,6 +465,7 @@ body.hero-header .nav-right .btn.primary{ background:transparent; border:0; box-
   <div class="lang-pill">
     <span class="flag" id="langFlag">🇯🇵</span>
     <select id="langSelect" class="langSel" title="Language">
+      <span class="abbr" id="langAbbr">US</span>
       <option value="auto">Auto</option>
       <option value="ja">日本語</option>
       <option value="en">English</option>
@@ -663,15 +683,21 @@ function applyI18N(){
   const typeOpt=document.querySelector('#type option[value=""]'); if(typeOpt) typeOpt.textContent=T[L].type;
 }
 function updateLangFlag(){
-  var f = document.getElementById('langFlag'); if(!f) return;
-  var L = (localStorage.getItem('bl_lang') || 'auto');
-  if(L==='auto'){
-    var ja = (navigator.language||'en').toLowerCase().startsWith('ja');
-    f.textContent = ja ? '🇯🇵' : '🇺🇸';
+  var f  = document.getElementById('langFlag');
+  var ab = document.getElementById('langAbbr');
+  var pref = (localStorage.getItem('bl_lang') || 'auto');
+  var isJa = (navigator.language||'en').toLowerCase().startsWith('ja');
+
+  if(pref === 'auto'){
+    if(f)  f.textContent  = isJa ? '🇯🇵' : '🇺🇸';
+    if(ab) ab.textContent = isJa ? 'JP'  : 'US';
   }else{
-    f.textContent = (L==='ja') ? '🇯🇵' : '🇺🇸';
+    var ja = (pref === 'ja');
+    if(f)  f.textContent  = ja ? '🇯🇵' : '🇺🇸';
+    if(ab) ab.textContent = ja ? 'JP'  : 'US';
   }
 }
+
 document.addEventListener('DOMContentLoaded', updateLangFlag);
 (function(){
   const sel = document.getElementById('langSelect');

@@ -601,7 +601,7 @@ function renderGallery(it){
     t.src = alts[i];
     thumbs.appendChild(t);
   });
-}
+
 
   function renderMap(it){
     const lat = Number(it.lat), lng = Number(it.lng);
@@ -919,6 +919,7 @@ refreshTagSuggest();
       const items = await getCatalog();
       if (!items.length){ $('#infoCard').insertAdjacentHTML('afterbegin','<div class="notice">カタログが空です</div>'); return; }
       const it = pickItem(items);
+      window.__currentSalon = it;
       renderInfo(it);
       renderGallery(it);
       renderMap(it);

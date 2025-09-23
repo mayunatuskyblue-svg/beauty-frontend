@@ -182,22 +182,12 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
 </div>
 
 <script>
-// ===== 通貨ユーティリティ（price_jpy を元に表示） =====
-const RATES = { JPY:1, USD:0.0067, EUR:0.0061, LKR:2.05 }; // 必要に応じて更新
-function getLang(){ try{ return (localStorage.getItem('lang')||'auto')==='ja' ? 'ja' : 'en'; }catch(e){ return 'en'; } }
-function getCurrency(){ try{ return localStorage.getItem('bl_currency') || 'JPY'; }catch(e){ return 'JPY'; } }
-function fmtCurrencyFromJPY(jpy, cur){
-  const n = Math.max(0, Number(jpy)||0);
-  const converted = Math.round(n * (RATES[cur] || 1));
-  try{
-    return new Intl.NumberFormat(getLang()==='ja'?'ja-JP':'en-US',
-      { style:'currency', currency: cur, maximumFractionDigits:0 }).format(converted);
-  }catch(e){
-    const symbols = {JPY:'¥', USD:'$', EUR:'€', LKR:'Rs '};
-    return (symbols[cur]||'') + converted.toLocaleString();
-  }
+// ===== LKR専用ユーティリティ =====
+const JPY_TO_LKR = 2.05; // 実運用のレートに合わせて調整可
+function fmtLKR(v){
+　const n = Math.max(0, Number(v)||0);
+  return n ? ('Rs ' + Math.round(n).toLocaleString('en-US')) : '-';
 }
-
 // ===== URL パラメータから表示を構成 =====
 const p = new URLSearchParams(location.search);
 const salonId   = p.get('salonId') || p.get('salon') || '';
@@ -205,14 +195,13 @@ const salonName = p.get('salonName') || p.get('salon_name') || 'Salon';
 const itemName  = p.get('item') || p.get('menu') || 'Menu';
 const staffName = p.get('staffName') || p.get('staff') || '指名なし';
 const dateTextParam  = p.get('date') || p.get('dt') || '';
-const priceJPY  = Number(p.get('price_jpy') || 0);
-
+const priceLKR  = Number(p.get('price_lkr') || 0)
+              || Math.round(Number(p.get('price_jpy')||0) * JPY_TO_LKR); // 後方互換
 document.getElementById('v_salon').textContent = salonName || salonId || '-';
 document.getElementById('v_menu').textContent  = itemName;
 document.getElementById('v_staff').textContent = staffName || '指名なし';
 document.getElementById('v_date').textContent  = dateTextParam || '-';
-document.getElementById('v_price').textContent = priceJPY ? fmtCurrencyFromJPY(priceJPY, getCurrency()) : '-';
-
+document.getElementById('v_price').textContent = fmtLKR(priceLKR);
 // ===== GAS 設定（meta / localStorage / URL の順で解決） =====
 const GAS_URL = document.querySelector('meta[name=bl-sheet-hook]')?.content || p.get('gas') || '';
 const GAS_KEY = p.get('key') || localStorage.getItem('bl_gas_key') || '';

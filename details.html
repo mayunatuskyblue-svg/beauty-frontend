@@ -305,6 +305,13 @@ function suggestCultureTags(ctx){
         <div class="section-title" data-i18n="details.reviews">レビュー</div>
         <div id="reviewsSummary" class="muted" data-i18n="details.loading">（読み込み中…）</div>
         <div id="reviewsList"></div>
+        <div id="tag-filters">
+  <button class="chip chip-filter" data-tag="">All</button>
+  <button class="chip chip-filter" data-tag="#traditional">#traditional</button>
+  <button class="chip chip-filter" data-tag="#localfamily">#localfamily</button>
+  <button class="chip chip-filter" data-tag="#ayurveda">#ayurveda</button>
+  <button class="chip chip-filter" data-tag="#localmarket">#localmarket</button>
+</div>
 
         <!-- Verifiedレビュー投稿：rid/token/exp がURLにある時だけ表示 -->
         <div id="verifiedBox" style="display:none;margin-top:12px">
@@ -663,6 +670,15 @@ function suggestCultureTags(ctx){
       box.appendChild(el);
     });
   }
+<script>
+async function translateText(text, target='en'){
+  const url = `${GAS.url}?key=${encodeURIComponent(GAS.key)}&kind=translate&text=${encodeURIComponent(text)}&target=${encodeURIComponent(target)}`;
+  const res = await fetch(url);
+  const j = await res.json();
+  if (!j.ok) throw new Error(j.error||'translate failed');
+  return j.text || '';
+}
+</script>
 
   function renderReviews(it, res){
     const box = $('#reviewsList');
@@ -678,6 +694,35 @@ function suggestCultureTags(ctx){
     sumLine.appendChild(s); sumLine.appendChild(meta);
     $('#reviewsSummary').innerHTML = '';
     $('#reviewsSummary').appendChild(sumLine);
+    <div class="review-item" data-rid="${r.bookingId||''}">
+  <div class="meta">
+    <span class="name">${r.name||'Guest'}</span>
+    <span class="rating">★ ${r.rating||0}</span>
+    ${(r.cultureTags||[]).map(t=>`<span class="chip">${t}</span>`).join('')}
+  </div>
+  <p class="text" data-original="${(r.text||'').replace(/"/g,'&quot;')}">${r.text||''}</p>
+  <div class="trans-tools">
+    <button class="btn-translate" data-target="en">Translate EN</button>
+    <button class="btn-translate" data-target="ja">日本語に翻訳</button>
+    <button class="btn-restore">原文に戻す</button>
+  </div>
+</div>
+  <script>
+let __allReviews = []; // 取得した生データをキープ
+function renderReviews(items){
+  __allReviews = items || [];
+  // …（既存のHTML生成。上の翻訳ボタン付きマークアップで）
+}
+
+document.addEventListener('click', (e)=>{
+  const f = e.target.closest('.chip-filter');
+  if (!f) return;
+  const tag = f.dataset.tag || '';
+  const list = (!tag) ? __allReviews : __allReviews.filter(r => (r.cultureTags||[]).includes(tag));
+  renderReviews(list);
+});
+</script>
+
 
     // Items (最新5件)
     box.innerHTML = '';
@@ -902,6 +947,29 @@ payload.cultureTags = collectSelectedTags();
   });
 })();
 </script>
+  <script>
+document.addEventListener('click', async (e)=>{
+  const btn = e.target.closest('.btn-translate');
+  if (btn){
+    const item = btn.closest('.review-item');
+    const p = item.querySelector('.text');
+    const orig = p.getAttribute('data-original') || p.textContent;
+    try{
+      p.textContent = '…translating';
+      const target = btn.dataset.target || 'en';
+      const t = await translateText(orig, target);
+      p.textContent = t || orig;
+    }catch(err){ p.textContent = orig; alert('翻訳に失敗しました'); }
+  }
+  if (e.target.matches('.btn-restore')){
+    const item = e.target.closest('.review-item');
+    const p = item.querySelector('.text');
+    const orig = p.getAttribute('data-original');
+    if (orig) p.textContent = orig;
+  }
+});
+</script>
+
   <!-- decorative background (purely visual) -->
 <div class="bg-radials"></div>
 <div class="grain"></div>

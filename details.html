@@ -138,6 +138,9 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
 .btn.primary{ color:#fff; }
 </style>
 <script>
+  const ASSET_BASE = 'https://beauty-frontend.onrender.com';
+const toAbs = (u) => { try { return new URL(u, ASSET_BASE).href; } catch(e){ return u || ''; } };
+
 // details.html 用の簡易言語ヘルパー（index と同じ挙動）
 function getLang(){
   const pref = localStorage.getItem('bl_lang') || 'auto';

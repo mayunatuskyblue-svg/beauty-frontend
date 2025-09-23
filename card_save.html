@@ -130,7 +130,7 @@ document.getElementById('v_date').textContent  = when || '-';
 document.getElementById('v_price').textContent = priceJP ? fmtCurrencyFromJPY(priceJP, getCurrency()) : '—';
 
 // ===== Pay サーバーと Stripe の設定
-const DEFAULT_PAY_SERVER = 'https://pay-server-uis7.onrender.com';
+const DEFAULT_PAY_SERVER = 'https://api.beautylk.com';
 const PAY_SERVER = (p.get('payServer') || DEFAULT_PAY_SERVER).replace(/\/$/,'');
 const STRIPE_PK  = p.get('pk') || localStorage.getItem('bl_stripe_pk') || 'pk_test_51S59dhHFHLP5RXi1qkW9cuPEJAlJPuSaFeWFb5GuYhsXs9vkX6RJYfVYwQEdK8TwN3eKF7wEctQftyhYxb2rRIZN00146bOW8U';
 

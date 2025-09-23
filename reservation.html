@@ -426,12 +426,17 @@ for (const d of days) takenMap[ymdOf(d)] = await fetchTakenSlots(salonId, ymdOf(
         const key = ymdOf(d);
     // 1つだけ残す（重複を削除）
         const keyYmd = ymdOf(d);
+        const taken = await fetchTaken(currentSalonId, selectedYmd);
         const slot   = hhmm(h,m); // ← 関数呼び出し（上で定義されているやつ）
         if (takenMap[keyYmd] && takenMap[keyYmd].has(slot)) {
         btn.textContent = '×';
         btn.disabled = true;
         btn.setAttribute('aria-disabled','true');
-      }
+          if (taken.has(hhmm)) {
+  btn.disabled = true;
+  btn.setAttribute('aria-disabled','true');
+  btn.title = '×';
+}  }
 
 
         btn.addEventListener('click', ()=>{

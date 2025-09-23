@@ -66,8 +66,13 @@
   .rv-form .stars-input {display:flex; gap:8px; align-items:center}
   .rv-form .stars-input input {accent-color:#f2b01e}
 </style>
-<script src="lang.js" defer></script>
-<script>document.addEventListener('DOMContentLoaded',()=>BL_I18N.i18nApply());</script>
+<script src="./lang.js" defer></script>
+<!-- i18n が無くても落ちない保険 -->
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    (window.BL_I18N && typeof window.BL_I18N.i18nApply === 'function') && BL_I18N.i18nApply();
+  });
+</script>
   <style>
 /* --- BeautyLanka UI Booster (non-breaking) --- */
 :root{
@@ -602,7 +607,6 @@ function renderGallery(it){
     thumbs.appendChild(t);
   });
 }
-  
   function renderMap(it){
     const lat = Number(it.lat), lng = Number(it.lng);
     const map = $('#map'), route = $('#route');

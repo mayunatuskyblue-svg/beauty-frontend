@@ -488,7 +488,6 @@ function requireAuth(redirectUrl){
   }
   return false;
 }
-<script>
 // ---------- i18n ----------
 function enPoints(s){
   if(!s) return '';
@@ -641,8 +640,6 @@ function cardTemplate(s, favOn){
   const uniqPhotos = [...new Set(photos)];
   const priceStr = fmtCurrencyFromJPY(s.price, getCurrency());
   return `<article class="card" data-id="${s.id}" data-lat="${s.lat}" data-lng="${s.lng}">
-  </script>
-  <script>
     <div class="media">
       <div class="carousel">${uniqPhotos.map((src,i)=>`<img src="${src}" alt="${s.name} photo ${i+1}">`).join('')}</div>
       <div class="nav"><button class="prev">‹</button><button class="next">›</button></div>
@@ -1064,7 +1061,7 @@ initCatalog();
 })();
 </script>
 <script>
-/* Category chips -> #type に反映して即検索。英語表示でも値は日本語運用 */
+
 (function(){
   const bar = document.getElementById('chipbar');
   if(!bar) return;

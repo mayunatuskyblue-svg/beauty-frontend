@@ -948,6 +948,74 @@ initFilters(DATA_FALLBACK);
 showSkeletons(6);
 initCatalog();
 
+  <script>
+/* ---- Unified search handler (場所/メニュー/キーワード/金額) ---- */
+(function enhanceSearch(){
+  const form   = document.getElementById('searchForm');
+  const place  = document.getElementById('place');
+  const type   = document.getElementById('type');
+  const kwInp  = document.getElementById('kw');
+  const budget = document.getElementById('budget');
+  const date   = document.getElementById('date'); // まだ絞り込みには未使用（将来の空き状況APIに接続予定）
+
+  function parseBudget(v){
+    if(!v) return null;
+    const [min,max] = v.split('-').map(n=>Number(n)||0);
+    return { min, max };
+  }
+
+  function runSearch(ev){
+    if(ev) ev.preventDefault();
+    const kw = (kwInp.value||'').toLowerCase().trim();
+    const src = (Array.isArray(window._DATA_CURRENT) && window._DATA_CURRENT.length>0)
+      ? window._DATA_CURRENT
+      : (window.DATA_FALLBACK||[]);
+
+    const br = parseBudget(budget.value);
+
+    const items = src.filter(s=>{
+      const okPlace  = !place.value || s.place === place.value;
+      const okType   = !type.value  || s.type  === type.value;
+      const okKw     = !kw || (
+        String(s.name).toLowerCase().includes(kw) ||
+        String(s.points||'').toLowerCase().includes(kw) ||
+        (s.tags||[]).join(',').toLowerCase().includes(kw)
+      );
+      const okMoney  = !br || (
+        (Number(s.price)||0) >= br.min &&
+        (Number(s.price)||0) <= br.max
+      );
+      return okPlace && okType && okKw && okMoney;
+    });
+
+    // 表示更新
+    if (typeof window.render === 'function') window.render(items);
+
+    // 検索履歴に保存（将来のUX用）
+    try{
+      const hist = JSON.parse(localStorage.getItem('bl_search_history')||'[]');
+      hist.unshift({
+        place: place.value, type: type.value,
+        budget: budget.value, date: date.value,
+        kw, ts: Date.now()
+      });
+      localStorage.setItem('bl_search_history', JSON.stringify(hist.slice(0,50)));
+    }catch(_e){}
+  }
+
+  // ボタン/Enterで検索
+  if(form){
+    form.addEventListener('submit', runSearch);
+
+    // ついでに budget 変更時も即反映したい人向け（任意）
+    budget.addEventListener('change', runSearch);
+  }
+
+  // 既にどこかで render 済みなら価格表示をLKRで再描画
+  if (typeof window.updateCardCurrencies === 'function') window.updateCardCurrencies();
+})();
+</script>
+
 // Back to top button
 (function(){
   const btn = document.getElementById('toTop');

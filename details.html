@@ -421,6 +421,8 @@ function suggestCultureTags(ctx){
 
   const fmtJPY = v => v ? '¥'+Number(v).toLocaleString('ja-JP') : '-';
   const setText = (sel, v) => { const el=$(sel); if(el) el.textContent = v||''; };
+  const JPY_TO_LKR = 2.05; // 例：運用時に合わせて更新
+const fmtLKR = v => v ? ('Rs ' + Math.round(Number(v) * JPY_TO_LKR).toLocaleString('en-US')) : '-';
 
   function parsePhotos(v){
   const IS_FILE = location.protocol === 'file:';
@@ -515,7 +517,7 @@ function suggestCultureTags(ctx){
   // 基本KV
   setText('#vType',  pick(it.type_ja,  it.type_en)  || '-');
   setText('#vPlace', pick(it.place_ja, it.place_en) || '-');
-  setText('#vPrice', it.price_jpy ? fmtJPY(it.price_jpy) : '-');
+  setText('#vPrice', it.price_jpy ? fmtLKR(it.price_jpy) : '-');
 
   // レーティング：数値ではなく星＋数値に
   const v = $('#vRating');

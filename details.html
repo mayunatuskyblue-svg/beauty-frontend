@@ -225,6 +225,47 @@ function getLang(){
         <div id="verifiedBox" style="display:none;margin-top:12px">
           <div class="notice" data-i18n="details.verified_note">施術後に配布される専用リンクからの投稿フォームです。</div>
           <form class="rv-form" id="verifiedForm">
+                        <!-- ▼ ここから追加：国籍 / 年代 / 来店時期 / （隠し）メニュー名 -->
+            <div class="row">
+              <label class="muted">国籍（任意） / Nationality (optional)</label>
+              <select id="rvNation">
+                <option value="">選択しない / Prefer not to say</option>
+                <option>Japan</option>
+                <option>Sri Lanka</option>
+                <option>United States</option>
+                <option>United Kingdom</option>
+                <option>Australia</option>
+                <option>Germany</option>
+                <option>France</option>
+                <option>China</option>
+                <option>Korea</option>
+                <option>India</option>
+                <option>Other</option>
+              </select>
+            </div>
+
+            <div class="row">
+              <label class="muted">年代（任意） / Age group (optional)</label>
+              <select id="rvAge">
+                <option value="">選択しない / Prefer not to say</option>
+                <option>10s</option>
+                <option>20s</option>
+                <option>30s</option>
+                <option>40s</option>
+                <option>50s</option>
+                <option>60+</option>
+              </select>
+            </div>
+
+            <div class="row">
+              <label class="muted">来店時期（任意） / Visited (optional)</label>
+              <input type="month" id="rvVisit" />
+            </div>
+
+            <!-- hidden: メニュー名（URLや予約情報から拾えた場合だけ） -->
+            <input type="hidden" id="rvMenu" />
+            <!-- ▲ 追加ここまで -->
+
             <div class="row">
               <label class="muted" data-i18n="details.name_opt">お名前（任意）</label>
               <input type="text" id="rvName" data-i18n-ph="details.rv_name_ph" placeholder="例：M*** さん">
@@ -592,15 +633,36 @@ function getLang(){
     form.addEventListener('submit', async (ev)=>{
       ev.preventDefault();
       msg.textContent = '送信中…';
-      const rating = Number((new FormData(form).get('rvStar'))||5);
+            const rating = Number((new FormData(form).get('rvStar'))||5);
+
+      // ▼ 追加：国籍/年代/来店時期/メニュー名の取得
+      const nation = ($('#rvNation') && $('#rvNation').value) || '';
+      const ageGroup = ($('#rvAge') && $('#rvAge').value) || '';
+      const visitedYM = ($('#rvVisit') && $('#rvVisit').value) || ''; // 例: "2025-09"
+
+      // メニュー名：予約リンクから item パラメータが来ている場合に拾う（無ければ空のまま）
+      // ※ 今回の「施術後リンク」には普通は含まれていない想定なので、空で送ってGAS側で予約IDから補完するのが本線
+      const qs2 = new URLSearchParams(location.search);
+      const menuFromQS = qs2.get('item') || '';
+      if ($('#rvMenu')) $('#rvMenu').value = menuFromQS;
+
+      // ▼ payload（既存フィールドは維持）＋新フィールドを追加
       const payload = {
         bookingId: rid,
         token, exp,
         rating,
         comment: $('#rvText').value || '',
         salonId: it.id,
-        name: $('#rvName').value || ''
+        name: $('#rvName').value || '',
+
+        // 追加分
+        nation,          // 国籍（任意）
+        ageGroup,        // 年代（任意）
+        visitedYM,       // 来店時期（任意, YYYY-MM）
+        menuName: ($('#rvMenu') && $('#rvMenu').value) || ''  // 予約IDからGAS側で最優先で補完
       };
+
+      
       try{
         const res = await fetch(GAS.url, {
           method:'POST',

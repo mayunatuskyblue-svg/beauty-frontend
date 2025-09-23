@@ -44,12 +44,20 @@ header{position:sticky;top:0;z-index:40;background:rgba(247,241,225,.72);backdro
 
 /* hero header */
 .hero-visual{position:relative;margin:0 0 8px}
-.hero-head{background:linear-gradient(180deg,#b8e7e0, #e1f3f0 60%, transparent); padding:96px 0 32px; position:relative; overflow:hidden}
+.hero-head{background:linear-gradient(180deg,#b8e7e0, #e1f3f0 60%, transparent); padding:72px 0 20px; position:relative; overflow:hidden}
 .hero-head h1{font-family:"Shippori Mincho",serif;font-weight:800;font-size:44px;letter-spacing:.02em;text-align:center;margin:0 0 6px;color:#17353a;text-shadow:0 1px 0 rgba(255,255,255,.6)}
 .hero-head p{opacity:.9;text-align:center;margin:18px 0 0}
+.hero-head h1{ font-size:44px; font-weight:800 }
+.hero-head p{ margin:16px 0 6px; font-size:16px; opacity:.92 }
+.container{ max-width:1200px; margin:0 auto; padding:0 20px }
+.grid{ gap:26px } /* カード間を少し広げる */
+.body{ padding:16px 18px 16px } /* カード内余白を少し増やす */
+.title{ font-size:19px; font-weight:900 }
+.rowmeta{ font-size:13px }
+.points{ font-size:14px; line-height:1.7 }
 @media(max-width:820px){ .hero-head h1{font-size:32px} }
 /* Sri outline floating behind title */
-.hero-sri{position:absolute;left:50%;top:60%;transform:translate(-50%,-50%) rotate(-6deg);width:min(36vw,340px);opacity:.16;pointer-events:none;filter:drop-shadow(0 12px 24px rgba(0,0,0,.18))}
+.hero-sri{position:absolute;left:50%;top:60%;transform:translate(-50%,-50%) rotate(-6deg);width:min(28vw,260px);opacity:.16;pointer-events:none;filter:drop-shadow(0 12px 24px rgba(0,0,0,.18))}
 
 /* search bar with animated border */
 .searchbar{margin:-28px auto 8px;background:#fff;border:1px solid var(--stroke);border-radius:16px;box-shadow:0 10px 24px rgba(49,14,16,.08);padding:12px;max-width:960px;position:relative;overflow:hidden}
@@ -121,6 +129,7 @@ footer{color:#6b5e55;text-align:center;font-size:12px;margin:12px 0}
 /* second Sri outline (page decoration) */
 .sri2{position:fixed;left:3%;bottom:3%;width:140px;opacity:.12;pointer-events:none;filter:drop-shadow(0 6px 10px rgba(0,0,0,.2));animation:floaty 10s ease-in-out infinite}
 @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.sri2{ display:none !important }
 
 /* breadcrumbs & header controls */
 .breadcrumbs { display:flex; gap:.5rem; align-items:center; font-size:.9rem; color: var(--muted); margin: .5rem 0 1rem }
@@ -192,15 +201,6 @@ body.hero-header .header-controls{ position:absolute; left:16px; top:158px; z-in
       <button class="btn reserve-btn" id="navMypage" data-i18n="ui.mypage">マイページ</button>
     </nav>
   </div>
-  <div class="header-controls container">
-    <label class="small" style="opacity:.7" data-i18n="ui.currency">Currency</label>
-    <select id="currencySelect">
-      <option value="USD">USD</option>
-      <option value="JPY">JPY</option>
-      <option value="LKR">LKR</option>
-      <option value="EUR">EUR</option>
-    </select>
-  </div>
 </header>
 
 <div class="container"><nav class="breadcrumbs" aria-label="Breadcrumb"></nav></div>
@@ -226,6 +226,15 @@ body.hero-header .header-controls{ position:absolute; left:16px; top:158px; z-in
       <button class="btn primary reserve-btn" type="submit" data-i18n="search_btn">検索</button>
     </form>
   </section>
+  <div class="header-controls container">
+    <label class="small" style="opacity:.7" data-i18n="ui.currency">Currency</label>
+    <select id="currencySelect">
+      <option value="USD">USD</option>
+      <option value="JPY">JPY</option>
+      <option value="LKR">LKR</option>
+      <option value="EUR">EUR</option>
+    </select>
+  </div>
   <div class="grid" id="list"></div>
 </div>
 

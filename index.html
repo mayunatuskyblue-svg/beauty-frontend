@@ -271,6 +271,8 @@ body.hero-header .header-controls{ position:absolute; left:16px; top:158px; z-in
 .searchbtn{
   height:56px; border-radius:16px; font-weight:900;
 }
+/* Keep code but hide currency picker (LKR fixed) */
+#currencySelect{ display:none; }
 
 </style>
   <script src="lang.js" defer></script>
@@ -376,9 +378,7 @@ body.hero-header .header-controls{ position:absolute; left:16px; top:158px; z-in
       <option value="JPY">JPY</option>
       <option value="LKR">LKR</option>
       <option value="EUR">EUR</option>
-      /* Keep code but hide currency picker (LKR fixed) */
-#currencySelect { display:none }
-    </select>
+         </select>
   </div>
   <div class="grid" id="list"></div>
 </div>
@@ -595,7 +595,7 @@ try{
   }
 }catch(e){}
 </script>
-
+<script>
 function updateCardCurrencies(){
   document.querySelectorAll('b[data-jpy]').forEach(el=>{
     const j = Number(el.getAttribute('data-jpy')||'0');

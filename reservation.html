@@ -254,7 +254,53 @@ document.getElementById('btnConfirm').addEventListener('click', async ()=>{
 
   try{
     // 既存のシート反映処理はそのまま
-    await recordBookingToSheet({ bookingId: bid, email });
+    // 既存：シート反映
+await recordBookingToSheet({ bookingId: bid, email });
+
+// --- ここから追記：WhatsApp 通知（ユーザー＆サロン） ---
+try {
+  const payBase   = 'https://api.beautylk.com';            // あなたのAPIベース
+  const adminToken= 'bl_admin_dev_......';                 // server側と同じ ADMIN_TOKEN
+
+  // 送信先（電話は E.164 形式で保存しておくのが理想）
+  const userPhone  = (localStorage.getItem('bl_user_phone')  || '').trim(); // 例: +81xxxxxxxxxx
+  const salonPhone = (localStorage.getItem('bl_salon_phone') || '').trim();
+  const toUser  = userPhone  ? `whatsapp:${userPhone}`  : '';
+  const toSalon = salonPhone ? `whatsapp:${salonPhone}` : '';
+
+  // 予約サマリ（画面から拾う）
+  const salon   = document.getElementById('v_salon')?.textContent?.trim() || '';
+  const menu    = document.getElementById('v_menu')?.textContent?.trim()  || '';
+  const staff   = document.getElementById('v_staff')?.textContent?.trim() || '';
+  const when    = document.getElementById('v_date')?.textContent?.trim()  || '';
+  const price   = document.getElementById('v_price')?.textContent?.trim() || '';
+
+  const makeText = (isSalon=false)=>[
+    isSalon ? '【新規予約（サロン向け）】' : 'ご予約ありがとうございます！',
+    `予約ID: ${bid}`,
+    `サロン: ${salon}`,
+    `メニュー: ${menu}`,
+    `施術者: ${staff||'—'}`,
+    `日時: ${when}`,
+    `目安金額: ${price}`,
+    isSalon ? '' : '※ご変更はサイトのマイページから承ります。'
+  ].filter(Boolean).join('\n');
+
+  const notify = async (to, text)=>{
+    if(!to) return;
+    await fetch(`${payBase}/api/notify-whatsapp`, {
+      method:'POST',
+      headers:{'content-type':'application/json','x-admin-token':adminToken},
+      body: JSON.stringify({ to, text })
+    }).catch(()=>{});
+  };
+
+  await Promise.all([
+    notify(toUser,  makeText(false)),
+    notify(toSalon, makeText(true))
+  ]);
+} catch(e) { /* 通知失敗は握りつぶしでOK */ }
+// --- ここまで追記 ---
     if(email) try{ localStorage.setItem('bl_email', email); }catch(e){}
     setMsg('予約を受け付けました。ご来店をお待ちしています！\n予約ID: '+bid);
 

@@ -545,101 +545,6 @@ const fmtLKR = v => v ? ('Rs ' + Math.round(Number(v) * JPY_TO_LKR).toLocaleStri
   };
 }
 
-<!-- ===== ギャラリー ===== -->
-<script>
-  // 写真（it.photos が配列 or 逗点区切り文字列想定）
-  function renderGallery(it) {
-    const box = document.querySelector('#gallery');
-    if (!box) return;
-    // 文字列だったら配列化
-    let photos = Array.isArray(it.photos) ? it.photos : (it.photos || '').split(',').map(s=>s.trim()).filter(Boolean);
-    // パス整形（相対/絶対どちらでもOKに）
-    const ASSET_BASE = (location.protocol === 'file:' ? '' : '');
-    if (!photos.length) {
-      box.innerHTML = '<div class="muted">（写真はまだありません）</div>';
-      return;
-    }
-    box.innerHTML = photos.map((url,i) => {
-      const src = /^https?:\/\//.test(url) ? url : ASSET_BASE + url;
-      return `<img class="thumb" alt="photo${i+1}" loading="lazy" src="${src}" />`;
-    }).join('');
-  }  // ←←← これが無いと全滅（**重要**）
-
-  /* ===== 地図 ===== */
-  function renderMap(it) {
-    const wrap = document.querySelector('#mapbox');
-    if (!wrap) return;
-    const lat = Number(it.lat), lng = Number(it.lng);
-    if (!isFinite(lat) || !isFinite(lng)) {
-      wrap.innerHTML = '<div class="muted">（地図は準備中です）</div>';
-      return;
-    }
-    const q = encodeURIComponent(`${lat},${lng}`);
-    const g = `https://www.google.com/maps/search/?api=1&query=${q}`;
-    wrap.innerHTML = `
-      <div id="mapPlaceholder" class="mapph"></div>
-      <a class="gmaps-btn" target="_blank" rel="noopener" href="${g}">Googleで道順</a>
-    `;
-    // ここで実地図を入れたい時は任意の地図ライブラリ呼び出し
-  }
-
-  /* ===== メニュー ===== */
-  function renderMenus(it) {
-    const box = document.querySelector('#menus');
-    if (!box) return;
-    const menus = it.menus || [];
-    if (!menus.length) {
-      box.innerHTML = '<div class="muted">（準備中です。スプレッドシートにメニューを追加したら自動表示されます）</div>';
-      return;
-    }
-    box.innerHTML = menus.map(m => `
-      <div class="menu">
-        <div class="menu-name">${m.name || ''}</div>
-        <div class="menu-price">${m.price || ''}</div>
-        <div class="menu-desc">${m.desc || ''}</div>
-      </div>
-    `).join('');
-  }
-
-  /* ===== クーポン ===== */
-  function renderCoupons(it) {
-    const box = document.querySelector('#coupons');
-    if (!box) return;
-    const cps = it.coupons || [];
-    if (!cps.length) {
-      box.innerHTML = '<div class="muted">（準備中です）</div>';
-      return;
-    }
-    box.innerHTML = cps.map(c => `
-      <div class="coupon">
-        <div class="cp-title">${c.title || ''}</div>
-        <div class="cp-body">${c.body || ''}</div>
-        <div class="cp-exp">${c.exp || ''}</div>
-      </div>
-    `).join('');
-  }
-
-  /* ===== レビュー ===== */
-  function renderReviews(it) {
-    const box = document.querySelector('#reviews');
-    if (!box) return;
-    const rvs = it.reviews || [];
-    if (!rvs.length) {
-      box.innerHTML = '<div class="muted">（レビューはまだありません）</div>';
-      return;
-    }
-    box.innerHTML = rvs.map(r => `
-      <div class="review">
-        <div class="rv-head">
-          <span class="rv-stars">${'★'.repeat(Number(r.star)||0)}</span>
-          <span class="rv-meta">${r.age || ''} / ${r.nat || ''}</span>
-        </div>
-        <div class="rv-body">${r.body || ''}</div>
-        <div class="rv-tags">${(r.tags||[]).map(t=>`<span class="tag">#${t}</span>`).join('')}</div>
-      </div>
-    `).join('');
-  }
-</script>
 
 
   // フィルタ用に保持
@@ -873,6 +778,76 @@ refreshTagSuggest();
 })();
 </script>
   <script>
+    function renderGallery(it){
+  const main = document.querySelector('#gMain');
+  const thumbs = document.querySelector('#gThumbs');
+  main.innerHTML = ''; thumbs.innerHTML = '';
+
+  let raw = Array.isArray(it.photos) ? it.photos :
+            String(it.photos||'').replace(/[\r\n]+/g, ',').replace(/，/g, ',').split(',');
+  raw = raw.map(s => String(s||'').trim()).filter(Boolean);
+
+  raw = raw.map(p => {
+    if (!p.includes('/')) p = '/assets/images/' + p;
+    if (!p.startsWith('/')) p = '/' + p;
+    return p;
+  });
+
+  const pairs = raw.map(p => {
+    const a = p.replace('/assets/images/','/assets/img/');
+    const b = p.replace('/assets/img/','/assets/images/');
+    const c1 = p.includes('/assets/images/') ? p : b;
+    const c2 = p.includes('/assets/images/') ? a : p;
+    return [ toAbs(c1), toAbs(c2) ];
+  });
+
+  if (!pairs.length){
+    main.innerHTML = '<div class="notice">写真が未登録です（catalog の photos 列）</div>';
+    return;
+  }
+
+  (function showFirst(list){
+    const img = new Image();
+    let i = 0;
+    img.onload  = () => { main.innerHTML=''; main.appendChild(img); };
+    img.onerror = () => { if (++i < list.length) img.src = list[i]; else main.innerHTML='<div class="notice">画像が見つかりません</div>'; };
+    img.src = list[i];
+  })(pairs[0]);
+
+  pairs.forEach(alts => {
+    const t = new Image();
+    t.loading = 'lazy';
+    let i = 0;
+    t.onerror = () => { if (++i < alts.length) t.src = alts[i]; else t.remove(); };
+    t.onload  = () => {
+      t.onclick = () => {
+        (function show(list){
+          const big = new Image();
+          let j = 0;
+          big.onload  = () => { main.innerHTML=''; main.appendChild(big); };
+          big.onerror = () => { if (++j < list.length) big.src = list[j]; else main.innerHTML='<div class="notice">画像が見つかりません</div>'; };
+          big.src = list[j];
+        })(alts);
+      };
+    };
+    t.src = alts[i];
+    thumbs.appendChild(t);
+  });
+}
+
+function renderMap(it){
+  const lat = Number(it.lat), lng = Number(it.lng);
+  const map = document.querySelector('#map'), route = document.querySelector('#route');
+  if (Number.isFinite(lat)&&Number.isFinite(lng)&&!(lat===0&&lng===0)){
+    map.src = `https://www.google.com/maps?q=${lat},${lng}&z=15&hl=ja&output=embed`;
+    route.disabled = false;
+    route.onclick = ()=> window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving&hl=ja`,'_blank');
+  }else{
+    map.remove(); route.disabled = true;
+    document.querySelector('#mapSection').insertAdjacentHTML('beforeend','<div class="notice">地図は未設定です。catalog の lat / lng を入れてください</div>');
+  }
+}
+
 document.addEventListener('click', (e)=>{
   const f = e.target.closest('.chip-filter');
   if (!f) return;

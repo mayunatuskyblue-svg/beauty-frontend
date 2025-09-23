@@ -113,14 +113,14 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
 
 /* 小さめのタグチップ（表示用。機能なし） */
 .tag{padding:6px 10px;border-radius:999px;border:1px solid var(--stroke);font-size:12px;background:#fff}
-<style>
+
 /* 文化タグの見た目（既存 .tag を流用して軽くアクセント） */
 .tag.culture { font-weight: 800; border-color: #d2c3a4; }
 .tag.suggested { outline: 2px dashed rgba(36,106,115,.35); }
 .rv-tags { margin-top:6px; display:flex; flex-wrap:wrap; gap:6px; }
-.rv-tags .tag { user-select:none; cursor:pointer; }
-</style>
+.rv-tags .tag { user-select:none; cursor:pointer; }</style>
 
+<style>
 /* ステップ風パンくず（必要なページだけHTMLを足せば見栄えUP） */
 .bl-steps{display:flex;gap:8px;align-items:center;color:var(--muted);font-weight:700}
 .bl-steps .dot{width:8px;height:8px;border-radius:50%;background:var(--teal);opacity:.35}
@@ -695,7 +695,20 @@ function suggestCultureTags(ctx){
       const ts = document.createElement('div'); ts.className='rv-ts'; ts.textContent = (o.ts||'').slice(0,10);
       head.appendChild(starsEl(o.rating)); head.appendChild(nm); head.appendChild(ts);
       const body = document.createElement('div'); body.textContent = o.text || '';
-      el.appendChild(head); el.appendChild(body);
+      el.appendChild(head); el.appendChild(body);// （forEach内）本文の直後にタグを表示
+const tags = (o.cultureTags || o.tags || []);
+if (Array.isArray(tags) && tags.length){
+  const tagBox = document.createElement('div');
+  tagBox.className = 'rv-tags';
+  tags.forEach(t=>{
+    const sp = document.createElement('span');
+    sp.className = 'tag culture';
+    sp.textContent = t;
+    tagBox.appendChild(sp);
+  });
+  el.appendChild(tagBox);
+}
+
       box.appendChild(el);
       // 上部の評価（#vRating）も集計結果で同期
       const topRating = document.getElementById('vRating');
@@ -792,21 +805,21 @@ payload.cultureTags = collectSelectedTags();
       const menuFromQS = qs2.get('item') || '';
       if ($('#rvMenu')) $('#rvMenu').value = menuFromQS;
 
-      // ▼ payload（既存フィールドは維持）＋新フィールドを追加
       const payload = {
-        bookingId: rid,
-        token, exp,
-        rating,
-        comment: $('#rvText').value || '',
-        salonId: it.id,
-        name: $('#rvName').value || '',
+  bookingId: rid,
+  token, exp,
+  rating,
+  comment: $('#rvText').value || '',
+  salonId: it.id,
+  name: $('#rvName').value || '',
+  nation,
+  ageGroup,
+  visitedYM,
+  menuName: ($('#rvMenu') && $('#rvMenu').value) || '',
+  // ここで同時に入れる
+  cultureTags: collectSelectedTags()
+};
 
-        // 追加分
-        nation,          // 国籍（任意）
-        ageGroup,        // 年代（任意）
-        visitedYM,       // 来店時期（任意, YYYY-MM）
-        menuName: ($('#rvMenu') && $('#rvMenu').value) || ''  // 予約IDからGAS側で最優先で補完
-      };
 
       
       try{

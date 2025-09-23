@@ -670,6 +670,136 @@ function suggestCultureTags(ctx){
       box.appendChild(el);
     });
   }
+
+  
+  <script>
+/* これ、IIFEの中（GAS と starsEl が見えるスコープ）に置いてOK */
+function renderReviews(it, res){
+  const box = document.querySelector('#reviewsList');
+  const sum = (res.summary && res.summary[it.id]) || { avg:0, count:0 };
+
+  // サマリ行（平均★ / 件数）
+  const sumLine = document.createElement('div');
+  sumLine.innerHTML = '';
+  const s = starsEl(sum.avg);
+  const meta = document.createElement('span');
+  meta.className = 'muted';
+  meta.style.marginLeft = '8px';
+  meta.textContent = `平均 ${sum.avg || 0} / 5（${sum.count || 0}件）`;
+  sumLine.appendChild(s);
+  sumLine.appendChild(meta);
+  document.querySelector('#reviewsSummary').innerHTML = '';
+  document.querySelector('#reviewsSummary').appendChild(sumLine);
+
+  // 最新5件
+  box.innerHTML = '';
+  const items = (res.items || [])
+    .filter(x => String(x.salonId) === String(it.id))
+    .sort((a,b) => String(b.ts).localeCompare(String(a.ts)))
+    .slice(0,5);
+
+  if (!items.length){
+    box.innerHTML = '<div class="muted">まだレビューはありません。施術完了後に届く専用リンクから投稿できます。</div>';
+    return;
+  }
+
+  // フィルタ用に保持
+  window.__allReviews = items;
+
+  items.forEach(r => {
+    const el = document.createElement('div');
+    el.className = 'rv-item';
+
+    // ヘッダ：星・名前・日付
+    const head = document.createElement('div');
+    head.className = 'rv-head';
+    head.appendChild(starsEl(r.rating));
+    const nm = document.createElement('div');
+    nm.className = 'rv-name';
+    nm.textContent = r.name || '匿名';
+    const ts = document.createElement('div');
+    ts.className = 'rv-ts';
+    ts.textContent = (r.ts || '').slice(0,10);
+    head.appendChild(nm);
+    head.appendChild(ts);
+
+    // 本文
+    const body = document.createElement('div');
+    const original = String(r.text || '');
+    body.textContent = original;
+
+    // 翻訳トグルボタン
+    const btn = document.createElement('button');
+    btn.className = 'btn secondary';
+    btn.style.margin = '6px 0';
+    const L = (localStorage.getItem('bl_lang') || 'auto');
+    const isJa = (L === 'ja') || (L === 'auto' && (navigator.language||'').toLowerCase().startsWith('ja'));
+    const target = isJa ? 'en' : 'ja';
+    const TXT_TO = isJa ? '英語に自動翻訳' : 'Translate to Japanese';
+    const TXT_BACK = isJa ? '原文に戻す' : 'Show original';
+    btn.textContent = TXT_TO;
+
+    let showingTranslated = false;
+    const cacheKey = `${target}:${original.slice(0,200)}`;
+    window.__bl_tr_cache = window.__bl_tr_cache || {};
+
+    btn.onclick = async () => {
+      if (!showingTranslated) {
+        try {
+          if (!window.__bl_tr_cache[cacheKey]) {
+            const u = `${GAS.url}?kind=translate&key=${encodeURIComponent(GAS.key)}&target=${encodeURIComponent(target)}&text=${encodeURIComponent(original)}`;
+            const j = await fetch(u, {cache:'no-store'}).then(r => r.json());
+            if (!j || !j.ok) throw new Error('translate failed');
+            window.__bl_tr_cache[cacheKey] = j.text || original;
+          }
+          body.textContent = window.__bl_tr_cache[cacheKey];
+          btn.textContent = TXT_BACK;
+          showingTranslated = true;
+        } catch (e) {
+          alert(isJa ? '翻訳に失敗しました' : 'Translation failed');
+        }
+      } else {
+        body.textContent = original;
+        btn.textContent = TXT_TO;
+        showingTranslated = false;
+      }
+    };
+
+    el.appendChild(head);
+    el.appendChild(body);
+    el.appendChild(btn);
+
+    // 文化タグ（chip表示）
+    const tags = Array.isArray(r.cultureTags) ? r.cultureTags : [];
+    if (tags.length){
+      const tagBox = document.createElement('div');
+      tagBox.className = 'rv-tags';
+      tags.forEach(t => {
+        const sp = document.createElement('span');
+        sp.className = 'tag culture';
+        sp.textContent = t;
+        tagBox.appendChild(sp);
+      });
+      el.appendChild(tagBox);
+    }
+
+    box.appendChild(el);
+  });
+
+  // 右上の「評価」もサマリで上書き（★＋平均＋件数）
+  const topRating = document.getElementById('vRating');
+  if (topRating) {
+    topRating.innerHTML = '';
+    topRating.appendChild(starsEl(sum.avg || 0));
+    const m = document.createElement('span');
+    m.className = 'muted';
+    m.style.marginLeft = '6px';
+    m.textContent = (sum.avg ? Number(sum.avg).toFixed(1) : '-') + (sum.count ? ` (${sum.count})` : '');
+    topRating.appendChild(m);
+  }
+}
+</script>
+
 <script>
 async function translateText(text, target='en'){
   const url = `${GAS.url}?key=${encodeURIComponent(GAS.key)}&kind=translate&text=${encodeURIComponent(text)}&target=${encodeURIComponent(target)}`;
@@ -679,149 +809,7 @@ async function translateText(text, target='en'){
   return j.text || '';
 }
 </script>
-
-  function renderReviews(it, res){
-    const box = $('#reviewsList');
-    const sum = (res.summary && res.summary[it.id]) || {avg:0, count:0};
-    // Summary line
-    const sumLine = document.createElement('div');
-    sumLine.innerHTML = '';
-    const s = starsEl(sum.avg);
-    const meta = document.createElement('span');
-    meta.className='muted';
-    meta.style.marginLeft = '8px';
-    meta.textContent = `平均 ${sum.avg||0} / 5（${sum.count||0}件）`;
-    sumLine.appendChild(s); sumLine.appendChild(meta);
-    $('#reviewsSummary').innerHTML = '';
-    $('#reviewsSummary').appendChild(sumLine);
-    <div class="review-item" data-rid="${r.bookingId||''}">
-  <div class="meta">
-    <span class="name">${r.name||'Guest'}</span>
-    <span class="rating">★ ${r.rating||0}</span>
-    ${(r.cultureTags||[]).map(t=>`<span class="chip">${t}</span>`).join('')}
-  </div>
-  <p class="text" data-original="${(r.text||'').replace(/"/g,'&quot;')}">${r.text||''}</p>
-  <div class="trans-tools">
-    <button class="btn-translate" data-target="en">Translate EN</button>
-    <button class="btn-translate" data-target="ja">日本語に翻訳</button>
-    <button class="btn-restore">原文に戻す</button>
-  </div>
-</div>
   <script>
-let __allReviews = []; // 取得した生データをキープ
-function renderReviews(items){
-  __allReviews = items || [];
-  // …（既存のHTML生成。上の翻訳ボタン付きマークアップで）
-}
-
-document.addEventListener('click', (e)=>{
-  const f = e.target.closest('.chip-filter');
-  if (!f) return;
-  const tag = f.dataset.tag || '';
-  const list = (!tag) ? __allReviews : __allReviews.filter(r => (r.cultureTags||[]).includes(tag));
-  renderReviews(list);
-});
-</script>
-
-
-    // Items (最新5件)
-    box.innerHTML = '';
-    const items = (res.items||[]).filter(x=>String(x.salonId)===String(it.id))
-                                  .sort((a,b)=>String(b.ts).localeCompare(String(a.ts)))
-                                  .slice(0,5);
-    if (!items.length){
-      box.innerHTML = '<div class="muted">まだレビューはありません。施術完了後に届く専用リンクから投稿できます。</div>';
-      return;
-    }
-    items.forEach(o=>{
-      const el = document.createElement('div'); el.className='rv-item';
-      const head = document.createElement('div'); head.className='rv-head';
-      const nm = document.createElement('div'); nm.className='rv-name'; nm.textContent = o.name || '匿名';
-      const ts = document.createElement('div'); ts.className='rv-ts'; ts.textContent = (o.ts||'').slice(0,10);
-      head.appendChild(starsEl(o.rating)); head.appendChild(nm); head.appendChild(ts);
-      const body = document.createElement('div'); body.textContent = o.text || '';
-      const btn = document.createElement('button');
-btn.className = 'btn secondary';
-btn.style.margin = '6px 0';
-const L = getLang();
-const target = (L === 'ja' ? 'en' : 'ja');
-btn.textContent = (L === 'ja' ? '英語に自動翻訳' : 'Translate to Japanese');
-let showingTranslated = false;
-let original = o.text || '';
-const cacheKey = `${target}:${(o.text||'').slice(0,200)}`;
-
-// 超簡易キャッシュ（メモリ）
-window.__bl_tr_cache = window.__bl_tr_cache || {};
-
-btn.onclick = async ()=>{
-  if (!showingTranslated) {
-    try{
-      if (!window.__bl_tr_cache[cacheKey]) {
-        const u = `${GAS.url}?kind=translate&key=${encodeURIComponent(GAS.key)}&target=${encodeURIComponent(target)}&text=${encodeURIComponent(original)}`;
-        const r = await fetch(u,{cache:'no-store'}).then(r=>r.json());
-        if (r && r.ok) window.__bl_tr_cache[cacheKey] = r.text;
-        else throw new Error('translate failed');
-      }
-      body.textContent = window.__bl_tr_cache[cacheKey] || original;
-      btn.textContent = (L === 'ja' ? '原文に戻す' : 'Show original');
-      showingTranslated = true;
-    }catch(e){
-      console.warn(e);
-      alert(L==='ja' ? '翻訳に失敗しました' : 'Translation failed');
-    }
-  } else {
-    body.textContent = original;
-    btn.textContent = (L === 'ja' ? '英語に自動翻訳' : 'Translate to Japanese');
-    showingTranslated = false;
-  }
-};
-
-el.appendChild(btn);
-
-      el.appendChild(head); el.appendChild(body);// （forEach内）本文の直後にタグを表示
-const tags = (o.cultureTags || o.tags || []);
-if (Array.isArray(tags) && tags.length){
-  const tagBox = document.createElement('div');
-  tagBox.className = 'rv-tags';
-  tags.forEach(t=>{
-    const sp = document.createElement('span');
-    sp.className = 'tag culture';
-    sp.textContent = t;
-    tagBox.appendChild(sp);
-  });
-  el.appendChild(tagBox);
-}
-
-      box.appendChild(el);
-      // 上部の評価（#vRating）も集計結果で同期
-      const topRating = document.getElementById('vRating');
-      if (topRating) {
-      topRating.innerHTML = '';
-      topRating.appendChild(starsEl(sum.avg || 0));
-      const m = document.createElement('span');
-      m.className = 'muted';
-      m.style.marginLeft = '6px';
-      m.textContent = (sum.avg ? Number(sum.avg).toFixed(1) : '-') + (sum.count ? ` (${sum.count})` : '');
-      topRating.appendChild(m);
-      }
-    });
-    // ▼ 文化タグの表示
-const tags = (o.cultureTags || o.tags || []);
-if (Array.isArray(tags) && tags.length){
-  const tagBox = document.createElement('div');
-  tagBox.className = 'rv-tags';
-  tags.forEach(t=>{
-    const sp = document.createElement('span');
-    sp.className = 'tag culture';
-    sp.textContent = t;
-    tagBox.appendChild(sp);
-  });
-  el.appendChild(tagBox);
-}
-// ▲ 文化タグ
-
-  }
-
   function setupBack(){
     $('#btnBack').addEventListener('click', (e)=>{
       e.preventDefault();
@@ -947,6 +935,45 @@ payload.cultureTags = collectSelectedTags();
   });
 })();
 </script>
+  <script>
+document.addEventListener('click', (e)=>{
+  const f = e.target.closest('.chip-filter');
+  if (!f) return;
+  const tag = f.dataset.tag || '';
+  const base = window.__allReviews || [];
+  const list = (!tag) ? base : base.filter(r => (r.cultureTags||[]).includes(tag));
+
+  // 直近に取得したサロンID/サマリを再利用するには、直前の res を保持するか、
+  // 手軽に「見た目だけ」更新したいなら一覧部分だけ描き直す関数を分けてもOK。
+  // ここでは“簡易”に一覧だけ作り直します。
+  const box = document.querySelector('#reviewsList');
+  box.innerHTML = '';
+  list.forEach(r => {
+    const el = document.createElement('div');
+    el.className = 'rv-item';
+    const head = document.createElement('div');
+    head.className = 'rv-head';
+    head.appendChild(starsEl(r.rating));
+    const nm = document.createElement('div'); nm.className='rv-name'; nm.textContent = r.name || '匿名';
+    const ts = document.createElement('div'); ts.className='rv-ts'; ts.textContent = (r.ts||'').slice(0,10);
+    head.appendChild(nm); head.appendChild(ts);
+
+    const body = document.createElement('div'); body.textContent = r.text || '';
+
+    el.appendChild(head);
+    el.appendChild(body);
+
+    const tags = Array.isArray(r.cultureTags) ? r.cultureTags : [];
+    if (tags.length){
+      const tagBox = document.createElement('div'); tagBox.className='rv-tags';
+      tags.forEach(t => { const sp=document.createElement('span'); sp.className='tag culture'; sp.textContent=t; tagBox.appendChild(sp); });
+      el.appendChild(tagBox);
+    }
+    box.appendChild(el);
+  });
+});
+</script>
+
   <script>
 document.addEventListener('click', async (e)=>{
   const btn = e.target.closest('.btn-translate');

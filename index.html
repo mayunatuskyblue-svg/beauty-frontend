@@ -48,7 +48,6 @@ header{position:sticky;top:0;z-index:40;background:rgba(247,241,225,.72);backdro
 .hero-head h1{font-family:"Shippori Mincho",serif;font-weight:800;font-size:44px;letter-spacing:.02em;text-align:center;margin:0 0 6px;color:#17353a;text-shadow:0 1px 0 rgba(255,255,255,.6)}
 .hero-head p{opacity:.9;text-align:center;margin:18px 0 0}
 .hero-head h1{ font-size:44px; font-weight:800 }
-.hero-head h1{ font-family:"Shippori Mincho","Playfair Display",serif; }
 .hero-head p{ margin:16px 0 6px; font-size:16px; opacity:.92 }
 .container{ max-width:1200px; margin:0 auto; padding:0 20px }
 .grid{ gap:26px } /* カード間を少し広げる */
@@ -343,64 +342,28 @@ body.hero-header .nav-right .btn.primary{ background:transparent; border:0; box-
   .nav-link{ font-weight:700 }
   .icon-btn{ width:40px; height:40px }
 }
-/* ==== Top white bar (cute header strip) ==== */
-.topbar{
-  position:absolute;     /* ヒーローの上に浮かせる */
-  top:12px; left:50%; transform:translateX(-50%);
-  width:min(1120px, 92vw);
-  height:72px;           /* 白い帯の“高さ”＝ここを変えると拡大/縮小 */
-  padding:10px 14px;
-  background:#fff;
-  border:1px solid var(--stroke);
-  border-radius:18px;
-  box-shadow:0 10px 24px rgba(0,0,0,.08);
-  display:flex; align-items:center; justify-content:space-between; gap:16px;
-  z-index:30;
+/* === Auth nav typography (Signup / Login だけ) === */
+#navSignup, #navLogin{
+  /* 日本語を“しっかり太く・綺麗に”見せる組み合わせ */
+  font-family: "Zen Kaku Gothic New","M PLUS Rounded 1c","Inter","Noto Sans JP",system-ui,sans-serif;
+  font-weight: 900;                 /* しっかり太く */
+  letter-spacing: .03em;            /* ほんの少しだけ字間を広げる */
+  font-feature-settings: "palt" 1;  /* かなのプロポーショナル詰め（対応フォントで効く） */
+  text-underline-offset: 4px;       /* hover時の下線位置をおしゃれに */
+  text-decoration-thickness: 2px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-/* 既存の hero-header 用の絶対配置を “帯の中では無効化” */
-body.hero-header .nav-right{ position:static; right:auto; top:auto }
-body.hero-header .logo-img{ position:static; width:56px; height:auto; border-radius:12px; box-shadow:none }
-body.hero-header #langSelect,
-body.hero-header .header-controls{ position:static }
-
-/* ナビの並びとフォントの雰囲気（丸ゴ寄りで可愛く） */
-.nav-right{ display:flex; align-items:center; gap:18px }
-.nav-link{
-  font-family: "M PLUS Rounded 1c","Zen Kaku Gothic New","Inter",sans-serif;
-  font-weight:800; letter-spacing:.02em;
-  color:#17353a; text-decoration:none; padding:4px 0;
+/* ほんのり効かせるだけ（色・レイアウトは変えない） */
+#navSignup:hover, #navLogin:hover{
+  text-decoration: underline;
+  opacity: .95;
 }
-.nav-link:hover{ text-decoration:underline }
 
-/* 丸いマイページ（中アイコン＋極薄の外枠） */
-.icon-btn{
-  width:46px; height:46px; border-radius:999px; cursor:pointer;
-  background:#fff;
-  border:1.5px solid color-mix(in oklab, var(--ink) 25%, white);
-  box-shadow:0 2px 8px rgba(0,0,0,.06);
-  display:grid; place-items:center;
-}
-.icon-btn:hover{ box-shadow:0 4px 12px rgba(0,0,0,.12) }
-.icon-btn:active{ transform:translateY(1px) }
-.icon-btn svg{ width:22px; height:22px; color:#17353a }
-
-/* 言語ピルをコンパクト＆上寄せ */
-.lang-pill{
-  display:inline-flex; align-items:center; gap:8px;
-  height:40px; padding:0 12px; border-radius:12px;
-  background:#fff; border:1px solid var(--stroke);
-  box-shadow:0 2px 8px rgba(0,0,0,.04);
-}
-.langSel{ border:0; background:transparent; font:inherit; font-weight:800; outline:0; appearance:none }
-.lang-pill .flag{ font-size:18px }
-.lang-pill .caret{ width:16px; height:16px; opacity:.6 }
-
-/* ヒーロー余白を調整（帯が入る分だけ上の余裕を少し増やす） */
-.hero-head{ padding-top:120px; }  /* 以前より +24〜32px 程度 */
-@media (max-width: 640px){
-  .topbar{ height:66px; gap:12px }
-  .hero-head{ padding-top:112px }
+/* モバイルは少し軽めに */
+@media (max-width: 560px){
+  #navSignup, #navLogin{ font-weight: 800; letter-spacing: .02em; }
 }
 
 </style>
@@ -410,35 +373,37 @@ body.hero-header .header-controls{ position:static }
 <body class="hero-header bg-radials">
 
 <header>
-  <div class="topbar container hwrap">
+  <div class="container hwrap">
     <a class="brand-left" href="./index.html" aria-label="BeautyLanka">
       <img class="logo-img" src="/assets/img/logo_mark.png" alt="BeautyLanka logo">
     </a>
-
     <nav class="nav-right">
-      <!-- 既存の言語ピル / 新規登録 / ログイン / マイページをそのまま移動 -->
-      <!-- （IDはそのまま：既存JSが動く） -->
-      <div class="lang-pill">
-        <span class="flag" id="langFlag">🇯🇵</span>
-        <select id="langSelect" class="langSel" title="Language">
-          <option value="auto">Auto</option>
-          <option value="ja">日本語</option>
-          <option value="en">English</option>
-        </select>
-        <svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="currentColor"/></svg>
-      </div>
-      <a class="nav-link" id="navSignup" data-i18n="auth.signup">新規登録</a>
-      <a class="nav-link" id="navLogin"  data-i18n="auth.login">ログイン</a>
-      <button class="icon-btn" id="navMypage" data-i18n="ui.mypage" aria-label="マイページ">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="8" r="3" fill="currentColor"/>
-          <path d="M4 20c1.5-4 6.5-5 8-5s6.5 1 8 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-      </button>
-    </nav>
+  <!-- 旗付きの言語ピル -->
+  <div class="lang-pill">
+    <span class="flag" id="langFlag">🇯🇵</span>
+    <select id="langSelect" class="langSel" title="Language">
+      <option value="auto">Auto</option>
+      <option value="ja">日本語</option>
+      <option value="en">English</option>
+    </select>
+    <svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="currentColor"/></svg>
+  </div>
+
+  <!-- テキストリンク風（IDは維持：既存JSが動く） -->
+  <a class="nav-link" id="navSignup" data-i18n="auth.signup">新規登録</a>
+  <a class="nav-link" id="navLogin"  data-i18n="auth.login">ログイン</a>
+
+  <!-- 丸アイコンのマイページ（ID維持） -->
+  <button class="icon-btn" id="navMypage" data-i18n="ui.mypage" aria-label="マイページ">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="8" r="3" fill="currentColor"/>
+      <path d="M4 20c1.5-4 6.5-5 8-5s6.5 1 8 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  </button>
+</nav>
+
   </div>
 </header>
-
 
 <div class="container"><nav class="breadcrumbs" aria-label="Breadcrumb"></nav></div>
 

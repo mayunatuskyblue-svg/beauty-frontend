@@ -464,6 +464,46 @@ body.hero-header #langSelect{
 @media (max-width:820px){
   body.hero-header .lang-pill{ left:auto; right:12px; top:76px }
 }
+/* ===== Language pill: complete override ===== */
+
+/* ピルの見た目（白い丸・影・太字） */
+.lang-pill{
+  position:relative;
+  display:inline-flex; align-items:center; gap:10px;
+  height:44px; padding:0 14px 0 12px;
+  border-radius:9999px;
+  background:#fff;
+  border:1px solid var(--stroke, #E7E7E7);
+  box-shadow:0 8px 22px rgba(0,0,0,.08);
+  color:#2B2B2B;
+  font-weight:800;
+  line-height:1;
+}
+
+/* 中の要素サイズ */
+.lang-pill .flag{ font-size:18px }
+.lang-pill .abbr{ font-size:16px; letter-spacing:.02em }
+.lang-pill .caret{ width:16px; height:16px; opacity:.6 }
+
+/* ネイティブ <select> は“透明で全面に被せる”だけ（操作担当） */
+.langSel{
+  position:absolute; inset:0;
+  width:100%; height:100%;
+  opacity:0; appearance:none !important;
+  border:0; background:transparent; cursor:pointer;
+}
+
+/* 位置：通常ヘッダーでは右上。ヒーローヘッダー時は既存デザイン通り左上寄り */
+header .lang-pill{ position:absolute; right:16px; top:14px; z-index:9; }
+body.hero-header .lang-pill{ left:16px; right:auto; top:108px; }
+
+/* 既存の “#langSelect を単独で動かす” ルールを打ち消す（重要） */
+#langSelect{ position:absolute; inset:0; left:auto; top:auto; right:auto; bottom:auto; }
+
+/* モバイル時の位置（必要なら） */
+@media (max-width:820px){
+  body.hero-header .lang-pill{ left:auto; right:12px; top:76px; }
+}
 
 </style>
   <script src="lang.js" defer></script>

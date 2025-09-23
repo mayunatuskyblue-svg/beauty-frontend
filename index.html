@@ -291,55 +291,6 @@ body.hero-header .header-controls{ position:absolute; left:16px; top:158px; z-in
 }
 /* Keep code but hide currency picker (LKR fixed) */
 #currencySelect{ display:none; }
-/* === Searchバーのピル高さを統一 === */
-:root{
-  --pill-h: 56px;         /* ← ここを 52–60px くらいで好み調整 */
-}
-
-/* ピル本体 */
-.pill{
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: var(--pill-h);
-  padding: 0 16px;
-  border-radius: calc(var(--pill-h)/2);
-  box-sizing: border-box;
-}
-
-/* アイコンだけの丸ピル（虫眼鏡など） */
-.pill.is-icon{
-  min-width: var(--pill-h);
-  justify-content: center;
-  padding: 0;             /* 正円にする */
-}
-
-/* ピル内の form 要素を高さ合わせ & 文字を上下中央に */
-.pill input,
-.pill select,
-.pill button{
-  height: calc(var(--pill-h) - 12px);   /* 内側余白分だけ少し小さく */
-  line-height: 1.2;
-  padding-block: 0;                      /* UAの上下余白を消す */
-  box-sizing: border-box;
-}
-
-/* date / search の挙動差吸収（Chrome系） */
-.pill input[type="date"]::-webkit-datetime-edit { padding: 0; line-height: 1.2; }
-.pill input[type="search"] { -webkit-appearance: none; }
-
-/* 送信ボタン（右の大きいボタン）も高さ合わせ */
-.search-button,                 /* 使っているクラス名に合わせてどれかを残す */
-button.search-btn,
-.search-bar button[type="submit"]{
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: var(--pill-h);
-  padding: 0 28px;
-  border-radius: calc(var(--pill-h)/2);
-  box-sizing: border-box;
-}
 
 </style>
   <script src="lang.js" defer></script>
@@ -743,6 +694,8 @@ function normalizeForUI(raw, L){
     name:   (L==='en' ? (raw.name_en||raw.name_ja) : (raw.name_ja||raw.name_en)),
     type:   (L==='en' ? (raw.type_en||raw.type_ja) : (raw.type_ja||raw.type_en)),
     place:  (L==='en' ? (raw.place_en||raw.place_ja) : (raw.place_ja||raw.place_en)),
+    typeJa:  (raw.type_ja  || raw.type_en  || ''),
+    placeJa: (raw.place_ja || raw.place_en || ''),
     lat:    raw.lat, lng: raw.lng,
     price:  raw.price_jpy,
     rating: raw.rating || 0,
@@ -781,6 +734,12 @@ const DATA_FALLBACK=[
   {id:"S2", name:"Ayur Luxe Spa", type:"スパ", place:"ゴール", lat:6.025, lng:80.217, price:6630, rating:4.7, tags:["アーユルヴェーダ","リラク"], points:"本格アーユルヴェーダと静かな個室。", photos:["/assets/img/spa_massage.webp","/assets/img/herbs_flatlay.webp","/assets/img/lashes_a.webp"]},
   {id:"S3", name:"Cinnamon Grow", type:"ハーブ", place:"キャンディ", lat:7.293, lng:80.641, price:5610, rating:4.5, tags:["ハーブ","リラク"], points:"自社ブレンドのハーブでリラックス。", photos:["/assets/img/herbs_flatlay.webp","/assets/img/spa_massage.webp","/assets/img/lashes_b.webp"]}
 ];
+  
+// Fallbackにも日本語固定キーを付与（比較で使う）
+DATA_FALLBACK.forEach(s=>{
+  s.typeJa  = s.type;
+  s.placeJa = s.place;
+});
 
 // ==== Filters ====
 function initFilters(dataSource){
@@ -797,10 +756,13 @@ function initFilters(dataSource){
     const type  = typeSel.value;
     const src = (_DATA_CURRENT && _DATA_CURRENT.length>0) ? _DATA_CURRENT : DATA_FALLBACK;
     const items = src.filter(s=>
-      (!place || s.place===place) &&
-      (!type  || s.type===type) &&
-      (!kw || (String(s.name).toLowerCase().includes(kw) || String(s.points||'').toLowerCase().includes(kw) || (s.tags||[]).join(',').toLowerCase().includes(kw)))
-    );
+  (!place || s.placeJa===place) &&
+  (!type  || s.typeJa===type) &&
+  (!kw || (String(s.name).toLowerCase().includes(kw)
+        || String(s.points||'').toLowerCase().includes(kw)
+        || (s.tags||[]).join(',').toLowerCase().includes(kw)))
+);
+
     render(items);
     const hist = readJSON('bl_search_history', []);
     hist.unshift({ place, type, date:'', guests:'', ts: Date.now() });
@@ -928,10 +890,13 @@ if(typeof render==='function'){
       const typeSel  = document.getElementById('type').value;
       const src = (typeof _DATA_CURRENT!=='undefined' && Array.isArray(_DATA_CURRENT) && _DATA_CURRENT.length>0) ? _DATA_CURRENT : DATA_FALLBACK;
       const items = src.filter(s=>
-        (!placeSel || s.place===placeSel) &&
-        (!typeSel  || s.type===typeSel) &&
-        (!kw || (String(s.name).toLowerCase().includes(kw) || String(s.points||'').toLowerCase().includes(kw) || (s.tags||[]).join(',').toLowerCase().includes(kw)))
-      );
+  (!placeSel || s.placeJa===placeSel) &&
+  (!typeSel  || s.typeJa===typeSel) &&
+  (!kw || (String(s.name).toLowerCase().includes(kw)
+        || String(s.points||'').toLowerCase().includes(kw)
+        || (s.tags||[]).join(',').toLowerCase().includes(kw)))
+);
+
       render(items);
     });
   }catch(e){ console.warn('attachI18nSubmit failed', e); }
@@ -948,75 +913,6 @@ initFilters(DATA_FALLBACK);
 showSkeletons(6);
 initCatalog();
 
-  <script>
-/* ---- Unified search handler (場所/メニュー/キーワード/金額) ---- */
-(function enhanceSearch(){
-  const form   = document.getElementById('searchForm');
-  const place  = document.getElementById('place');
-  const type   = document.getElementById('type');
-  const kwInp  = document.getElementById('kw');
-  const budget = document.getElementById('budget');
-  const date   = document.getElementById('date'); // まだ絞り込みには未使用（将来の空き状況APIに接続予定）
-
-  function parseBudget(v){
-    if(!v) return null;
-    const [min,max] = v.split('-').map(n=>Number(n)||0);
-    return { min, max };
-  }
-
-  function runSearch(ev){
-    if(ev) ev.preventDefault();
-    const kw = (kwInp.value||'').toLowerCase().trim();
-    const src = (Array.isArray(window._DATA_CURRENT) && window._DATA_CURRENT.length>0)
-      ? window._DATA_CURRENT
-      : (window.DATA_FALLBACK||[]);
-
-    const br = parseBudget(budget.value);
-
-    const items = src.filter(s=>{
-      const okPlace  = !place.value || s.place === place.value;
-      const okType   = !type.value  || s.type  === type.value;
-      const okKw     = !kw || (
-        String(s.name).toLowerCase().includes(kw) ||
-        String(s.points||'').toLowerCase().includes(kw) ||
-        (s.tags||[]).join(',').toLowerCase().includes(kw)
-      );
-      const okMoney  = !br || (
-        (Number(s.price)||0) >= br.min &&
-        (Number(s.price)||0) <= br.max
-      );
-      return okPlace && okType && okKw && okMoney;
-    });
-
-    // 表示更新
-    if (typeof window.render === 'function') window.render(items);
-
-    // 検索履歴に保存（将来のUX用）
-    try{
-      const hist = JSON.parse(localStorage.getItem('bl_search_history')||'[]');
-      hist.unshift({
-        place: place.value, type: type.value,
-        budget: budget.value, date: date.value,
-        kw, ts: Date.now()
-      });
-      localStorage.setItem('bl_search_history', JSON.stringify(hist.slice(0,50)));
-    }catch(_e){}
-  }
-
-  // ボタン/Enterで検索
-  if(form){
-    form.addEventListener('submit', runSearch);
-
-    // ついでに budget 変更時も即反映したい人向け（任意）
-    budget.addEventListener('change', runSearch);
-  }
-
-  // 既にどこかで render 済みなら価格表示をLKRで再描画
-  if (typeof window.updateCardCurrencies === 'function') window.updateCardCurrencies();
-})();
-</script>
-</script>
-<script>
 // Back to top button
 (function(){
   const btn = document.getElementById('toTop');

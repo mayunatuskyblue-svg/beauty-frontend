@@ -252,6 +252,26 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
           }
 
           // ここから先は既存の予約POST→payments.html遷移ロジックを継続
+          // ★このブロックを挿入（confirm.html）
+const base = (window.BL_PAY?.base||'').replace(/\/$/,'');
+const payload = {
+  bookingId:  crypto.randomUUID(),       // 既に持ってるIDがあればそれを使う
+  date:       (new Date()).toISOString(),// 実際は予約日時を入れる
+  menu:       item,
+  minutes:    Number(qs.get('minutes')||0),
+  amountJPY:  price,
+  email:      email,
+  name:       (document.getElementById('uf_name')?.value||'').trim()
+};
+
+await fetch(`${base}/api/book`, {
+  method:'POST', headers:{'Content-Type':'application/json'},
+  body: JSON.stringify(payload)
+}).then(r=>r.json());
+
+/* 以降は支払いページや thanks へ遷移 */
+location.href = ev.currentTarget.getAttribute('href') || './';
+
         }catch(e){
           alert('予約の作成に失敗しました。もう一度お試しください。');
         }

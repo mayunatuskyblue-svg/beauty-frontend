@@ -296,6 +296,52 @@ body.hero-header .header-controls{ position:absolute; left:16px; top:158px; z-in
 }
 /* Keep code but hide currency picker (LKR fixed) */
 #currencySelect{ display:none; }
+/* --- Header new look --- */
+.nav-right{ display:flex; align-items:center; gap:14px }
+
+/* テキストリンク風 */
+.nav-link{
+  font-weight:800; letter-spacing:.01em;
+  color:#17353a; text-decoration:none; padding:4px 0;
+}
+.nav-link:hover{ text-decoration:underline }
+.nav-link:active{ opacity:.8 }
+
+/* 丸いマイページボタン */
+.icon-btn{
+  width:44px; height:44px; border-radius:999px;
+  border:1.5px solid color-mix(in oklab, var(--ink) 35%, white);
+  background:#fff; display:grid; place-items:center; cursor:pointer;
+  box-shadow:0 2px 8px rgba(0,0,0,.06);
+}
+.icon-btn:hover{ box-shadow:0 4px 12px rgba(0,0,0,.10) }
+.icon-btn:active{ transform:translateY(1px) }
+.icon-btn svg{ width:22px; height:22px; color:#17353a }
+
+/* 旗付きの言語ピル */
+.lang-pill{
+  display:inline-flex; align-items:center; gap:8px;
+  height:38px; padding:0 10px; border-radius:12px;
+  background:#fff; border:1px solid var(--stroke);
+  box-shadow:0 2px 8px rgba(0,0,0,.04);
+}
+.lang-pill .flag{ font-size:18px; line-height:1 }
+.langSel{
+  border:0; background:transparent; font:inherit; font-weight:800;
+  padding:0; outline:0; appearance:none;
+}
+.lang-pill .caret{ width:16px; height:16px; opacity:.6 }
+
+/* ヒーロー上配置時の微調整：旧ボタン依存を無効化 */
+body.hero-header .nav-right .btn,
+body.hero-header .nav-right .btn.primary{ background:transparent; border:0; box-shadow:none }
+
+/* レスポンシブ（狭い幅） */
+@media (max-width:560px){
+  .nav-right{ gap:10px }
+  .nav-link{ font-weight:700 }
+  .icon-btn{ width:40px; height:40px }
+}
 
 </style>
   <script src="lang.js" defer></script>
@@ -309,11 +355,30 @@ body.hero-header .header-controls{ position:absolute; left:16px; top:158px; z-in
       <img class="logo-img" src="/assets/img/logo_mark.png" alt="BeautyLanka logo">
     </a>
     <nav class="nav-right">
-      <select id="langSelect" class="sel" title="Language"><option value="auto">Auto</option><option value="ja">日本語</option><option value="en">English</option></select>
-      <button class="btn reserve-btn" id="navLogin" data-i18n="auth.login">ログイン</button>
-      <button class="btn primary reserve-btn" id="navSignup" data-i18n="auth.signup">新規登録</button>
-      <button class="btn reserve-btn" id="navMypage" data-i18n="ui.mypage">マイページ</button>
-    </nav>
+  <!-- 旗付きの言語ピル -->
+  <div class="lang-pill">
+    <span class="flag" id="langFlag">🇯🇵</span>
+    <select id="langSelect" class="langSel" title="Language">
+      <option value="auto">Auto</option>
+      <option value="ja">日本語</option>
+      <option value="en">English</option>
+    </select>
+    <svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="currentColor"/></svg>
+  </div>
+
+  <!-- テキストリンク風（IDは維持：既存JSが動く） -->
+  <a class="nav-link" id="navSignup" data-i18n="auth.signup">新規登録</a>
+  <a class="nav-link" id="navLogin"  data-i18n="auth.login">ログイン</a>
+
+  <!-- 丸アイコンのマイページ（ID維持） -->
+  <button class="icon-btn" id="navMypage" data-i18n="ui.mypage" aria-label="マイページ">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="8" r="3" fill="currentColor"/>
+      <path d="M4 20c1.5-4 6.5-5 8-5s6.5 1 8 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  </button>
+</nav>
+
   </div>
 </header>
 
@@ -511,6 +576,21 @@ function applyI18N(){
   const placeOpt=document.querySelector('#place option[value=""]'); if(placeOpt) placeOpt.textContent=T[L].place;
   const typeOpt=document.querySelector('#type option[value=""]'); if(typeOpt) typeOpt.textContent=T[L].type;
 }
+  <script>
+function updateLangFlag(){
+  var f = document.getElementById('langFlag'); if(!f) return;
+  var L = (localStorage.getItem('bl_lang') || 'auto');
+  if(L==='auto'){
+    var ja = (navigator.language||'en').toLowerCase().startsWith('ja');
+    f.textContent = ja ? '🇯🇵' : '🇺🇸';
+  }else{
+    f.textContent = (L==='ja') ? '🇯🇵' : '🇺🇸';
+  }
+}
+document.addEventListener('DOMContentLoaded', updateLangFlag);
+/* 既存の sel.onchange 内で reload しているのでここでは呼ぶだけ */
+</script>
+
 (function(){
   const sel = document.getElementById('langSelect');
   const pref = localStorage.getItem('bl_lang') || 'auto';

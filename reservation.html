@@ -358,21 +358,7 @@ function getGasUrlAndKey(){
   const key = p.get('key') || localStorage.getItem('bl_gas_key') || '';
   return { url, key };
 }
-// ymd: '2025-09-22' → Set('09:00','09:30',...)
-async function fetchTakenSlots(salonId, ymd){
-  try{
-    const {url, key} = getGasUrlAndKey();
-    if(!url) return new Set(); // URL未設定なら全部◯で描画（壊さない）
-    const q = new URLSearchParams({ kind:'taken', salonId, ymd, key });
-    const res = await fetch(`${url}?${q}`, { credentials:'omit' });
-    const j = await res.json().catch(()=>({ok:false, items:[]}));
-    if(!j || !j.ok || !Array.isArray(j.items)) return new Set();
-    return new Set(j.items.map(String));
-  }catch(e){
-    console.warn('fetchTakenSlots failed', e);
-    return new Set();
-  }
-}
+
 function hhmm(h,m){ return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); }
 function ymdOf(d){ return d.toISOString().slice(0,10); }
 
@@ -415,48 +401,53 @@ for (const d of days) takenMap[ymdOf(d)] = await fetchTakenSlots(salonId, ymdOf(
     });
     thead.appendChild(hr);
 
-    times.forEach(([h,m])=>{
-      const tr=document.createElement('tr');
-      const th=document.createElement('th'); th.textContent = fmtHm(h,m); th.style.padding='6px 8px'; tr.appendChild(th);
-      days.forEach(d=>{
-        const td=document.createElement('td');
-        const btn=document.createElement('button');
-        btn.className='timebtn';
-        btn.textContent='◯';
-        const key = ymdOf(d);
-    // 1つだけ残す（重複を削除）
-        const keyYmd = ymdOf(d);
-        const taken = await fetchTaken(currentSalonId, selectedYmd);
-        const slot   = hhmm(h,m); // ← 関数呼び出し（上で定義されているやつ）
-        if (takenMap[keyYmd] && takenMap[keyYmd].has(slot)) {
-        btn.textContent = '×';
-        btn.disabled = true;
-        btn.setAttribute('aria-disabled','true');
-          if (taken.has(hhmm)) {
-  btn.disabled = true;
-  btn.setAttribute('aria-disabled','true');
-  btn.title = '×';
-}  }
+    // 既に: const table, thead, tbody, hr はできている前提
 
+times.forEach(([h,m])=>{
+  const tr = document.createElement('tr');
+  const th = document.createElement('th');
+  th.textContent = fmtHm(h,m);
+  th.style.padding = '6px 8px';
+  tr.appendChild(th);
 
-        btn.addEventListener('click', ()=>{
-          const dt = new Date(d); dt.setHours(h,m,0,0);
-          const iso = dt.toISOString();
-          localStorage.setItem('reserve_selected', iso);
-          document.getElementById('v_date').textContent = dt.toLocaleString();
-          // 軽いフィードバック
-          btn.textContent='✓';
-          setTimeout(()=>btn.textContent='◯',600);
-        });
-        td.appendChild(btn);
-        tr.appendChild(td);
+  days.forEach(d=>{
+    const td  = document.createElement('td');
+    const btn = document.createElement('button');
+    btn.className = 'timebtn';
+
+    const slot = hhmm(h,m);        // '09:30' など
+    const y    = ymdOf(d);         // '2025-09-24' など
+    const isTaken = takenMap[y] && takenMap[y].has(slot);
+
+    if (isTaken) {
+      btn.textContent = '×';
+      btn.disabled = true;
+      btn.setAttribute('aria-disabled','true');
+    } else {
+      btn.textContent = '◯';
+      btn.addEventListener('click', ()=>{
+        const dt = new Date(d);
+        dt.setHours(h, m, 0, 0);
+        const iso = dt.toISOString();
+        try { localStorage.setItem('reserve_selected', iso); } catch(_){}
+        document.getElementById('v_date').textContent = dt.toLocaleString();
+        btn.textContent = '✓';
+        setTimeout(()=>btn.textContent='◯', 600);
       });
-      tbody.appendChild(tr);
-    });
+    }
 
-    table.appendChild(thead); table.appendChild(tbody);
-    grid.innerHTML=''; grid.appendChild(table);
-  }
+    td.appendChild(btn);
+    tr.appendChild(td);
+  });
+
+  tbody.appendChild(tr);
+});
+
+table.appendChild(thead);
+table.appendChild(tbody);
+grid.innerHTML = '';
+grid.appendChild(table);
+
 
   buildWeek(weekOffset);
   btnPrev.addEventListener('click', ()=>{ weekOffset--; buildWeek(weekOffset); });

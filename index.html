@@ -392,6 +392,24 @@ body.hero-header .nav-right .btn.primary{ background:transparent; border:0; box-
     height: 56px;      /* .pill.big と同じ高さ */
   }
 }
+/* === FIX: 旧4カラム指定を無効化して、新レイアウトを素直に効かせる === */
+.searchbar form{
+  display: block;         /* ← これで内側 .searchgrid / .searchrow2 が主役になる */
+}
+
+/* （オプション）PC幅での見た目だけ少し整える：ボタン高さ合わせ */
+@media (min-width: 980px){
+  .searchrow2 .searchbtn{ height:56px; }
+}
+/* === FIX: 旧4カラム指定を無効化して、新レイアウトを素直に効かせる === */
+.searchbar form{
+  display: block;         /* ← これで内側 .searchgrid / .searchrow2 が主役になる */
+}
+
+/* （オプション）PC幅での見た目だけ少し整える：ボタン高さ合わせ */
+@media (min-width: 980px){
+  .searchrow2 .searchbtn{ height:56px; }
+}
 
 </style>
   <script src="lang.js" defer></script>

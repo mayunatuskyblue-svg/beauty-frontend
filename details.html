@@ -36,7 +36,7 @@
   .list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
   .chip{display:inline-block;background:#efe5d9;color:#6b5e55;border-radius:999px;padding:4px 10px;margin-right:6px;font-size:12px}
 
-  iframe.map{width:100%;height:300px;border:0;border-radius:12px}
+  iframe.map{width:100%;height:220px;border:0;border-radius:12px}
   .notice{padding:.75em 1em;margin:.5em 0;background:#fff7e6;border:1px solid #ffd18a;border-radius:8px;color:#6b5e55}
 
   /* レビュー表示 */
@@ -118,6 +118,17 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
 .btn{ color: var(--ink); }
 .btn.primary{ color:#fff; }
 </style>
+<script>
+// details.html 用の簡易言語ヘルパー（index と同じ挙動）
+function getLang(){
+  const pref = localStorage.getItem('bl_lang') || 'auto';
+  if(pref === 'auto'){
+    const ja = (navigator.language||'en').toLowerCase().startsWith('ja');
+    return ja ? 'ja' : 'en';
+  }
+  return pref;
+}
+</script>
 
 </head>
 <body>
@@ -327,16 +338,39 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
     return root;
   }
 
-  // ---- renderers ----
   function renderInfo(it){
-    setText('#salonTitle', it.name_ja || it.name_en || it.id);
-    setText('#vType', it.type_ja || it.type_en || '-');
-    setText('#vPlace', it.place_ja || it.place_en || '-');
-    setText('#vPrice', it.price_jpy ? fmtJPY(it.price_jpy) : '-');
-    setText('#vRating', it.rating ? String(it.rating) : '-');
-    setText('#points', it.points_ja || it.points_en || '');
-    $('#btnBook').onclick = (e)=>{e.preventDefault(); /* 予約導線は後で差し替え */ alert('予約導線は後で差し替え');};
-  }
+  const L = getLang();
+  const pick = (ja, en) => (L === 'en' ? (en || ja) : (ja || en));
+
+  // タイトル
+  setText('#salonTitle', pick(it.name_ja, it.name_en) || it.id);
+
+  // 基本KV
+  setText('#vType',  pick(it.type_ja,  it.type_en)  || '-');
+  setText('#vPlace', pick(it.place_ja, it.place_en) || '-');
+  setText('#vPrice', it.price_jpy ? fmtJPY(it.price_jpy) : '-');
+
+  // レーティング：数値ではなく星＋数値に
+  const v = $('#vRating');
+  v.innerHTML = '';
+  const score = Number(it.rating || 0);
+  v.appendChild(starsEl(score));
+  const n = document.createElement('span');
+  n.className = 'muted';
+  n.style.marginLeft = '6px';
+  n.textContent = score ? score.toFixed(1) : '-';
+  v.appendChild(n);
+
+  // ハイライト文：言語別
+  setText('#points', pick(it.points_ja, it.points_en) || '');
+
+  // 予約ボタン（既存導線は残す）
+  $('#btnBook').onclick = (e)=>{
+    e.preventDefault();
+    alert('予約導線は後で差し替え');
+  };
+}
+
 
   function renderGallery(it){
   const main = document.querySelector('#gMain');
@@ -440,7 +474,7 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
           <div class="space"></div>
           <div>
             ${dur?`<span class="chip">${dur}分</span>`:''}
-            ${price?`<span class="chip">${price}</span>`:''}
+           ${price?`<span class="chip chip-price">${price}</span>`:''}
           </div>
         </div>
         <div style="flex:0 0 auto;display:flex;align-items:center">
@@ -508,6 +542,17 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
       const body = document.createElement('div'); body.textContent = o.text || '';
       el.appendChild(head); el.appendChild(body);
       box.appendChild(el);
+      // 上部の評価（#vRating）も集計結果で同期
+      const topRating = document.getElementById('vRating');
+      if (topRating) {
+      topRating.innerHTML = '';
+      topRating.appendChild(starsEl(sum.avg || 0));
+      const m = document.createElement('span');
+      m.className = 'muted';
+      m.style.marginLeft = '6px';
+      m.textContent = (sum.avg ? Number(sum.avg).toFixed(1) : '-') + (sum.count ? ` (${sum.count})` : '');
+      topRating.appendChild(m);
+      }
     });
   }
 

@@ -541,29 +541,32 @@ const fmtLKR = v => v ? ('Rs ' + Math.round(Number(v) * JPY_TO_LKR).toLocaleStri
 }
 
 
-  function renderGallery(it){
+  <script>
+function renderGallery(it){
   const main = document.querySelector('#gMain');
   const thumbs = document.querySelector('#gThumbs');
   main.innerHTML = ''; thumbs.innerHTML = '';
 
-  // 1) 値のゆらぎ吸収 + 代替候補を作る
-  let raw = Array.isArray(it.photos) ? it.photos : String(it.photos||'')
-    .replace(/[\r\n]+/g, ',').replace(/，/g, ',').split(',');
+  // 1) 値のゆらぎ吸収（配列 or 文字列 -> 配列）
+  let raw = Array.isArray(it.photos) ? it.photos :
+            String(it.photos||'').replace(/[\r\n]+/g, ',').replace(/，/g, ',').split(',');
   raw = raw.map(s => String(s||'').trim()).filter(Boolean);
 
-  // 裸ファイル名は /assets/images/ を補完（実ファイルが images にある前提）
+  // 2) 裸ファイル名は /assets/images/ を補完。先頭スラッシュが無ければ付与。
   raw = raw.map(p => {
     if (!p.includes('/')) p = '/assets/images/' + p;
     if (!p.startsWith('/')) p = '/' + p;
     return p;
   });
 
-  // 各エントリに img / images の両方の候補を用意
+  // 3) images / img の両候補を用意し、必ず ASSET_BASE を付与（GAS 上でも破綻しない）
   const pairs = raw.map(p => {
     const a = p.replace('/assets/images/','/assets/img/');
     const b = p.replace('/assets/img/','/assets/images/');
-    // どちらが元でも [images版, img版] の順にしておく（images優先）
-    return p.includes('/assets/images/') ? [p, a] : [b, p];
+    // images 優先で [images版, img版] の順
+    const c1 = p.includes('/assets/images/') ? p : b;
+    const c2 = p.includes('/assets/images/') ? a : p;
+    return [ toAbs(c1), toAbs(c2) ];
   });
 
   if (!pairs.length){
@@ -571,35 +574,38 @@ const fmtLKR = v => v ? ('Rs ' + Math.round(Number(v) * JPY_TO_LKR).toLocaleStri
     return;
   }
 
-  // 2) 最初の1枚は“ロード成功するまで”順番に試す
-  (function showFirstAvailable(list){
+  // 最初の1枚：ロード成功まで候補を順番に試す
+  (function showFirst(list){
     const img = new Image();
     let i = 0;
-    img.onload = () => { main.innerHTML = ''; main.appendChild(img); };
-    img.onerror = () => { if (++i < list.length) img.src = list[i]; else main.innerHTML = '<div class="notice">画像が見つかりません</div>'; };
+    img.onload  = () => { main.innerHTML=''; main.appendChild(img); };
+    img.onerror = () => { if (++i < list.length) img.src = list[i]; else main.innerHTML='<div class="notice">画像が見つかりません</div>'; };
     img.src = list[i];
   })(pairs[0]);
 
-  // 3) サムネは“成功したものだけ”並べる
+  // サムネ：成功したものだけ並べる（クリックでメインも同じ候補順に再試行）
   pairs.forEach(alts => {
     const t = new Image();
     t.loading = 'lazy';
     let i = 0;
     t.onerror = () => { if (++i < alts.length) t.src = alts[i]; else t.remove(); };
-    t.onload  = () => { t.onclick = () => {
-      // クリックでメインも同じ候補順で再試行
-      (function show(list){
-        const big = new Image();
-        let j = 0;
-        big.onload = () => { main.innerHTML=''; main.appendChild(big); };
-        big.onerror= () => { if (++j < list.length) big.src = list[j]; else main.innerHTML='<div class="notice">画像が見つかりません</div>'; };
-        big.src = list[j];
-      })(alts);
-    }; };
+    t.onload  = () => {
+      t.onclick = () => {
+        (function show(list){
+          const big = new Image();
+          let j = 0;
+          big.onload  = () => { main.innerHTML=''; main.appendChild(big); };
+          big.onerror = () => { if (++j < list.length) big.src = list[j]; else main.innerHTML='<div class="notice">画像が見つかりません</div>'; };
+          big.src = list[j];
+        })(alts);
+      };
+    };
     t.src = alts[i];
     thumbs.appendChild(t);
   });
 }
+</script>
+
 
 
   function renderMap(it){
@@ -648,7 +654,7 @@ const fmtLKR = v => v ? ('Rs ' + Math.round(Number(v) * JPY_TO_LKR).toLocaleStri
         </div>
         <div style="flex:0 0 auto;display:flex;align-items:center">
           <a class="btn" style="white-space:nowrap"
-             href="reservation.html?${new URLSearchParams({
+             href="${ASSET_BASE}/reservation.html?${new URLSearchParams({
                salonId,
                salonName,
                item: name,

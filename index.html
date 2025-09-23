@@ -242,9 +242,6 @@ body.hero-header .header-controls{ position:absolute; left:16px; top:158px; z-in
 .chipbar{ margin: 10px auto 8px; }          /* チップ列 */
 .searchwrap{ margin: 12px auto 8px; }       /* もう重ならない値に */
 
-<section id="list" class="grid" aria-live="polite"></section>
-
-
 /* ==== New search layout (two rows like the mock) ==== */
 .searchbar{ padding:16px; }
 .searchgrid{
@@ -333,6 +330,16 @@ body.hero-header .header-controls{ position:absolute; left:16px; top:158px; z-in
         <option value="" data-i18n="search.place">場所</option>
       </select>
     </label>
+
+    <!-- ここは既存：検索UI -->
+</div> <!-- .searchwrap -->
+</div> <!-- .container (検索UIの外側) -->
+
+<!-- ▼▼ これを追加：カード描画先 ▼▼ -->
+<div class="container">
+  <section id="list" class="grid" aria-live="polite"></section>
+</div>
+<!-- ▲▲ ここまで追加 ▲▲ -->
 
     <label class="pill" aria-label="メニュー">
       <!-- list icon -->

@@ -545,105 +545,118 @@ const fmtLKR = v => v ? ('Rs ' + Math.round(Number(v) * JPY_TO_LKR).toLocaleStri
   };
 }
 
-
-
-  // フィルタ用に保持
-  window.__allReviews = items;
-
-  items.forEach(r => {
-    const el = document.createElement('div');
-    el.className = 'rv-item';
-
-    // ヘッダ：星・名前・日付
-    const head = document.createElement('div');
-    head.className = 'rv-head';
-    head.appendChild(starsEl(r.rating));
-    const nm = document.createElement('div');
-    nm.className = 'rv-name';
-    nm.textContent = r.name || '匿名';
-    const ts = document.createElement('div');
-    ts.className = 'rv-ts';
-    ts.textContent = (r.ts || '').slice(0,10);
-    head.appendChild(nm);
-    head.appendChild(ts);
-
-    // 本文
-    const body = document.createElement('div');
-    const original = String(r.text || '');
-    body.textContent = original;
-
-    // 翻訳トグルボタン
-    const btn = document.createElement('button');
-    btn.className = 'btn secondary';
-    btn.style.margin = '6px 0';
-    const L = (localStorage.getItem('bl_lang') || 'auto');
-    const isJa = (L === 'ja') || (L === 'auto' && (navigator.language||'').toLowerCase().startsWith('ja'));
-    const target = isJa ? 'en' : 'ja';
-    const TXT_TO = isJa ? '英語に自動翻訳' : 'Translate to Japanese';
-    const TXT_BACK = isJa ? '原文に戻す' : 'Show original';
-    btn.textContent = TXT_TO;
-
-    let showingTranslated = false;
-    const cacheKey = `${target}:${original.slice(0,200)}`;
-    window.__bl_tr_cache = window.__bl_tr_cache || {};
-
-    btn.onclick = async () => {
-      if (!showingTranslated) {
-        try {
-          if (!window.__bl_tr_cache[cacheKey]) {
-            const u = `${GAS.url}?kind=translate&key=${encodeURIComponent(GAS.key)}&target=${encodeURIComponent(target)}&text=${encodeURIComponent(original)}`;
-            const j = await fetch(u, {cache:'no-store'}).then(r => r.json());
-            if (!j || !j.ok) throw new Error('translate failed');
-            window.__bl_tr_cache[cacheKey] = j.text || original;
-          }
-          body.textContent = window.__bl_tr_cache[cacheKey];
-          btn.textContent = TXT_BACK;
-          showingTranslated = true;
-        } catch (e) {
-          alert(isJa ? '翻訳に失敗しました' : 'Translation failed');
-        }
-      } else {
-        body.textContent = original;
-        btn.textContent = TXT_TO;
-        showingTranslated = false;
-      }
-    };
-
-    el.appendChild(head);
-    el.appendChild(body);
-    el.appendChild(btn);
-
-    // 文化タグ（chip表示）
-    const tags = Array.isArray(r.cultureTags) ? r.cultureTags : [];
-    if (tags.length){
-      const tagBox = document.createElement('div');
-      tagBox.className = 'rv-tags';
-      tags.forEach(t => {
-        const sp = document.createElement('span');
-        sp.className = 'tag culture';
-        sp.textContent = t;
-        tagBox.appendChild(sp);
-      });
-      el.appendChild(tagBox);
+  // ---- メニュー ----
+  function renderMenus(list){
+    const box = $('#menuList'), empty = $('#menuEmpty');
+    if(!Array.isArray(list) || !list.length){
+      box.innerHTML = ''; empty.style.display = ''; return;
     }
-
-    box.appendChild(el);
-  });
-
-  // 右上の「評価」もサマリで上書き（★＋平均＋件数）
-  const topRating = document.getElementById('vRating');
-  if (topRating) {
-    topRating.innerHTML = '';
-    topRating.appendChild(starsEl(sum.avg || 0));
-    const m = document.createElement('span');
-    m.className = 'muted';
-    m.style.marginLeft = '6px';
-    m.textContent = (sum.avg ? Number(sum.avg).toFixed(1) : '-') + (sum.count ? ` (${sum.count})` : '');
-    topRating.appendChild(m);
+    empty.style.display = 'none';
+    box.innerHTML = list.map(m => {
+      const name  = m.name_ja || m.name_en || m.name || '';
+      const desc  = m.desc || '';
+      const price = (m.price_jpy || m.price) ? `<span class="chip chip-price">${fmtLKR(m.price_jpy || m.price)}</span>` : '';
+      const dur   = m.minutes ? `<span class="chip">${m.minutes}min</span>` : '';
+      return `<div class="bl-card">
+        <div style="font-weight:800;margin-bottom:6px">${name}</div>
+        ${desc ? `<div class="muted" style="margin-bottom:8px">${desc}</div>` : ''}
+        <div>${price} ${dur}</div>
+      </div>`;
+    }).join('');
   }
-}
-</script>
 
+  // ---- クーポン ----
+  function renderCoupons(list){
+    const box = $('#couponList'), empty = $('#couponEmpty');
+    if(!Array.isArray(list) || !list.length){
+      box.innerHTML = ''; empty.style.display = ''; return;
+    }
+    empty.style.display = 'none';
+    box.innerHTML = list.map(c => {
+      const exp = c.exp ? `<div class="muted" style="font-size:12px">有効期限: ${c.exp}</div>` : '';
+      return `<div class="bl-card">
+        <div style="font-weight:800;margin-bottom:6px">${c.title||''}</div>
+        ${c.body ? `<div class="muted" style="margin-bottom:8px">${c.body}</div>` : ''}
+        ${exp}
+      </div>`;
+    }).join('');
+  }
+
+  // ---- レビュー ----
+  function renderReviews(it, res){
+    const box = $('#reviewsList'), sumEl = $('#reviewsSummary');
+    const items = (res && res.items) || [];
+    const sum   = (res && res.summary) || {};
+    window.__allReviews = items; // フィルタ用に保持
+
+    // summary（★ + 平均 + 件数）
+    sumEl.innerHTML = '';
+    sumEl.appendChild(starsEl(sum.avg || 0));
+    const meta = document.createElement('span');
+    meta.className = 'muted';
+    meta.style.marginLeft = '6px';
+    meta.textContent = (sum.avg ? Number(sum.avg).toFixed(1) : '-') + (sum.count ? ` (${sum.count})` : '');
+    sumEl.appendChild(meta);
+
+    // list
+    box.innerHTML = '';
+    items.forEach(r => {
+      const el = document.createElement('div'); el.className='rv-item';
+      const head = document.createElement('div'); head.className='rv-head';
+      head.appendChild(starsEl(r.rating));
+      const nm = document.createElement('div'); nm.className='rv-name'; nm.textContent = r.name || '匿名';
+      const ts = document.createElement('div'); ts.className='rv-ts'; ts.textContent = (r.ts||'').slice(0,10);
+      head.appendChild(nm); head.appendChild(ts);
+
+      const body = document.createElement('div');
+      const original = String(r.text || '');
+      body.textContent = original;
+
+      // 翻訳トグル
+      const btn = document.createElement('button');
+      btn.className = 'btn secondary'; btn.style.margin = '6px 0';
+      const L = (localStorage.getItem('bl_lang') || 'auto');
+      const isJa = (L === 'ja') || (L === 'auto' && (navigator.language||'').toLowerCase().startsWith('ja'));
+      const target = isJa ? 'en' : 'ja';
+      const TXT_TO = isJa ? '英語に自動翻訳' : 'Translate to Japanese';
+      const TXT_BACK = isJa ? '原文に戻す' : 'Show original';
+      btn.textContent = TXT_TO;
+      let showingTranslated = false;
+      const cacheKey = `${target}:${original.slice(0,200)}`;
+      window.__bl_tr_cache = window.__bl_tr_cache || {};
+      btn.onclick = async () => {
+        if(!showingTranslated){
+          try{
+            if(!window.__bl_tr_cache[cacheKey]){
+              const u = `${GAS.url}?kind=translate&key=${encodeURIComponent(GAS.key)}&target=${encodeURIComponent(target)}&text=${encodeURIComponent(original)}`;
+              const j = await fetch(u,{cache:'no-store'}).then(r=>r.json());
+              if(!j || !j.ok) throw new Error('translate failed');
+              window.__bl_tr_cache[cacheKey] = j.text || original;
+            }
+            body.textContent = window.__bl_tr_cache[cacheKey];
+            btn.textContent = TXT_BACK; showingTranslated = true;
+          }catch(e){ alert(isJa ? '翻訳に失敗しました' : 'Translation failed'); }
+        }else{
+          body.textContent = original; btn.textContent = TXT_TO; showingTranslated = false;
+        }
+      };
+
+      el.appendChild(head);
+      el.appendChild(body);
+      el.appendChild(btn);
+
+      const tags = Array.isArray(r.cultureTags) ? r.cultureTags : [];
+      if(tags.length){
+        const tagBox = document.createElement('div'); tagBox.className='rv-tags';
+        tags.forEach(t => { const sp=document.createElement('span'); sp.className='tag culture'; sp.textContent=t; tagBox.appendChild(sp); });
+        el.appendChild(tagBox);
+      }
+      box.appendChild(el);
+    });
+  }
+
+
+  
 <script>
 async function translateText(text, target='en'){
   const url = `${window._GAS_url}?key=${encodeURIComponent(window._GAS_key)}&kind=translate&text=${encodeURIComponent(text)}&target=${encodeURIComponent(target)}`;

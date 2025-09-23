@@ -373,6 +373,26 @@ body.hero-header .nav-right .btn.primary{ background:transparent; border:0; box-
   height: auto;            /* 帯の高さ固定を解除 */
   padding: 0;              /* 余白を最小に */
 }
+  /* === PC幅では検索バーを1列に並べ、均等配置にする === */
+@media (min-width: 981px){
+  /* 親フォームを6カラム（ピル×5 + ボタン）に */
+  .searchbar form{
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) 220px; /* 最後は検索ボタンの幅 */
+    gap: 10px;
+    align-items: center;
+  }
+  /* 子ラッパーを“透過”させて、中の要素を親グリッドに直接参加させる */
+  .searchgrid,
+  .searchrow2{
+    display: contents;  /* 中の label.pill や .searchbtn を同じ列に流し込む */
+  }
+  /* ボタンの高さをピルに合わせる（見た目揃え） */
+  .searchrow2 .searchbtn{
+    height: 56px;      /* .pill.big と同じ高さ */
+  }
+}
+
 </style>
   <script src="lang.js" defer></script>
 <script>document.addEventListener('DOMContentLoaded',()=>BL_I18N.i18nApply());</script>

@@ -371,17 +371,7 @@ body.hero-header .header-controls{ position:absolute; left:16px; top:158px; z-in
 
   </section>
 </div>
-  <div class="header-controls container">
-    <label class="small" style="opacity:.7" data-i18n="ui.currency">Currency</label>
-    <select id="currencySelect">
-      <option value="USD">USD</option>
-      <option value="JPY">JPY</option>
-      <option value="LKR">LKR</option>
-      <option value="EUR">EUR</option>
-         </select>
-  </div>
-  <div class="grid" id="list"></div>
-</div>
+  
   
 
 <!-- fullscreen intro splash (first visit per session) -->
@@ -582,7 +572,6 @@ function render(items){
   attachHandlers();
   updateCardCurrencies();
 }
-<script>
 /* --- Force LKR display globally (keep old code intact) --- */
 try{
   // LKRレートだけ必要。下の値は例（適宜GAS側と合わせる運用でOK）
@@ -594,7 +583,7 @@ try{
     updateCardCurrencies();
   }
 }catch(e){}
-</script>
+
 <script>
 function updateCardCurrencies(){
   document.querySelectorAll('b[data-jpy]').forEach(el=>{

@@ -521,8 +521,15 @@ function applyI18N(){
   }
 })();
 
-// ---------- Currency (list-level conversion live) ----------
-(function(){ const sel=document.getElementById('currencySelect'); sel.value=(localStorage.getItem('bl_currency')||'JPY'); sel.onchange=()=>{ localStorage.setItem('bl_currency', sel.value); updateCardCurrencies(); }; })();
+(function(){
+  const sel = document.getElementById('currencySelect');
+  if(!sel) return; // ← 無ければ何もしない（ここが重要）
+  sel.value = (localStorage.getItem('bl_currency') || 'JPY');
+  sel.onchange = () => {
+    localStorage.setItem('bl_currency', sel.value);
+    updateCardCurrencies();
+  };
+})();
 
 // ---------- Card rendering ----------
 function yen(n){ return "¥"+(Number(n)||0).toLocaleString("ja-JP"); }

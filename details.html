@@ -113,6 +113,13 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
 
 /* 小さめのタグチップ（表示用。機能なし） */
 .tag{padding:6px 10px;border-radius:999px;border:1px solid var(--stroke);font-size:12px;background:#fff}
+<style>
+/* 文化タグの見た目（既存 .tag を流用して軽くアクセント） */
+.tag.culture { font-weight: 800; border-color: #d2c3a4; }
+.tag.suggested { outline: 2px dashed rgba(36,106,115,.35); }
+.rv-tags { margin-top:6px; display:flex; flex-wrap:wrap; gap:6px; }
+.rv-tags .tag { user-select:none; cursor:pointer; }
+</style>
 
 /* ステップ風パンくず（必要なページだけHTMLを足せば見栄えUP） */
 .bl-steps{display:flex;gap:8px;align-items:center;color:var(--muted);font-weight:700}
@@ -139,6 +146,84 @@ function getLang(){
     return ja ? 'ja' : 'en';
   }
   return pref;
+}
+  const CULTURE_TAGS = [
+  { id:'#localfamily', ja:'ローカル家庭', en:'Local family', kw:['home','family','local family','母','家庭','家族','homestay','home-cooked','kitchen'] },
+  { id:'#traditional', ja:'伝統', en:'Traditional', kw:['traditional','伝統','ritual','古典','heritage','本場','authentic'] },
+  { id:'#ayurveda', ja:'アーユルヴェーダ', en:'Ayurveda', kw:['ayurveda','アーユル','shirodhara','シロダーラ','herbal','薬草','steam','発汗'] },
+  { id:'#threading', ja:'スレッディング', en:'Threading', kw:['threading','スレッディング','糸','眉','eyebrow'] },
+  { id:'#henna', ja:'ヘナ', en:'Henna', kw:['henna','メヘンディ','mehndi','ヘナ'] },
+  { id:'#templearea', ja:'寺院エリア', en:'Temple area', kw:['temple','寺','仏','stupa','bo tree','kandy'] },
+  { id:'#marketside', ja:'マーケット横', en:'Market side', kw:['market','バザール','ペター','pettah','bazaar'] },
+  { id:'#beachside', ja:'ビーチサイド', en:'Beachside', kw:['beach','海','shore','mirissa','unawatuna','trincomalee'] },
+  { id:'#villagesalon', ja:'村サロン', en:'Village salon', kw:['village','田舎','rural','村'] },
+  { id:'#colombomodern', ja:'コロンボ・モダン', en:'Colombo modern', kw:['colombo','モダン','modern','city','capital'] },
+];
+
+function pickLangStr(obj){
+  const L = getLang();
+  return L==='en' ? (obj.en || obj.ja) : (obj.ja || obj.en);
+}
+
+function buildTagChip(tagId, suggested=false){
+  const el = document.createElement('span');
+  el.className = 'tag culture' + (suggested?' suggested':'');
+  el.textContent = tagId;
+  el.dataset.value = tagId;
+  el.onclick = ()=> el.classList.toggle('on');
+  return el;
+}
+
+function initCultureTagUI(context){
+  const box = document.getElementById('rvTagBox');
+  if (!box) return;
+  box.innerHTML = '';
+  // 基本タグを並べる
+  CULTURE_TAGS.forEach(t=>{
+    box.appendChild(buildTagChip(t.id, false));
+  });
+  // サジェスト
+  if (document.getElementById('rvTagAuto')?.checked){
+    const guesses = suggestCultureTags(context);
+    [...box.children].forEach(chip=>{
+      if (guesses.has(chip.dataset.value)) chip.classList.add('suggested','on');
+    });
+  }
+}
+
+function collectSelectedTags(){
+  const box = document.getElementById('rvTagBox');
+  if (!box) return [];
+  const arr = [...box.querySelectorAll('.tag.on')].map(x=>x.dataset.value);
+  const custom = (document.getElementById('rvTagCustom')?.value || '').trim();
+  if (custom){
+    // ensure starts with '#'
+    const tag = custom.startsWith('#') ? custom : ('#'+custom.replace(/\s+/g,''));
+    arr.push(tag);
+  }
+  // 重複除去
+  return [...new Set(arr)];
+}
+
+// かなり単純な「含まれてたら提案」ルール。
+// テキスト/メニュー名/ジャンル/エリア/国籍などを小文字化して keyword に当てる。
+function suggestCultureTags(ctx){
+  const hay = [
+    ctx.text||'',
+    ctx.menu||'',
+    ctx.type||'',
+    ctx.place||'',
+    ctx.nation||'',
+  ].join(' ').toLowerCase();
+  const out = new Set();
+  CULTURE_TAGS.forEach(t=>{
+    if ((t.kw||[]).some(k=>hay.includes(k.toLowerCase()))) out.add(t.id);
+  });
+  // 補助ルール：placeに海っぽい地名が出たら#beachside、Kandy系は#templearea
+  if (/(mirissa|unawatuna|trincomalee|arugam|hikkaduwa|galle)/i.test(hay)) out.add('#beachside');
+  if (/(kandy|temple|stupa|bo tree)/i.test(hay)) out.add('#templearea');
+  if (/(colombo)/i.test(hay)) out.add('#colombomodern');
+  return out;
 }
 </script>
 
@@ -225,6 +310,23 @@ function getLang(){
         <div id="verifiedBox" style="display:none;margin-top:12px">
           <div class="notice" data-i18n="details.verified_note">施術後に配布される専用リンクからの投稿フォームです。</div>
           <form class="rv-form" id="verifiedForm">
+            <!-- ▼ 文化タグ（自動サジェスト＋手動選択＋自由入力） -->
+<div class="row" id="rvCultureRow">
+  <label class="muted">文化タグ / Culture tags</label>
+  <div class="rv-tags" id="rvTagBox"></div>
+  <div style="display:flex; gap:8px; margin-top:6px; align-items:center">
+    <input type="text" id="rvTagCustom" placeholder="#custom (任意)" style="flex:1 1 auto">
+    <label style="display:flex; gap:4px; align-items:center; white-space:nowrap;">
+      <input type="checkbox" id="rvTagAuto" checked>
+      自動提案を使う / Auto-suggest
+    </label>
+  </div>
+  <div class="muted" style="font-size:12px; margin-top:4px">
+    例: #localfamily #traditional #ayurveda #herbal #beachside #templearea #marketside #homestyle
+  </div>
+</div>
+<!-- ▲ 文化タグ -->
+
                         <!-- ▼ ここから追加：国籍 / 年代 / 来店時期 / （隠し）メニュー名 -->
             <div class="row">
               <label class="muted">国籍（任意） / Nationality (optional)</label>
@@ -607,6 +709,21 @@ function getLang(){
       topRating.appendChild(m);
       }
     });
+    // ▼ 文化タグの表示
+const tags = (o.cultureTags || o.tags || []);
+if (Array.isArray(tags) && tags.length){
+  const tagBox = document.createElement('div');
+  tagBox.className = 'rv-tags';
+  tags.forEach(t=>{
+    const sp = document.createElement('span');
+    sp.className = 'tag culture';
+    sp.textContent = t;
+    tagBox.appendChild(sp);
+  });
+  el.appendChild(tagBox);
+}
+// ▲ 文化タグ
+
   }
 
   function setupBack(){
@@ -630,6 +747,32 @@ function getLang(){
 
     const form = $('#verifiedForm');
     const msg  = $('#rvMsg');
+    // ▼ 初期化：文化タグUI
+const tagAuto = document.getElementById('rvTagAuto');
+const tagCustom = document.getElementById('rvTagCustom');
+const tagBox = document.getElementById('rvTagBox');
+
+function refreshTagSuggest(){
+  initCultureTagUI({
+    text: document.getElementById('rvText')?.value || '',
+    nation: document.getElementById('rvNation')?.value || '',
+    menu: document.getElementById('rvMenu')?.value || '',
+    type: (window.__currentSalon && (window.__currentSalon.type_ja || window.__currentSalon.type_en)) || '',
+    place:(window.__currentSalon && (window.__currentSalon.place_ja|| window.__currentSalon.place_en)) || ''
+  });
+}
+
+if (tagAuto) tagAuto.addEventListener('change', refreshTagSuggest);
+if (tagCustom) tagCustom.addEventListener('input', ()=>{/* 手動入力はそのまま */});
+const rvText = document.getElementById('rvText');
+if (rvText) rvText.addEventListener('input', ()=>{ if (tagAuto?.checked) refreshTagSuggest(); });
+
+// 現在サロン情報を覚えていれば context 使える
+if (!window.__currentSalon) window.__currentSalon = it;
+// 初期描画
+refreshTagSuggest();
+// ▲ 初期化
+
     form.addEventListener('submit', async (ev)=>{
       ev.preventDefault();
       msg.textContent = '送信中…';
@@ -639,6 +782,9 @@ function getLang(){
       const nation = ($('#rvNation') && $('#rvNation').value) || '';
       const ageGroup = ($('#rvAge') && $('#rvAge').value) || '';
       const visitedYM = ($('#rvVisit') && $('#rvVisit').value) || ''; // 例: "2025-09"
+      // ▼ 文化タグ（選択＋カスタム）
+payload.cultureTags = collectSelectedTags();
+// ▲ 文化タグ
 
       // メニュー名：予約リンクから item パラメータが来ている場合に拾う（無ければ空のまま）
       // ※ 今回の「施術後リンク」には普通は含まれていない想定なので、空で送ってGAS側で予約IDから補完するのが本線

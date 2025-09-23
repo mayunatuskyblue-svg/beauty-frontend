@@ -632,8 +632,7 @@ function renderGallery(it){
     const name = m.name_ja || m.name_en || '-';
     const desc = m.desc_ja || m.desc_en || '';
     const dur  = m.duration_min || '';
-    const price= m.price_jpy ? '¥' + Number(m.price_jpy).toLocaleString('ja-JP') : '';
-
+    const price= m.price_jpy ? fmtLKR(m.price_jpy) : '';
     const el = document.createElement('div');
     el.className='card';
     el.innerHTML = `
@@ -653,7 +652,7 @@ function renderGallery(it){
                salonId,
                salonName,
                item: name,
-               price: String(m.price_jpy||0)
+               price_lkr: String(Math.round((m.price_jpy||0) * JPY_TO_LKR))
              }).toString()}">
              予約へ
           </a>

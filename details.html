@@ -540,8 +540,6 @@ const fmtLKR = v => v ? ('Rs ' + Math.round(Number(v) * JPY_TO_LKR).toLocaleStri
   };
 }
 
-
-  <script>
 function renderGallery(it){
   const main = document.querySelector('#gMain');
   const thumbs = document.querySelector('#gThumbs');
@@ -604,9 +602,6 @@ function renderGallery(it){
     thumbs.appendChild(t);
   });
 }
-</script>
-
-
 
   function renderMap(it){
     const lat = Number(it.lat), lng = Number(it.lng);

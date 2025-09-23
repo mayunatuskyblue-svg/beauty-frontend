@@ -571,7 +571,7 @@ function renderGallery(it){
     main.innerHTML = '<div class="notice">写真が未登録です（catalog の photos 列）</div>';
     return;
   }
-}
+
   // 最初の1枚：ロード成功まで候補を順番に試す
   (function showFirst(list){
     const img = new Image();
@@ -660,8 +660,6 @@ function renderGallery(it){
       </div>`;
     box.appendChild(el);
   });
-
-  // 予約導線でも使えるように現在のサロンを覚えておく（上で利用）
 }
 
 

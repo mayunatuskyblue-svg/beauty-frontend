@@ -410,6 +410,25 @@ body.hero-header .nav-right .btn.primary{ background:transparent; border:0; box-
 @media (min-width: 980px){
   .searchrow2 .searchbtn{ height:56px; }
 }
+/* === PC幅では 6 等分（ピル×5 + 検索ボタン）にして完全に均等化 === */
+@media (min-width: 980px){
+  /* 既存の4カラム指定を上書き */
+  .searchwrap .searchbar form{
+    display: grid;
+    grid-template-columns: repeat(6, 1fr); /* 6等分 */
+    gap: 10px;
+    align-items: center;
+  }
+  /* 中の2つのラッパーを“透過”させて、子要素を親グリッドに直接流し込む */
+  .searchwrap .searchgrid,
+  .searchwrap .searchrow2{
+    display: contents;
+  }
+  /* ボタン高さをピルに合わせる（見た目揃え） */
+  .searchwrap .searchrow2 .searchbtn{
+    height: 56px;
+  }
+}
 
 </style>
   <script src="lang.js" defer></script>

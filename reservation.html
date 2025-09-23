@@ -402,7 +402,6 @@ function hhmmOf(h,m){ return String(h).padStart(2,'0')+':'+String(m).padStart(2,
     // 各日の満枠セットをまとめて取得
 const takenMap = {};
 for (const d of days) takenMap[ymdOf(d)] = await fetchTakenSlots(salonId, ymdOf(d));
-}
 
     const table = document.createElement('table');
     const thead=document.createElement('thead'), tbody=document.createElement('tbody');
@@ -425,21 +424,15 @@ for (const d of days) takenMap[ymdOf(d)] = await fetchTakenSlots(salonId, ymdOf(
         btn.className='timebtn';
         btn.textContent='◯';
         const key = ymdOf(d);
-const t = hhmm(h,m);
-if (takenMap[key] && takenMap[key].has(t)) {
-  btn.textContent = '×';
-  btn.disabled = true;
-  btn.setAttribute('aria-disabled','true');
-}
+    // 1つだけ残す（重複を削除）
+        const keyYmd = ymdOf(d);
+        const slot   = hhmm(h,m); // ← 関数呼び出し（上で定義されているやつ）
+        if (takenMap[keyYmd] && takenMap[keyYmd].has(slot)) {
+        btn.textContent = '×';
+        btn.disabled = true;
+        btn.setAttribute('aria-disabled','true');
+      }
 
-// その日のその時刻が満枠なら × で無効化
-const ymd = fmtYmd(d);
-const hhmm = hhmmOf(h,m);
-if (takenMap[ymd] && takenMap[ymd].has(hhmm)) {
-  btn.textContent = '×';
-  btn.disabled = true;
-  btn.setAttribute('aria-disabled','true');
-}
 
         btn.addEventListener('click', ()=>{
           const dt = new Date(d); dt.setHours(h,m,0,0);

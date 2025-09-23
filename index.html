@@ -242,6 +242,9 @@ body.hero-header .header-controls{ position:absolute; left:16px; top:158px; z-in
 .chipbar{ margin: 10px auto 8px; }          /* チップ列 */
 .searchwrap{ margin: 12px auto 8px; }       /* もう重ならない値に */
 
+<section id="list" class="grid" aria-live="polite"></section>
+
+
 /* ==== New search layout (two rows like the mock) ==== */
 .searchbar{ padding:16px; }
 .searchgrid{
@@ -591,7 +594,6 @@ try{
   }
 }catch(e){}
 
-<script>
 function updateCardCurrencies(){
   document.querySelectorAll('b[data-jpy]').forEach(el=>{
     const j = Number(el.getAttribute('data-jpy')||'0');
@@ -653,7 +655,7 @@ function attachHandlers(){
 
 // ==== GAS catalog + review summary ====
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwJz67fvPpB1tJ7IWggPFWJ-2tBydVOHikzFvviS36_8LOD8YW7jn3vWjWF9f3ngomH/exec';
-const GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
+const GAS_KEY = 'bl_gas_key_bR6ZXWwu6kM_nrK25geP97Cs5qCX3auxugX_IUGlg90';
 
 async function loadCatalog(){
   const url = GAS_URL + '?kind=catalog&key=' + encodeURIComponent(GAS_KEY);

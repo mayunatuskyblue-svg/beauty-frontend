@@ -167,7 +167,7 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
   </div>
 
   <div class="toolbar">
-    <button id="btnConfirm" class="btn primary" data-i18n="reserve.submit">この内容で予約する</button>
+    <button id="btnConfirm" class="btn primary" data-i18n="reserve.submit" disabled>この内容で予約する</button>
     <button id="btnCancel" class="btn ghost" onclick="history.back()" data-i18n="reserve.backOnce">一度戻る</button>
     <span id="spin" style="display:none" data-i18n="reserve.process">処理中…</span>
   </div>
@@ -234,95 +234,48 @@ async function recordBookingToSheet({ bookingId, email }){
 function setMsg(t, isErr=false){ const el=document.getElementById('msg'); el.textContent=t||''; el.style.color=isErr?'#74070E':'#2E1A16'; }
 function uid(n=8){ const s='23456789ABCDEFGHJKLMNPQRSTUVWXYZ'; return Array.from(crypto.getRandomValues(new Uint8Array(n))).map(b=>s[b%s.length]).join(''); }
 
+function updateConfirmButtonEnabled(){
+  const has = !!(localStorage.getItem('reserve_selected') || '').trim();
+  const btn = document.getElementById('btnConfirm');
+  if(btn) btn.disabled = !has;
+}
 
-document.getElementById('btnConfirm').addEventListener('click', async ()=>{
-  const email = (document.getElementById('email').value||'').trim();
-  const dtIso = localStorage.getItem('reserve_selected') || '';
-  const dateText = dtIso ? new Date(dtIso).toLocaleString() : (dateTextParam || '');
-  if(dateText) document.getElementById('v_date').textContent = dateText;
-
-  // 予約ID（元の仕様を踏襲）
-  const bid = [salonId||'S', (dateText||'').replace(/[^0-9]/g,''), uid(4)].filter(Boolean).join('-');
-
-  document.getElementById('btnConfirm').disabled = true;
-  document.getElementById('spin').style.display = 'inline';
-  setMsg('');
-
-  try{
-    // 既存のシート反映処理はそのまま
-    // 既存：シート反映
-await recordBookingToSheet({ bookingId: bid, email });
-
-// --- ここから追記：WhatsApp 通知（ユーザー＆サロン） ---
-try {
-  const payBase   = 'https://api.beautylk.com';            // あなたのAPIベース
-  const adminToken= 'bl_admin_dev_......';                 // server側と同じ ADMIN_TOKEN
-
-  // 送信先（電話は E.164 形式で保存しておくのが理想）
-  const userPhone  = (localStorage.getItem('bl_user_phone')  || '').trim(); // 例: +81xxxxxxxxxx
-  const salonPhone = (localStorage.getItem('bl_salon_phone') || '').trim();
-  const toUser  = userPhone  ? `whatsapp:${userPhone}`  : '';
-  const toSalon = salonPhone ? `whatsapp:${salonPhone}` : '';
-
-  // 予約サマリ（画面から拾う）
-  const salon   = document.getElementById('v_salon')?.textContent?.trim() || '';
-  const menu    = document.getElementById('v_menu')?.textContent?.trim()  || '';
-  const staff   = document.getElementById('v_staff')?.textContent?.trim() || '';
-  const when    = document.getElementById('v_date')?.textContent?.trim()  || '';
-  const price   = document.getElementById('v_price')?.textContent?.trim() || '';
-
-  const makeText = (isSalon=false)=>[
-    isSalon ? '【新規予約（サロン向け）】' : 'ご予約ありがとうございます！',
-    `予約ID: ${bid}`,
-    `サロン: ${salon}`,
-    `メニュー: ${menu}`,
-    `施術者: ${staff||'—'}`,
-    `日時: ${when}`,
-    `目安金額: ${price}`,
-    isSalon ? '' : '※ご変更はサイトのマイページから承ります。'
-  ].filter(Boolean).join('\n');
-
-  const notify = async (to, text)=>{
-    if(!to) return;
-    await fetch(`${payBase}/api/notify-whatsapp`, {
-      method:'POST',
-      headers:{'content-type':'application/json','x-admin-token':adminToken},
-      body: JSON.stringify({ to, text })
-    }).catch(()=>{});
-  };
-
-  await Promise.all([
-    notify(toUser,  makeText(false)),
-    notify(toSalon, makeText(true))
-  ]);
-} catch(e) { /* 通知失敗は握りつぶしでOK */ }
-// --- ここまで追記 ---
-    if(email) try{ localStorage.setItem('bl_email', email); }catch(e){}
-    setMsg('予約を受け付けました。ご来店をお待ちしています！\n予約ID: '+bid);
-
-  }catch(e){
-    setMsg('予約は完了しましたが、シート反映に失敗しました。後で自動再送します。\n'+(e.message||e), true);
-
-  }finally{
-    document.getElementById('btnConfirm').disabled = false;
-    document.getElementById('spin').style.display = 'none';
-
-    // 追記：カード登録画面に渡す最低限の情報を保存して遷移
-    const payload = {
-      email: (document.getElementById('email').value||'').trim(),
-      salon:  document.getElementById('v_salon')?.textContent?.trim() || '',
-      menu:   document.getElementById('v_menu')?.textContent?.trim()  || '',
-      staff:  document.getElementById('v_staff')?.textContent?.trim() || '',
-      date:   document.getElementById('v_date')?.textContent?.trim()  || dateText || '',
-      price:  document.getElementById('v_price')?.textContent?.trim() || '',
-      bookingId: bid || ''
-    };
-    try { sessionStorage.setItem('pendingReservation', JSON.stringify(payload)); } catch(_e) {}
-
-    // カード情報登録ページへ
-    window.location.href = 'card_save.html';
+document.getElementById('btnConfirm').addEventListener('click', ()=>{
+  const dtIso = (localStorage.getItem('reserve_selected') || '').trim();
+  if(!dtIso){
+    alert('日時を選択してください');
+    return;
   }
+  const dt = new Date(dtIso);
+  const dateText = dt.toLocaleString();
+
+  // すでにURLに載っている値も拾う（salon/menu/staff/price/coupon 等）
+  const p = new URLSearchParams(location.search);
+  const salonId    = p.get('salonId')   || p.get('salon')     || '';
+  const salonName  = p.get('salonName') || p.get('salon_name')|| (document.getElementById('v_salon')?.textContent?.trim() || 'Salon');
+  const itemName   = p.get('item')      || p.get('menu')      || (document.getElementById('v_menu')?.textContent?.trim()  || 'Menu');
+  const staffName  = p.get('staffName') || p.get('staff')     || (document.getElementById('v_staff')?.textContent?.trim() || '指名なし');
+  const couponName = p.get('coupon')    || (document.getElementById('v_coupon')?.textContent?.trim() || '');
+  const priceLKR   = p.get('price_lkr') || (document.getElementById('v_price')?.dataset?.lkr || '');
+  const priceJPY   = p.get('price_jpy') || (document.getElementById('v_price')?.dataset?.jpy || '');
+
+  const qs = new URLSearchParams({
+    salonId, salonName,
+    item: itemName,
+    staffName,
+    coupon: couponName,
+    dt: dtIso,
+    dateText,
+    price_lkr: String(priceLKR||''),
+    price_jpy: String(priceJPY||'')
+  });
+
+  // 保険：confirm.htmlが読み取れるようlocalStorageにも残す
+  try{ localStorage.setItem('reserve_selected', dtIso); }catch(_){}
+
+  window.location.href = 'confirm.html?' + qs.toString();
 });
+
 </script>
 
 
@@ -435,6 +388,7 @@ times.forEach(([h,m])=>{
     // 画面上の日時表示も復元（必要なら）
     const dt = new Date(y + 'T' + slot + ':00');
     document.getElementById('v_date').textContent = dt.toLocaleString();
+    updateConfirmButtonEnabled();
   }
 
   btn.addEventListener('click', ()=>{
@@ -451,6 +405,7 @@ times.forEach(([h,m])=>{
 
     btn.classList.add('selected');
     btn.textContent = '✓';
+    updateConfirmButtonEnabled();
   });
 }
 
@@ -469,6 +424,7 @@ grid.appendChild(table);
   }
 
   buildWeek(weekOffset);
+  updateConfirmButtonEnabled(); 
   btnPrev.addEventListener('click', ()=>{ weekOffset--; buildWeek(weekOffset); });
   btnNext.addEventListener('click', ()=>{ weekOffset++; buildWeek(weekOffset); });
 })();

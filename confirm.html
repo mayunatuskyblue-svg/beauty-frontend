@@ -151,7 +151,7 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
       <div class="title" id="s_item">Menu</div>
       <div class="meta" id="s_salon">#1 / Salon</div>
       <div class="meta" id="s_time" data-i18n="confirm.time_prefix">時間 : 2025/01/01 10:00</div>
-      <div class="meta" id="s_price" data-i18n="confirm.pay_prefix">支払い : ¥0</div>
+      <div class="meta" id="s_price" data-i18n="confirm.pay_prefix">支払い : Rs 0</div>
       <div class="meta" id="s_staff">施術者 : <span id="s_staff_name" data-i18n="confirm.staff_default">指名なし</span></div>
     </div>
 
@@ -238,62 +238,40 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
       showToast('入力OK。お支払いに進みます…', true);
 (async ()=>{
   try{
-    // 1) クエリ・表示から必要値を集める
     const qs = new URLSearchParams(location.search);
-    const salonId   = qs.get('salonId') || '-';
-    const salonName = qs.get('salonName') || '';
 
+    // URL確保済みの bookingId を利用（ensureBookingIdInURLで付与済み）
+    const bookingId = qs.get('bookingId') || (localStorage.getItem('bl_current_booking_id') || '');
+
+    // 表示から拾う
     const item      = (document.getElementById('s_item')?.textContent || qs.get('item') || 'Reservation').trim();
+    const priceLKR  = Number(qs.get('price_lkr') || 0);
+    const dtIso     = qs.get('dt') || '';
+    const dateText  = qs.get('dateText') || (dtIso ? new Date(dtIso).toLocaleString() : '');
+    const minutes   = Number(qs.get('minutes') || 0) || 0;
 
-    // 料金（LKR優先→JPY→旧price）
-    const priceLKR = Number(qs.get('price_lkr') || 0);
-    const priceJPY = Number(qs.get('price_jpy') || 0);
-    const amount   = priceLKR || priceJPY || Number(qs.get('price') || 0);
-    const currency = (priceLKR ? 'lkr' : (priceJPY ? 'jpy' : (qs.get('currency')||'usd'))).toLowerCase();
-
-    // 日時（ISO優先。表示用dateTextがあればフォールバック）
-    const dtIso    = qs.get('dt') || '';
-    const dateText = qs.get('dateText') || qs.get('time') || '';
-    const dateISO  = (dtIso || '').trim() || new Date(dateText ? Date.parse(dateText) : Date.now()).toISOString();
-
-    // 入力フォームの値（バリデーションは外側で済んでいる）
-    const name  = (document.getElementById('uf_name')?.value||'').trim();
+    const name  = (document.getElementById('uf_name') ?.value||'').trim();
     const email = (document.getElementById('uf_email')?.value||'').trim();
-    const minutes = Number(qs.get('minutes')||0);
 
-    // 2) bookingId は URL か LS から取得（B案）
-    const bookingId =
-      new URL(location.href).searchParams.get('bookingId') ||
-      localStorage.getItem('bl_current_booking_id') || '';
-
-    // 3) 予約レコードを作成（現地/カードどちらでも共通）
-    const base = (window.BL_PAY?.base||'').replace(/\/$/,'');
-    const payload = {
+    // ★C：GASへ送るペイロードを sessionStorage に保存（ロード時に1回だけ送信）
+    sessionStorage.setItem('bl_pending_booking', JSON.stringify({
       bookingId,
-      salonId, salonName,
-      date: dateISO,
+      date: dtIso || new Date(Date.parse(dateText||'') || Date.now()).toISOString(),
       menu: item,
       minutes,
-      amount,
-      currency,
-      email,
-      name
-    };
+      // 注意: amountJPY というキー名だが、中身は LKR の数値を入れる（GAS側でLKR列に保存する想定）
+      amountJPY: priceLKR,
+      email, name
+    }));
 
-    // POST は失敗しても UI を固めすぎない（ユーザー体験優先）
-    await fetch(`${base}/api/book`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(payload)
-    }).catch(()=>null);
-
-    // 4) 押したボタンごとの遷移先へ
+    // 次ページへ（押下したボタンの遷移先）
     location.href = ev.currentTarget.getAttribute('href') || './';
 
   }catch(e){
     alert('予約の作成に失敗しました。もう一度お試しください。');
   }
 })();
+
 
     }
   }, {capture:true});
@@ -333,10 +311,6 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
   const title = document.getElementById('ftTitle');
   const closeBtn = document.getElementById('ftClose');
   const backdrop = document.getElementById('ftBackdrop');
-
- const L = (k)=>k.split('.').reduce((o,p)=>o&&o[p], BL_I18N.T[BL_I18N.getLang()]);
-if(elTime)  elTime.textContent  = `${L('confirm.time_prefix')} ${qs.get('time')||''}`;
-if(elPrice) elPrice.textContent = `${L('confirm.pay_prefix')} ${qs.get('price')||''}`;
 
   function open(kind){
     // タイトル：footer.*、本文：legal.*_html から取得（HTML可）
@@ -417,9 +391,9 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
     // 値の整形
     const timeLabel = dateText || (dtIso ? new Date(dtIso).toLocaleString() : '');
-    const priceLabel =
-      priceLKR ? `Rs ${Number(priceLKR||0).toLocaleString('en-US')}` :
-      (priceJPY ? `¥${Number(priceJPY||0).toLocaleString('ja-JP')}` : '');
+    const priceLabel = priceLKR
+       ? `Rs ${Number(priceLKR||0).toLocaleString('en-US')}` 
+       : '';
 
     // 反映（見出しの「時間:」「支払い:」は元テキストを活かす）
     if(elItem)  elItem.textContent  = itemName || elItem.textContent;

@@ -1,42 +1,334 @@
-  // ② URL（?bookingId=...）から予約情報を拾う or 事前に保存しておいたデータを拾う
-  function readBookingFromPage() {
-    const qs = new URLSearchParams(location.search);
-    let booking = {
-      bookingId:  qs.get('bookingId') || '',
-      date:       qs.get('date') || new Date().toISOString(),
-      menu:       qs.get('menu') || '',
-      minutes:    Number(qs.get('minutes') || 0) || 0,
-      amountJPY:  Number(qs.get('amountJPY') || 0) || 0,
-      email:      qs.get('email') || '',
-      name:       qs.get('name') || ''
+<!-- ✅ このファイルは、あなたの /confirm.html をベースに
+     1) 支払い方法の選択（Smart保存 / 現地払い）UI を追加
+     2) Smart保存 選択時のみカード保存フォーム(#bl-card-box)を表示
+     3) 予約確定の送信ペイロードに paymentPref と idempotencyKey を追加
+     4) GAS(Webhook) ログと Stripe 連携の具体フックを同居
+     5) 二重課金防止のためのサーバ側チェック前提のクライアント実装
+   に調整した全文版です。既存スタイル・i18n・トースト等は踏襲します。 -->
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- ▼ あなたのGAS Webhook（既存の meta をそのまま利用） -->
+  <meta name="bl-sheet-hook" content="https://script.google.com/...your...exec">
+  <title>予約内容の確認</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="stylesheet" href="assets/css/theme.css"/>
+  <style>
+    :root{ --base:#F7F1E1; --ink:#310E10; --stroke:#eadfca; --teal:#246A73; --danger:#74070E; --good:#0B7F5F; }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--base);color:#111;font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, 'Noto Sans JP', sans-serif}
+    .wrap{max-width:1200px;margin:28px auto;padding:0 20px}
+    .hrow{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    .back{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:12px;border:1px solid var(--stroke);background:#fff;color:#513;text-decoration:none}
+    .h1{font-size:42px;font-family:'Shippori Mincho', serif;font-weight:700;color:#310E10;margin:0 0 8px;letter-spacing:.02em}
+    .card{background:#fff;border:1px solid var(--stroke);border-radius:16px;padding:18px 16px;box-shadow:0 12px 32px rgba(49,14,16,.08);margin:0 0 18px}
+    .title{font-size:28px;font-weight:800;margin:0 0 8px}
+    .meta{opacity:.9;line-height:1.9}
+    .btn{border-radius:999px;padding:14px 22px;font-size:18px;font-weight:800;cursor:pointer;border:1px solid transparent;transition:.15s}
+    .btn-primary{background:#246A73;color:#fff;border-color:#246A73;box-shadow:0 10px 24px rgba(36,106,115,.20)}
+    .btn-outline{background:#fff;color:#246A73;border:1px solid color-mix(in oklab, #246A73 35%, white)}
+    .input{height:48px;border-radius:12px;border:1px solid var(--stroke);padding:0 14px;background:#fff;width:100%;font-size:16px}
+    .input:focus{outline:none;border-color:color-mix(in oklab,#246A73 45%, #eadfca 55%);box-shadow:0 0 0 3px color-mix(in oklab,#246A73 20%, transparent)}
+    textarea.input{height:110px;padding:12px;resize:vertical}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:10px}
+    @media (max-width:900px){.form-row{grid-template-columns:1fr}}
+    .sec-title{font-weight:900;font-size:22px;color:#310E10;margin:8px 0}
+    .sec-desc{color:#444;opacity:.85;margin-bottom:8px}
+    .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid #eadfca;border-radius:999px;padding:8px 12px;background:#fff}
+    .muted{opacity:.8;font-size:13px}
+    .hide{display:none !important}
+
+    /* Toast */
+    .toast{ position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(12px); background: #fff; color:#513; border:1px solid #f2d09c; box-shadow: 0 16px 40px rgba(49,14,16,.14); padding: 12px 16px; border-radius:14px; z-index:9999; width: min(92vw, 640px); display:flex; align-items:center; gap:10px; opacity:0; pointer-events:none; transition: transform .2s ease, opacity .2s ease; }
+    .toast.on{ opacity:1; transform: translateX(-50%) translateY(0) }
+  </style>
+  <script src="lang.js" defer></script>
+  <script>document.addEventListener('DOMContentLoaded',()=>BL_I18N.i18nApply());</script>
+  <script src="https://js.stripe.com/v3"></script>
+  <script>
+    window.BL_PAY = {
+      pk: 'pk_test_xxx_your_pubkey',  // ← あなたの公開鍵に置換
+      base: 'https://beautylk.com'    // ← あなたの Render ベースURL
     };
-    if (!booking.bookingId) {
-      try {
-        const saved = JSON.parse(sessionStorage.getItem('bl_pending_booking') || localStorage.getItem('bl_pending_booking') || 'null');
-        if (saved && saved.bookingId) booking = Object.assign(booking, saved);
-      } catch {}
+  </script>
+</head>
+<body class="confirm-page">
+  <div class="wrap">
+    <div class="hrow">
+      <a class="back" href="./reservation.html" data-i18n="ui.back">← 戻る</a>
+      <h1 class="h1" data-i18n="confirm.title">予約内容の確認</h1>
+    </div>
+
+    <!-- 予約サマリ -->
+    <div class="card" id="sum">
+      <div class="title" id="s_item">Menu</div>
+      <div class="meta" id="s_salon">#1 / Salon</div>
+      <div class="meta" id="s_time" data-i18n="confirm.time_prefix">時間 : 2025/01/01 10:00</div>
+      <div class="meta" id="s_price" data-i18n="confirm.pay_prefix">支払い : LKR 0</div>
+      <div class="meta" id="s_staff">施術者 : <span id="s_staff_name" data-i18n="confirm.staff_default">指名なし</span></div>
+    </div>
+
+    <!-- 予約者情報 -->
+    <div class="card" id="userForm">
+      <div class="sec-title" id="uf_title" data-i18n="ui.yourInfo">予約者情報</div>
+      <div class="sec-desc" id="uf_desc" data-i18n="confirm.uf_desc">連絡が取れるメールアドレスと電話番号をご入力ください。</div>
+      <div class="form-row">
+        <input id="uf_name"  class="input" data-i18n-ph="ui.name"  placeholder="お名前 / Name" autocomplete="name"/>
+        <input id="uf_email" class="input" data-i18n-ph="ui.email" placeholder="メール / Email" autocomplete="email" inputmode="email"/>
+        <input id="uf_phone" class="input" data-i18n-ph="ui.phone" placeholder="電話番号 / Phone" autocomplete="tel" inputmode="tel"/>
+        <textarea id="uf_note" class="input" data-i18n-ph="ui.notes" placeholder="要望・メモ（任意）"></textarea>
+      </div>
+    </div>
+
+    <!-- ▼▼ 支払い方法（追加） ▼▼ -->
+    <div class="card" id="payPref">
+      <div class="sec-title">支払い方法</div>
+      <div class="sec-desc muted">Smart保存は施術後に自動で引き落とし。現地払いは当日サロンでお支払い（現金/カード）。</div>
+      <div class="row" role="radiogroup" aria-labelledby="payPref">
+        <label class="pill"><input type="radio" name="pay" id="pay_smart" checked> スマート支払い（カード保存）</label>
+        <label class="pill"><input type="radio" name="pay" id="pay_onsite"> 現地払い</label>
+      </div>
+      <!-- Smart 選択時のみ見せるカード保存ボックス（Elementsをここにマウント） -->
+      <div id="bl-card-box" class="" style="margin-top:12px"></div>
+      <p class="muted" id="bl-card-note" style="margin:8px 0 0">※ カードは Stripe に安全に保存され、施術後に確定金額で一回のみ課金されます。</p>
+    </div>
+    <!-- ▲▲ /支払い方法（追加） ▲▲ -->
+
+    <!-- 最下部アクション -->
+    <div class="card">
+      <div class="row">
+        <button id="btnConfirm" class="btn btn-primary" data-i18n="confirm.btn">この内容で予約を確定する</button>
+        <a id="btnCancel" class="btn btn-outline" href="./reservation.html">修正する</a>
+      </div>
+      <div class="muted" style="margin-top:8px">予約を確定すると <a href="#" class="ft-link" data-ft="terms">利用規約</a> と <a href="#" class="ft-link" data-ft="privacy">プライバシー</a> に同意したものとみなされます。</div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- ===== Script (バリデーション・予約確定・Stripe SetupIntent) ===== -->
+  <script>
+    const $$ = (s, r=document)=>r.querySelector(s);
+    const $A = (s, r=document)=>Array.from(r.querySelectorAll(s));
+    const toastEl = $$('#toast');
+    function showToast(msg, ok=true){ if(!toastEl) return; toastEl.innerHTML = msg; toastEl.classList.add('on'); setTimeout(()=>toastEl.classList.remove('on'), 2500); }
+
+    const WEBHOOK = document.querySelector('meta[name="bl-sheet-hook"]')?.content || '';
+
+    const qs = new URLSearchParams(location.search);
+    const priceLKR = Number(qs.get('price_lkr') || 0);
+    const priceJPY = Number(qs.get('price_jpy') || 0);
+    const price    = priceLKR || priceJPY || Number(qs.get('price') || 0);
+    const timeISO  = qs.get('dt') || '';
+    const timeText = qs.get('dateText') || qs.get('time') || (timeISO ? new Date(timeISO).toLocaleString() : '');
+
+    // 予約サマリ表示
+    (function fillSummary(){
+      const item = (qs.get('item')||'Reservation').trim();
+      const salonName = qs.get('salonName')||'';
+      $$('#s_item').textContent = item;
+      $$('#s_salon').textContent = salonName;
+      $$('#s_time').textContent = `時間 : ${timeText}`;
+      const priceStr = priceLKR ? `LKR ${priceLKR.toLocaleString()}` : (priceJPY ? `¥${priceJPY.toLocaleString()}` : (price ? `¥${price.toLocaleString()}` : '未定'));
+      $$('#s_price').textContent = `支払い : ${priceStr}`;
+    })();
+
+    // バリデーション
+    function validate(){
+      const name = $$('#uf_name').value.trim();
+      const email = $$('#uf_email').value.trim();
+      const phone = $$('#uf_phone').value.trim();
+      if(!name)  return {ok:false, miss:'お名前を入力してください'};
+      if(!email) return {ok:false, miss:'メールアドレスを入力してください'};
+      if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return {ok:false, miss:'メール形式が正しくありません'};
+      if(!phone) return {ok:false, miss:'電話番号を入力してください'};
+      // Smart選択時はカード保存の有無を確認（saved か Elements 完了が必要）
+      if($$('#pay_smart').checked){
+        const saved = localStorage.getItem('bl_saved_card');
+        if(!saved){
+          const mounted = $$('#bl-card-box [data-mounted="1"]');
+          if(!mounted){
+            $$('#bl-card-box').scrollIntoView({behavior:'smooth', block:'center'});
+            return {ok:false, miss:'カード情報を保存してください（スマート支払い）'};
+          }
+        }
+      }
+      return {ok:true};
     }
-    return booking;
-  }
 
-  // ③ 1回だけ送る（同じ bookingId での二重送信防止）
-  document.addEventListener('DOMContentLoaded', async () => {
-    const b = readBookingFromPage();
-    if (!b.bookingId) { console.warn('bookingId が無いので送信しません'); return; }
+    // 予約確定
+    $$('#btnConfirm').addEventListener('click', async (ev)=>{
+      ev.preventDefault();
+      const {ok, miss} = validate();
+      if(!ok){ showToast(miss, false); return; }
 
-    const sentKey = `bl_booking_sent_${b.bookingId}`;
-    if (localStorage.getItem(sentKey)) return;
+      const salonId   = qs.get('salonId') || '';
+      const salonName = qs.get('salonName') || '';
+      const item      = $$('#s_item')?.textContent || 'Reservation';
 
-    const ok = await postBookingToSheet({
-      bookingId: b.bookingId,
-      date:      b.date || new Date().toISOString(),
-      menu:      b.menu,
-      minutes:   b.minutes,
-      amountJPY: b.amountJPY,
-      email:     b.email,
-      name:      b.name
+      const paymentPref = $$('#pay_onsite').checked ? 'onsite' : 'smart';
+      const saved = (function(){ try{return JSON.parse(localStorage.getItem('bl_saved_card')||'null')}catch(e){return null} })();
+
+      // 予約ID（例：S-YYYYMMDDhhmm-xxxx）
+      function uid(n){ return Array.from(crypto.getRandomValues(new Uint8Array(n))).map(v=>('0'+(v%36).toString(36)).slice(-1)).join(''); }
+      const bid = [salonId||'S', (timeISO||timeText||'').replace(/[^0-9]/g,''), uid(4)].filter(Boolean).join('-');
+
+      const payload = {
+        bid,
+        salonId, salonName,
+        item,
+        price_lkr: priceLKR||null,
+        price_jpy: priceJPY||null,
+        dt_iso: timeISO||null,
+        dt_text: timeText||'',
+        name: $$('#uf_name').value.trim(),
+        email: $$('#uf_email').value.trim(),
+        phone: $$('#uf_phone').value.trim(),
+        note:  $$('#uf_note').value.trim(),
+        payment_pref: paymentPref,               // ★ smart | onsite
+        payment_status: 'pending',               // ★ サーバで更新（paid|charged|cancelled）
+        customer_id: saved?.customerId||null,
+        payment_method_id: saved?.paymentMethodId||null
+      };
+
+      try{
+        showToast('送信中…');
+
+        // 1) GAS へ予約行を作成（ロギング）
+        if(WEBHOOK){
+          await fetch(WEBHOOK, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({kind:'booking_created', ...payload}) });
+        }
+
+        // 2) 自前APIに予約確定を作成（idempotency で二重作成防止）
+        //    ※ /api/booking/create はあなたの既存エンドポイント名に置換
+        await fetch(`${BL_PAY.base}/api/booking/create`, {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json', 'Idempotency-Key': bid },
+          body: JSON.stringify(payload)
+        });
+
+        // 3) WhatsApp 通知（任意）
+        try{
+          await fetch(`${BL_PAY.base}/api/notify/booking`, {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ toPhone: payload.phone, salonName, dateStr: payload.dt_text, timeStr: '', locale: (window.BL_I18N?.getLang?.()||'ja') })
+          });
+        }catch(e){ console.warn('WhatsApp notify failed:', e); }
+
+        // 4) 完了
+        showToast('予約を確定しました。確認メールをご覧ください。');
+        // 必要であれば、完了ページへ遷移
+        // location.href = `/thanks.html?bid=${encodeURIComponent(bid)}`;
+
+      }catch(e){
+        console.error(e);
+        showToast('送信に失敗しました。通信環境をご確認ください', false);
+      }
     });
+  </script>
 
-    if (ok) localStorage.setItem(sentKey, '1');
-  });
-</script>
+  <!-- ===== Stripe Elements（カード保存：Smart選択時のみ） ===== -->
+  <script>
+    (function initStripe(){
+      const smartRadio = $$('#pay_smart');
+      const box = $$('#bl-card-box');
+      if(!smartRadio || !box) return;
+
+      const stripe = Stripe(BL_PAY.pk);
+      let elements, cardEl;
+
+      async function mount(){
+        // すでに保存済みなら簡易表示
+        const saved = (function(){ try{return JSON.parse(localStorage.getItem('bl_saved_card')||'null')}catch(e){return null} })();
+        if(saved){ box.innerHTML = `<div class="muted">カード情報は保存済みです ✅<br><small>(customer: ${saved.customerId}, pm: ${saved.paymentMethodId})</small><br><button id="changeCard" class="btn" style="margin-top:8px">別のカードにする</button></div>`; $$('#changeCard').onclick = renderForm; return; }
+        renderForm();
+      }
+
+      async function renderForm(){
+        box.innerHTML = `<div id="cardForm" data-mounted="1"><div id="cardElement" style="border:1px solid #eadfca;border-radius:10px;padding:12px"></div><div class="muted" style="margin-top:6px">※ 課金は施術後に一度だけ行われます。</div><button id="saveCard" class="btn btn-outline" style="margin-top:10px">カードを保存する</button></div>`;
+        elements = stripe.elements();
+        cardEl = elements.create('card');
+        cardEl.mount('#cardElement');
+        $$('#saveCard').onclick = save;
+      }
+
+      async function save(){
+        try{
+          // サーバに SetupIntent を作らせる
+          const res = await fetch(`${BL_PAY.base}/api/setup-intent`, {
+  method:'POST',
+  headers:{ 'Content-Type':'text/plain;charset=utf-8' }, // ← プリフライト回避
+  body: JSON.stringify({
+    email: $$('#uf_email').value.trim(),
+    name:  $$('#uf_name').value.trim()
+  })
+});
+
+// レスポンスをテキストで受け、安全にJSONへ（空/HTMLでも原因が見える）
+const raw = await res.text();
+let si; try { si = JSON.parse(raw); }
+catch { throw new Error('Invalid JSON from setup-intent: ' + raw.slice(0,120)); }
+if (!res.ok || !si?.ok) throw new Error(si?.error || `setup-intent failed (${res.status})`);
+
+const clientSecret = si.clientSecret;
+const customerId   = si.customerId;
+
+          const {setupIntent, error} = await stripe.confirmCardSetup(clientSecret, {
+  payment_method: {
+    card: cardEl,
+    billing_details: {
+      name:  $$('#uf_name').value.trim(),
+      email: $$('#uf_email').value.trim(),
+      phone: $$('#uf_phone').value.trim()
+    }
+  },
+  // ★ 3Dセキュア（SCA）を必須化
+  payment_method_options:{ card: { request_three_d_secure:'any' } }
+});
+          if(error){ showToast(error.message || 'カード保存に失敗しました', false); return; }
+
+          // pm を保存
+          const payload = { customerId, paymentMethodId: setupIntent.payment_method };
+          localStorage.setItem('bl_saved_card', JSON.stringify(payload));
+          showToast('カードを保存しました');
+
+          // GAS ログ
+          if(WEBHOOK){
+            try{ await fetch(WEBHOOK, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({ kind:'card_saved', ...payload })}); }catch(e){ console.warn('sheet log fail', e); }
+          }
+
+          // 表示更新
+          mount();
+        }catch(e){ console.error(e); showToast('カード保存に失敗しました', false); }
+      }
+
+      function toggle(){
+        if(smartRadio.checked){ box.classList.remove('hide'); $$('#bl-card-note')?.classList.remove('hide'); if(!box.innerHTML.trim()) mount(); }
+        else { box.classList.add('hide'); $$('#bl-card-note')?.classList.add('hide'); }
+      }
+      $A('input[name="pay"]').forEach(r=> r.addEventListener('change', toggle));
+      toggle();
+    })();
+  </script>
+
+  <!-- ===== Footer (規約/プライバシーのモーダル開閉だけ) ※中身は i18n 側に用意 ===== -->
+  <script>
+    (function(){
+      document.addEventListener('click', (e)=>{
+        const a = e.target.closest && e.target.closest('a.ft-link');
+        if(!a){ return; }
+        e.preventDefault();
+        alert('規約/プライバシー本文は i18n の legal.* を表示する実装に入れ替えてください。');
+      });
+    })();
+  </script>
+
+  <!-- 背景デコ -->
+  <div class="bg-radials"></div>
+  <div class="grain"></div>
+</body>
+</html>

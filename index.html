@@ -307,16 +307,33 @@ body.hero-header .header-controls{ position:absolute; left:16px; top:158px; z-in
 .nav-link:hover{ text-decoration:underline }
 .nav-link:active{ opacity:.8 }
 
-/* 丸いマイページボタン */
+/* ここから差し替え */
 .icon-btn{
-  width:44px; height:44px; border-radius:999px;
-  border:1.5px solid color-mix(in oklab, var(--ink) 35%, white);
-  background:#fff; display:grid; place-items:center; cursor:pointer;
-  box-shadow:0 2px 8px rgba(0,0,0,.06);
+  --avatar-size: 44px;           /* ←好きなサイズに一括調整できる変数 */
+  width: var(--avatar-size);
+  height: var(--avatar-size);
+  border-radius: 999px;
+  border: 1.5px solid color-mix(in oklab, var(--ink) 35%, white);
+  background: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  position: relative;            /* ←中のimgを四隅0でフィットさせるため */
+  overflow: hidden;              /* ←ボタンの丸でトリミング */
+  padding: 0;                    /* 念のため */
 }
-.icon-btn:hover{ box-shadow:0 4px 12px rgba(0,0,0,.10) }
-.icon-btn:active{ transform:translateY(1px) }
-.icon-btn svg{ width:22px; height:22px; color:#17353a }
+
+.icon-btn > .avatar{
+  position: absolute;
+  inset: 0;                      /* 上下左右ぜんぶ0＝ボタンと同サイズ */
+  width: 100%;
+  height: 100%;
+  object-fit: cover;             /* 写真のはみ出しはトリミングして埋める */
+  display: block;
+  border-radius: 0;              /* 切り抜きは親のoverflowでやる */
+}
+/* ここまで差し替え */
 
 /* 旗付きの言語ピル */
 .lang-pill{

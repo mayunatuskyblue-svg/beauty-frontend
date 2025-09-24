@@ -405,7 +405,30 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     base: 'https://beautylk.com'
   };
 </script>
+
+<!-- ↓↓↓ ここからを confirm.html の </body> の直前に貼る ↓↓↓ -->
 <script>
+  // ① GAS へ送る関数（まだ無ければこのまま使う）
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbwJz67fvPpB1tJ7IWggPFWJ-2tBydVOHikzFvviS36_8LOD8YW7jn3vWjWF9f3ngomH/exec'; 
+  const GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';               
+
+  async function postBookingToSheet({ bookingId, date, menu, minutes, amountJPY, email, name }) {
+    // 可能なら保存カードから customerId を同梱（任意）
+    let customerId = '';
+    try { customerId = JSON.parse(localStorage.getItem('bl_saved_card')||'null')?.customerId || ''; } catch {}
+    const payload = { key: GAS_KEY, kind: 'booking',
+      data: { bookingId, date, menu, minutes, amountJPY, email, name, customerId }
+    };
+    const res = await fetch(`${BL_PAY.base}/api/setup-intent`, {
+  method:'POST',
+  headers:{ 'Content-Type':'text/plain;charset=utf-8' }, // プリフライト回避
+  body: JSON.stringify({
+    email: $$('#uf_email').value.trim(),
+    name:  $$('#uf_name').value.trim()
+  })
+});
+
+    <script>
 (() => {
   // 既に保存済みなら状態だけ見せる（変更ボタンでフォームを出す）
   const holder = document.getElementById('bl-card-box');
@@ -440,8 +463,8 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
     const stripe   = Stripe(pk);
     const elements = stripe.elements();
-    const card     = elements.create('card', { hidePostalCode:true });
-    card.mount('#sp_card');
+    const cardEl   = elements.create('card', { hidePostalCode:true });
+    cardEl.mount('#sp_card');
 
     const $ = id => document.getElementById(id);
     const msg = (t, ok=false) => { $('sp_msg').textContent = t; $('sp_msg').style.color = ok ? '#246A73' : '#6f5a54'; };
@@ -449,7 +472,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     // 既存フォームから自動推測（あれば）
     const val = s => {const el=document.querySelector(s); return el && el.value ? el.value.trim() : ''};
     $('sp_email').value = val('#uf_email') || val('#email') || val('[name="email"]');
-    $('sp_name').value  = val('#uf_name')  || val('#name') ||val('[name="name"]');
+    $('sp_name').value  = val('#uf_name')  || val('#name')  || val('[name="name"]');
 
     $('sp_save').addEventListener('click', async () => {
       try{
@@ -459,111 +482,78 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
         msg('カード保存の準備中…');
 
+        // 1) SetupIntent を発行（text/plainでプリフライト回避）
         const siRes = await fetch(base + '/api/setup-intent', {
-  method:'POST',
-  headers:{ 'Content-Type':'text/plain;charset=utf-8' }, // ← プリフライト回避
-  body: JSON.stringify({ email, name })
-});
+          method:'POST',
+          headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+          body: JSON.stringify({ email, name })
+        });
 
-// 安全にパース（空/HTMLでも原因が見える）
-const raw = await siRes.text();
-let si;
-try { si = JSON.parse(raw); }
-catch { throw new Error('Invalid JSON from setup-intent: ' + raw.slice(0,120)); }
+        const raw = await siRes.text();
+        let si;
+        try { si = JSON.parse(raw); }
+        catch { throw new Error('Invalid JSON from setup-intent: ' + raw.slice(0,120)); }
+        if(!siRes.ok || !si?.ok) throw new Error(si?.error || `setup-intent failed (${siRes.status})`);
 
-if(!siRes.ok || !si?.ok) {
-  throw new Error(si?.error || `setup-intent failed (${siRes.status})`);
-}
+        const clientSecret = si.clientSecret;
+        const customerId   = si.customerId;
 
-      
-        // 2) confirmCardSetup で保存
+        // 2) confirmCardSetup で保存（3DS必須）
         const {setupIntent, error} = await stripe.confirmCardSetup(clientSecret, {
-  payment_method: {
-    card: cardEl,
-    billing_details: {
-      name:  $$('#uf_name').value.trim(),
-      email: $$('#uf_email').value.trim(),
-      phone: $$('#uf_phone').value.trim()
-    }
-  },
-  // ★ ここで3DS（SCA）を必須に
-  payment_method_options: { card: { request_three_d_secure: 'any' } }
-});
+          payment_method: {
+            card: cardEl,
+            billing_details: { email, name }
+          },
+          payment_method_options:{ card: { request_three_d_secure: 'any' } }
+        });
+        if(error) throw error;
 
-  //★3DS(SCA)を必須に
-  payment_method_options:{ card: {request_three_d_secure: 'any' }}
-});
-
-        if(result.error) throw result.error;
-
+        // 3) ローカル保存
         const payload = {
           email, name,
-          customerId: si.customerId,
-          paymentMethodId: result.setupIntent.payment_method,
+          customerId,
+          paymentMethodId: setupIntent.payment_method,
           ts: Date.now()
         };
         localStorage.setItem('bl_saved_card', JSON.stringify(payload));
 
         msg('カードを保存しました。', true);
 
-        // 3) スプレッドシートに記録（③-4：URLを渡したら自動で走る）
+        // 4) スプレッドシートに記録（任意）
         sendToSheet(payload);
+
+        // 表示を保存済み状態に更新
+        const savedHtml = `
+          <div class="notice" style="padding:10px;border:1px solid #eadfca;border-radius:10px">
+            カード情報は保存済みです ✅<br>
+            <small>（customerId: ${payload.customerId} / pm: ${payload.paymentMethodId}）</small><br>
+            <button id="bl-change" class="btn" style="margin-top:8px">別のカードにする</button>
+          </div>`;
+        holder.innerHTML = savedHtml;
+        document.getElementById('bl-change').onclick = mountForm;
+
       }catch(e){
         console.error(e);
         msg('保存に失敗しました：' + (e.message||e));
       }
     });
 
-    // ③-4 で設定された URL があれば投げる
     async function sendToSheet(payload){
       const WEBHOOK =
-        // A) metaタグから取得（推奨）
         (document.querySelector('meta[name="bl-sheet-hook"]')?.content) ||
-        // B) 事前にローカルに保存しておく方式
-        localStorage.getItem('bl_sheet_hook') ||
-        // C) ここに直書きしてもOK（空なら送らない）
-        '';
-
-      if(!WEBHOOK) return; // 未設定なら何もしない
-
+        localStorage.getItem('bl_sheet_hook') || '';
+      if(!WEBHOOK) return;
       try{
         await fetch(WEBHOOK, {
           method:'POST',
-          headers:{ 'Content-Type':'text/plain;charset=utf-8' }, // プリフライト回避
-          body: JSON.stringify({
-            kind:'card_saved',
-            salonId:  (new URLSearchParams(location.search)).get('salonId') || '',
-            salonName:(new URLSearchParams(location.search)).get('salonName') || '',
-            ...payload
-          })
+          headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+          body: JSON.stringify({ kind:'card_saved', ...payload })
         });
       }catch(e){ console.warn('Sheet logging failed', e); }
     }
   }
 })();
 </script>
-
-<!-- ↓↓↓ ここからを confirm.html の </body> の直前に貼る ↓↓↓ -->
-<script>
-  // ① GAS へ送る関数（まだ無ければこのまま使う）
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbwJz67fvPpB1tJ7IWggPFWJ-2tBydVOHikzFvviS36_8LOD8YW7jn3vWjWF9f3ngomH/exec'; 
-  const GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';               
-
-  async function postBookingToSheet({ bookingId, date, menu, minutes, amountJPY, email, name }) {
-    // 可能なら保存カードから customerId を同梱（任意）
-    let customerId = '';
-    try { customerId = JSON.parse(localStorage.getItem('bl_saved_card')||'null')?.customerId || ''; } catch {}
-    const payload = { key: GAS_KEY, kind: 'booking',
-      data: { bookingId, date, menu, minutes, amountJPY, email, name, customerId }
-    };
-    const res = await fetch(`${BL_PAY.base}/api/setup-intent`, {
-  method:'POST',
-  headers:{ 'Content-Type':'text/plain;charset=utf-8' }, // プリフライト回避
-  body: JSON.stringify({
-    email: $$('#uf_email').value.trim(),
-    name:  $$('#uf_name').value.trim()
-  })
-});
 
 // テキストで受け取り、安全にJSONへ
 const raw = await res.text();

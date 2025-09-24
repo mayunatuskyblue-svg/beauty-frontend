@@ -236,58 +236,96 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
     } else {
       ev.preventDefault();
       showToast('入力OK。お支払いに進みます…', true);
-      (async ()=>{
-        try{
-          const qs = new URLSearchParams(location.search);
-          const salonId   = qs.get('salonId') || '-';
-          const salonName = qs.get('salonName') || '';
-          const item  = (document.getElementById('s_item')?.textContent || qs.get('item') || 'Reservation').trim();
+(async ()=>{
+  try{
+    const qs = new URLSearchParams(location.search);
 
-// 新旧パラメータ両対応：LKR優先→JPY→旧price
-const priceLKR = Number(qs.get('price_lkr') || 0);
-const priceJPY = Number(qs.get('price_jpy') || 0);
-const price    = priceLKR || priceJPY || Number(qs.get('price') || 0);
+    // 予約IDは ensureBookingIdInURL で URL に必ず入っている想定
+    const bookingId = qs.get('bookingId');
 
-// 予約日時（表示用dateText優先→ISO→旧time）
-const timeISO  = qs.get('dt') || ''; // 後段で ISO が必要ならこちらを使う
-const timeText = qs.get('dateText') || qs.get('time') || (timeISO ? new Date(timeISO).toLocaleString() : '');
+    // 表示値 & クエリから必要情報を集約
+    const salonId   = qs.get('salonId')   || '-';
+    const salonName = qs.get('salonName') || '';
+    const item      = (document.getElementById('s_item')?.textContent || qs.get('item') || 'Reservation').trim();
 
-// 通貨は LKR を基本（price_lkr があれば lkr、なければ jpy/既定）
-const currency = (priceLKR ? 'lkr' : (priceJPY ? 'jpy' : (qs.get('currency')||'usd'))).toLowerCase();
-// まず予約レコードを共通で作成（現地払い/カード払いどちらでも）
-await fetch(`${base}/api/book`, {
-  method:'POST', headers:{'Content-Type':'application/json'},
-  body: JSON.stringify(payload)
-}).then(r=>r.json()).catch(()=>null);
+    // 新旧パラメータ両対応の金額
+    const priceLKR = Number(qs.get('price_lkr') || 0);
+    const priceJPY = Number(qs.get('price_jpy') || 0);
+    const amount   = priceLKR || priceJPY || Number(qs.get('price') || 0);
 
-// その後、押したボタンごとの遷移先へ
-location.href = ev.currentTarget.getAttribute('href') || './';
-          // ★このブロックを挿入（confirm.html）
-const base = (window.BL_PAY?.base||'').replace(/\/$/,'');
-const payload = {
-  bookingId:  crypto.randomUUID(),       // 既に持ってるIDがあればそれを使う
-  date:       (timeISO || '').trim() || new Date(dateText ? Date.parse(dateText) : Date.now()).toISOString(),// 実際は予約日時を入れる
-  menu:       item,
-  minutes:    Number(qs.get('minutes')||0),
-  //通貨と金額は名称に惑わされず値を正しく:バックエンド側が通過を見るなら両方持たせてもOK
-  amount:     (priceLKR || priceJPY || 0),//汎用金額
-  currency,
-  email:      email,
-  name:       (document.getElementById('uf_name')?.value||'').trim()
-};
+    // 予約日時（表示用dateText優先→ISO→旧time）
+    const timeISO  = qs.get('dt') || '';
+    const dateText = qs.get('dateText') || qs.get('time') || (timeISO ? new Date(timeISO).toLocaleString() : '');
+    const minutes  = Number(qs.get('minutes') || 0) || 0;
 
-await fetch(`${base}/api/book`, {
-  method:'POST', headers:{'Content-Type':'application/json'},
-  body: JSON.stringify(payload)
-}).then(r=>r.json());
+    // 入力フォーム
+    const name  = (document.getElementById('uf_name')?.value  || '').trim();
+    const email = (document.getElementById('uf_email')?.value || '').trim();
+    const phone = (document.getElementById('uf_phone')?.value || '').trim();
+    const note  = (document.getElementById('uf_note') ?.value || '').trim();
 
-/* 以降は支払いページや thanks へ遷移 */
-location.href = ev.currentTarget.getAttribute('href') || './';
+    // API ベースURL
+    const base = (window.BL_PAY?.base||'').replace(/\/$/,''); // 例: https://beautylk.com
 
-        }catch(e){
-          alert('予約の作成に失敗しました。もう一度お試しください。');
-        }
-      })();
+    // 1) まず予約をサーバに記録（現地/カードどちらでも共通）
+    const payload = {
+      bookingId,
+      salonId, salonName,
+      menu: item,
+      date: (timeISO || '').trim() || new Date(Date.parse(dateText||'')||Date.now()).toISOString(),
+      minutes,
+      amount,                    // 汎用金額
+      currency: (priceLKR ? 'lkr' : (priceJPY ? 'jpy' : (qs.get('currency')||'usd'))).toLowerCase(),
+      email, name, phone, note
+    };
+    if (base) {
+      await fetch(`${base}/api/book`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      }).then(r=>r.json()).catch(()=>null);
+    }
+
+    // 2) GAS（スプレッドシート）へ“確実に1回だけ”流れるよう sessionStorage に保存（C：標準）
+    try{
+      sessionStorage.setItem('bl_pending_booking', JSON.stringify({
+        bookingId,
+        date: payload.date,
+        menu: payload.menu,
+        minutes,
+        amountJPY: amount,   // ← GAS側は amountJPY キーを読む設計
+        email, name
+      }));
+    }catch(_){}
+
+    // 3) B：WhatsApp “ワンタップ送信リンク”の生成（承認不要・ユーザー手動）
+    try{
+      const salonPhoneRaw = (localStorage.getItem('bl_salon_phone') || '').trim(); // 例: +9477...
+      const waPhone = salonPhoneRaw.replace(/[^\d]/g, '');
+      if (waPhone) {
+        const when   = (document.getElementById('s_time') ?.textContent||'').replace(/^.*?：\s*/,'');
+        const priceT = (document.getElementById('s_price')?.textContent||'').replace(/^.*?：\s*/,'');
+        const txt = [
+          '【予約内容の共有】',
+          `予約ID: ${bookingId}`,
+          `サロン: ${salonName}`,
+          `メニュー: ${item}`,
+          `施術者: ${(document.getElementById('s_staff_name')?.textContent?.trim() || '') || '—'}`,
+          `日時: ${when || dateText}`,
+          `目安金額: ${priceT || ''}`
+        ].filter(Boolean).join('\n');
+        const waLink = `https://wa.me/${waPhone}?text=${encodeURIComponent(txt)}`;
+        sessionStorage.setItem('bl_wa_link', waLink); // 支払い/サンクスでボタン表示用
+      }
+    }catch(_){}
+
+    // 4) 次ページへ遷移（押したボタンのhrefに従う）
+    location.href = ev.currentTarget.getAttribute('href') || './';
+
+  }catch(e){
+    alert('予約の作成に失敗しました。もう一度お試しください。');
+  }
+})();
+
     }
   }, {capture:true});
 });

@@ -569,35 +569,40 @@ $('#btnBook').onclick = (e)=>{
     const raw=parsePhotos(it.photos);
     if(!raw.length){ main.innerHTML='<div class="notice">写真が未登録です（catalog の photos 列）</div>'; return; }
 
-    // 2本1組でフォールバック
-const groups=[]; for(let i=0;i<raw.length;i+=2) groups.push([raw[i], raw[i+1]||raw[i]]);
+   // 2本1組でフォールバック
+const groups = [];
+for (let i = 0; i < raw.length; i += 2) groups.push([raw[i], raw[i + 1] || raw[i]]);
 
-// メインに表示する（alts のどれかが読めたらOK）
-const show=(alts)=>{
-  const img=new Image(); let k=0;
-  img.onload = ()=>{ main.innerHTML=''; main.appendChild(img); };
-  img.onerror= ()=>{ if(++k<alts.length) img.src=alts[k]; /* 全滅でも何もしない */ };
+// メインに表示（alts のどれかが読めたら成功）
+const show = (alts) => {
+  const img = new Image(); let k = 0;
+  img.onload  = () => { main.innerHTML = ''; main.appendChild(img); };
+  img.onerror = () => { if (++k < alts.length) img.src = alts[k]; /* 全滅でも何もしない */ };
   img.src = alts[k];
 };
 
-// 方針：サムネが「初めて1枚ロード成功したタイミング」で、その alts をメインにも適用
-let inited=false;
-groups.forEach(alts=>{
-  const t=new Image(); let k=0; t.loading='lazy';
-  t.onerror=()=>{ if(++k<alts.length) t.src=alts[k]; else t.remove(); };
-  t.onload =()=>{ 
-    if(!inited){ inited=true; show(alts); }  // ← 最初に成功した組をメインへ
-    t.onclick=()=>show(alts);                // ← 以降はクリックで差し替え
-  };
-  t.src=alts[k]; thumbs.appendChild(t);
-});
-
-// 念のため：サムネが1枚も残らなかった場合のみ、メインに注意文を出す
-setTimeout(()=>{
-  if(!inited && !thumbs.children.length){
-    main.innerHTML='<div class="notice">画像が見つかりません</div>';
+// 非同期安全：グループを順番に試す
+function tryGroup(i) {
+  if (i >= groups.length) {
+    main.innerHTML = '<div class="notice">画像が見つかりません</div>';
+    return;
   }
-}, 800);
+  const alts = groups[i];
+  const test = new Image(); let k = 0;
+  test.onload  = () => { show(alts); };            // ← この組をメインに採用
+  test.onerror = () => { if (++k < alts.length) test.src = alts[k]; else tryGroup(i + 1); };
+  test.src = alts[k];
+}
+tryGroup(0);
+
+// サムネイル生成（成功した画像だけ残す）
+groups.forEach((alts) => {
+  const t = new Image(); let k = 0; t.loading = 'lazy';
+  t.onerror = () => { if (++k < alts.length) t.src = alts[k]; else t.remove(); };
+  t.onload  = () => { t.onclick = () => show(alts); };
+  t.src = alts[k];
+  thumbs.appendChild(t);
+});
 
 
   // ====== Renderer: 地図 ======

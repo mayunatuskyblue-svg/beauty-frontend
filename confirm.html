@@ -518,12 +518,24 @@ if(!siRes.ok || !si?.ok) {
     const payload = { key: GAS_KEY, kind: 'booking',
       data: { bookingId, date, menu, minutes, amountJPY, email, name, customerId }
     };
-    const res = await fetch(GAS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // preflight回避
-      body: JSON.stringify(payload)
-    });
-    const j = await res.json().catch(()=>({}));
+    const res = await fetch(`${BL_PAY.base}/api/setup-intent`, {
+  method:'POST',
+  headers:{ 'Content-Type':'text/plain;charset=utf-8' }, // プリフライト回避
+  body: JSON.stringify({
+    email: $$('#uf_email').value.trim(),
+    name:  $$('#uf_name').value.trim()
+  })
+});
+
+// レスポンスをテキストで受けて安全にパース（空/HTMLでも原因が見える）
+const raw = await res.text();
+let si; try { si = JSON.parse(raw); }
+catch { throw new Error('Invalid JSON from setup-intent: ' + raw.slice(0,120)); }
+if (!res.ok || !si?.ok) throw new Error(si?.error || `setup-intent failed (${res.status})`);
+
+const clientSecret = si.clientSecret;
+const customerId   = si.customerId;
+
     if (!j.ok) console.warn('GAS booking write failed:', j.error);
     return !!j.ok;
   }

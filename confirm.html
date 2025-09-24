@@ -156,6 +156,19 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
     </div>
 
     <div class="card" id="userForm">
+      <!-- ▼ スマート支払い（カード保存のみ） ▼ -->
+<div class="card" id="paySmart">
+  <div class="sec-title">支払い方法</div>
+  <div class="sec-desc" style="opacity:.85">
+    本サイトは <b>スマート支払い（カード保存→施術後に確定金額を一度だけ課金）</b> のみ対応です。
+  </div>
+  <!-- Stripe Elements マウント先 -->
+  <div id="bl-card-box" style="margin-top:12px"></div>
+  <p class="muted" id="bl-card-note" style="margin:8px 0 0">
+    ※ カードは Stripe に安全に保存され、施術後に確定金額で一度だけ課金されます。
+  </p>
+</div>
+<!-- ▲ /スマート支払い ▲ -->
       <div class="sec-title" id="uf_title" data-i18n="ui.yourInfo">予約者情報</div>
       <div class="sec-desc" id="uf_desc" data-i18n="confirm.uf_desc">連絡が取れるメールアドレスと電話番号をご入力ください。</div>
       <div class="form-row">
@@ -219,13 +232,12 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
   const { confirm } = BL_I18N.T[BL_I18N.getLang()];
   return confirm.toast_prompt.replace('{fields}', fields.join('・'));
 }
-    <script>
+
 // Smart専用運用：現地払いボタンは非表示（削除はしない）
 document.addEventListener('DOMContentLoaded', () => {
   const br = document.getElementById('btnRecord');
   if (br) br.style.display = 'none';
-});
-</script>
+})
 
     // Intercept payment clicks: warn if invalid, otherwise allow navigation
     ['btnPay','btnRecord'].forEach(id=>{
@@ -507,10 +519,24 @@ document.addEventListener('DOMContentLoaded', async ()=>{
         });
         const si = await siRes.json();
         if(!si.ok) throw new Error(si.error||'setup-intent failed');
+        // 例：Node/Express 側（サーバ）
+const si = await stripe.setupIntents.create({
+  customer,                       // ← 必須：保存先の customer
+  payment_method_types: ['card'],
+  usage: 'off_session',           // ← 後日オフセッション課金を想定
+  payment_method_options: {
+    card: {
+      request_three_d_secure: 'any'  // ← 3DS チャレンジをここで要求
+    }
+  }
+});
+
 
         // 2) confirmCardSetup で保存
         const result = await Stripe(pk).confirmCardSetup(si.clientSecret, {
-          payment_method: { card, billing_details: { email, name } }
+          payment_method: { card, billing_details: { email, name } },
+          //★3DS(SCA)を必須に
+          payment_method_options:{ card: {request_three_d_secure: 'any' }}
         });
         if(result.error) throw result.error;
 

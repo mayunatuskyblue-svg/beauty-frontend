@@ -576,6 +576,15 @@ $('#btnBook').onclick = (e)=>{
       img.onerror=()=>{ if(++k<alts.length) img.src=alts[k]; else main.innerHTML='<div class="notice">画像が見つかりません</div>'; };
       img.src=alts[k];
     };
+    // 先頭から順に「読めた組」をメインに採用
+   (function tryShow(i=0){
+     if(i>=groups.length){ main.innerHTML='<div class="notice">画像が見つかりません</div>'; return; }
+     try{
+       show(groups[i]);
+     }catch(_){
+       tryShow(i+1);
+     }
+   })();
     show(groups[0]);
     groups.forEach(alts=>{
       const t=new Image(); let k=0; t.loading='lazy';

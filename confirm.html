@@ -418,16 +418,22 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   const footer = document.querySelector('footer');
   if(!footer) return;
 
+ <script>
+(function(){
+  const footer = document.querySelector('footer');
+  if(!footer) return;
+
   const dlg   = document.getElementById('blModal');
   const frame = document.getElementById('blModalFrame');
   const title = dlg?.querySelector('.title');
   const btnX  = dlg?.querySelector('button.close');
 
+  // フッターの a をモーダルで開く（.html だけ対象）
   footer.addEventListener('click', (ev)=>{
     const a = ev.target.closest('a');
     if(!a) return;
     const href = a.getAttribute('href');
-    if(!href || !/\.html?$/i.test(href)) return; // htmlだけモーダルで
+    if(!href || !/\.html?$/i.test(href)) return;
     ev.preventDefault();
 
     if(title) title.textContent = (a.textContent||'').trim() || 'Info';
@@ -447,6 +453,9 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   });
 
   btnX?.addEventListener('click', ()=> dlg.close());
+})();
+</script>
+ 
 })();
 </script>
 

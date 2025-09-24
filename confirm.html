@@ -180,9 +180,7 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
     </div>
 
     <div class="row" style="gap:18px;flex-wrap:wrap;margin-top:24px">
-      <a id="btnPay" class="btn btn-primary" href="./payments.html">予約を確定して進む（カードは保存済み）</a>
-      <a id="btnRecord" class="btn btn-primary" style="background:#1F6B72" href="./thankyou.html" data-i18n="ui.pay_on_site">現地で支払う（記録）</a>
-      <a href="./index.html" class="btn btn-outline" data-i18n="ui.toTop">トップに戻る</a>
+        <a href="./index.html" class="btn btn-outline" data-i18n="ui.toTop">トップに戻る</a>
     </div>
   </div>
 
@@ -233,85 +231,7 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
   return confirm.toast_prompt.replace('{fields}', fields.join('・'));
 }
 
-// Smart専用運用：現地払いボタンは非表示（削除はしない）
-document.addEventListener('DOMContentLoaded', () => {
-  const br = document.getElementById('btnRecord');
-  if (br) br.style.display = 'none';
-})
-
-    // Intercept payment clicks: warn if invalid, otherwise allow navigation
-    ['btnPay','btnRecord'].forEach(id=>{
-  const a = document.getElementById(id);
-  if(!a) return;
-  a.addEventListener('click', (ev)=>{
-    const {ok, miss} = validate();
-
-    if(!ok){
-      ev.preventDefault();
-      showToast(promptText(miss), false);
-      if(!nameEl.value.trim())      nameEl.focus();
-      else if(!mailEl.value.trim()) mailEl.focus();
-      else if(!telEl.value.trim())  telEl.focus();
-      return;
-    } else {
-      ev.preventDefault();
-      showToast('入力OK。お支払いに進みます…', true);
-  // ここは既存の if(!ok){...} else { の "else" ブロック内（= バリデーションOK直後）に入れる
-// ★ スマート支払い：保存カードが必須
-try {
-  const saved = JSON.parse(localStorage.getItem('bl_saved_card') || 'null');
-  if (!saved || !saved.paymentMethodId) {
-    ev.preventDefault();
-    showToast('まず「カードを保存する」を完了してください。', false);
-    // カード保存ボックスへスクロール
-    document.getElementById('bl-card-box')?.scrollIntoView({behavior:'smooth', block:'center'});
-    return;
-  }
-} catch(_) {}
-
-(async ()=>{
-  try{
-    const qs = new URLSearchParams(location.search);
-
-    // URL確保済みの bookingId を利用（ensureBookingIdInURLで付与済み）
-    const bookingId = qs.get('bookingId') || (localStorage.getItem('bl_current_booking_id') || '');
-
-    // 表示から拾う
-    const item      = (document.getElementById('s_item')?.textContent || qs.get('item') || 'Reservation').trim();
-    const priceLKR  = Number(qs.get('price_lkr') || 0);
-    const dtIso     = qs.get('dt') || '';
-    const dateText  = qs.get('dateText') || (dtIso ? new Date(dtIso).toLocaleString() : '');
-    const minutes   = Number(qs.get('minutes') || 0) || 0;
-
-    const name  = (document.getElementById('uf_name') ?.value||'').trim();
-    const email = (document.getElementById('uf_email')?.value||'').trim();
-
-    // ★C：GASへ送るペイロードを sessionStorage に保存（ロード時に1回だけ送信）
-    sessionStorage.setItem('bl_pending_booking', JSON.stringify({
-      bookingId,
-      date: dtIso || new Date(Date.parse(dateText||'') || Date.now()).toISOString(),
-      menu: item,
-      minutes,
-      // 注意: amountJPY というキー名だが、中身は LKR の数値を入れる（GAS側でLKR列に保存する想定）
-      amountJPY: priceLKR,
-      email, name
-    }));
-
-    // 次ページへ（押下したボタンの遷移先）
-    location.href = ev.currentTarget.getAttribute('href') || './';
-
-  }catch(e){
-    alert('予約の作成に失敗しました。もう一度お試しください。');
-  }
-})();
-
-
-    }
-  }, {capture:true});
-});
-  })();
-  </script>
-
+    
 <footer id="ft" style="margin:18px 0 40px;text-align:center;color:#6b5e55;font-size:12px">
   <a href="terms.html" class="ft-link" data-ft="terms" style="margin:0 10px" data-i18n="footer.terms">Terms</a>·
   <a href="privacy.html" class="ft-link" data-ft="privacy" style="margin:0 10px" data-i18n="footer.privacy">Privacy</a>·

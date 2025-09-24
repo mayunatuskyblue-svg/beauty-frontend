@@ -742,7 +742,7 @@ function applyI18N(){
   document.querySelectorAll('[data-ph]').forEach(el=>{ const k=el.dataset.ph; if(T[L][k]) el.setAttribute('placeholder', T[L][k]); });
   document.getElementById('navLogin').textContent = T[L].login;
   document.getElementById('navSignup').textContent= T[L].signup;
-  document.getElementById('navMypage').textContent= T[L].mypage;
+  document.getElementById('navMypage').setattribute('area-label', T[L].mypage);
   const placeOpt=document.querySelector('#place option[value=""]'); if(placeOpt) placeOpt.textContent=T[L].place;
   const typeOpt=document.querySelector('#type option[value=""]'); if(typeOpt) typeOpt.textContent=T[L].type;
 }

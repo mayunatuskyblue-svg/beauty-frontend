@@ -175,7 +175,7 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
   <div id="msg"></div>
 
   <footer>
-    <a href="terms.html">Terms</a> ・ <a href="privacy.html">Privacy</a> ・ <a href="cancel_policy.html">Cancel Policy</a> ・ <a href="contact.html">Contact</a>
+    <a href="terms.html">Terms</a> ・ <a href="privacy.html">Privacy</a> ・ <a href="cancel.html">Cancel Policy</a> ・ <a href="contact.html">Contact</a>
  <!-- Footer Modal -->
 <dialog id="blModal">
   <header>
@@ -472,6 +472,44 @@ grid.appendChild(table);
  <!-- decorative background (purely visual) -->
 <div class="bg-radials"></div>
 <div class="grain"></div>
+<script>
+(function(){
+  const footer = document.querySelector('footer');
+  if(!footer) return;
+
+  const dlg   = document.getElementById('blModal');
+  const frame = document.getElementById('blModalFrame');
+  const title = dlg?.querySelector('.title');
+  const btnX  = dlg?.querySelector('button.close');
+
+  // フッターの a をモーダルで開く
+  footer.addEventListener('click', (ev)=>{
+    const a = ev.target.closest('a');
+    if(!a) return;
+    const href = a.getAttribute('href');
+    if(!href || !/\.html?$/i.test(href)) return; // 外部/＃は無視
+    ev.preventDefault();
+
+    if(title) title.textContent = (a.textContent||'').trim() || 'Info';
+    if(frame) frame.src = href;
+
+    if(typeof dlg?.showModal === 'function') dlg.showModal();
+
+    // 読み込み後、iframe内<title>で見出し更新（同一オリジン想定）
+    const onLoad = ()=>{
+      try{
+        const doc = frame.contentDocument || frame.contentWindow?.document;
+        const t = doc?.title?.trim();
+        if(t && title) title.textContent = t;
+      }catch(_){}
+      frame.removeEventListener('load', onLoad);
+    };
+    frame.addEventListener('load', onLoad);
+  });
+
+  btnX?.addEventListener('click', ()=> dlg.close());
+})();
+</script>
 
 
 </body>

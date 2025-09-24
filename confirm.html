@@ -430,10 +430,10 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
     <script>
 (() => {
-  // 既に保存済みなら状態だけ見せる（変更ボタンでフォームを出す）
   const holder = document.getElementById('bl-card-box');
   if(!holder) return;
 
+  // 既に保存済みなら表示だけ
   const saved = (()=>{ try{return JSON.parse(localStorage.getItem('bl_saved_card')||'null')}catch(e){return null} })();
   if(saved){
     holder.innerHTML = `
@@ -469,7 +469,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     const $ = id => document.getElementById(id);
     const msg = (t, ok=false) => { $('sp_msg').textContent = t; $('sp_msg').style.color = ok ? '#246A73' : '#6f5a54'; };
 
-    // 既存フォームから自動推測（あれば）
+    // 既存フォームから自動入力
     const val = s => {const el=document.querySelector(s); return el && el.value ? el.value.trim() : ''};
     $('sp_email').value = val('#uf_email') || val('#email') || val('[name="email"]');
     $('sp_name').value  = val('#uf_name')  || val('#name')  || val('[name="name"]');
@@ -482,13 +482,12 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
         msg('カード保存の準備中…');
 
-        // 1) SetupIntent を発行（text/plainでプリフライト回避）
+        // 1) SetupIntent を発行（text/plain でプリフライト回避）
         const siRes = await fetch(base + '/api/setup-intent', {
           method:'POST',
           headers:{ 'Content-Type':'text/plain;charset=utf-8' },
           body: JSON.stringify({ email, name })
         });
-
         const raw = await siRes.text();
         let si;
         try { si = JSON.parse(raw); }
@@ -498,7 +497,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
         const clientSecret = si.clientSecret;
         const customerId   = si.customerId;
 
-        // 2) confirmCardSetup で保存（3DS必須）
+        // 2) 3DS必須で保存
         const {setupIntent, error} = await stripe.confirmCardSetup(clientSecret, {
           payment_method: {
             card: cardEl,
@@ -508,52 +507,32 @@ document.addEventListener('DOMContentLoaded', async ()=>{
         });
         if(error) throw error;
 
-        // 3) ローカル保存
-        const payload = {
-          email, name,
-          customerId,
-          paymentMethodId: setupIntent.payment_method,
-          ts: Date.now()
-        };
+        // 3) ローカル保存 ＆ 表示更新
+        const payload = { email, name, customerId, paymentMethodId: setupIntent.payment_method, ts: Date.now() };
         localStorage.setItem('bl_saved_card', JSON.stringify(payload));
-
         msg('カードを保存しました。', true);
-
-        // 4) スプレッドシートに記録（任意）
-        sendToSheet(payload);
-
-        // 表示を保存済み状態に更新
-        const savedHtml = `
+        holder.innerHTML = `
           <div class="notice" style="padding:10px;border:1px solid #eadfca;border-radius:10px">
             カード情報は保存済みです ✅<br>
             <small>（customerId: ${payload.customerId} / pm: ${payload.paymentMethodId}）</small><br>
             <button id="bl-change" class="btn" style="margin-top:8px">別のカードにする</button>
           </div>`;
-        holder.innerHTML = savedHtml;
         document.getElementById('bl-change').onclick = mountForm;
 
+        // 任意：スプレッドシートに記録
+        const WEBHOOK = (document.querySelector('meta[name="bl-sheet-hook"]')?.content)||'';
+        if(WEBHOOK){
+          try{ await fetch(WEBHOOK, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: JSON.stringify({ kind:'card_saved', ...payload }) }); }catch(_){}
+        }
       }catch(e){
         console.error(e);
         msg('保存に失敗しました：' + (e.message||e));
       }
     });
-
-    async function sendToSheet(payload){
-      const WEBHOOK =
-        (document.querySelector('meta[name="bl-sheet-hook"]')?.content) ||
-        localStorage.getItem('bl_sheet_hook') || '';
-      if(!WEBHOOK) return;
-      try{
-        await fetch(WEBHOOK, {
-          method:'POST',
-          headers:{ 'Content-Type':'text/plain;charset=utf-8' },
-          body: JSON.stringify({ kind:'card_saved', ...payload })
-        });
-      }catch(e){ console.warn('Sheet logging failed', e); }
-    }
   }
 })();
 </script>
+
 
 // テキストで受け取り、安全にJSONへ
 const raw = await res.text();

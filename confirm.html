@@ -238,87 +238,56 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
       showToast('入力OK。お支払いに進みます…', true);
 (async ()=>{
   try{
+    // 1) クエリ・表示から必要値を集める
     const qs = new URLSearchParams(location.search);
-
-    // 予約IDは ensureBookingIdInURL で URL に必ず入っている想定
-    const bookingId = qs.get('bookingId');
-
-    // 表示値 & クエリから必要情報を集約
-    const salonId   = qs.get('salonId')   || '-';
+    const salonId   = qs.get('salonId') || '-';
     const salonName = qs.get('salonName') || '';
+
     const item      = (document.getElementById('s_item')?.textContent || qs.get('item') || 'Reservation').trim();
 
-    // 新旧パラメータ両対応の金額
+    // 料金（LKR優先→JPY→旧price）
     const priceLKR = Number(qs.get('price_lkr') || 0);
     const priceJPY = Number(qs.get('price_jpy') || 0);
     const amount   = priceLKR || priceJPY || Number(qs.get('price') || 0);
+    const currency = (priceLKR ? 'lkr' : (priceJPY ? 'jpy' : (qs.get('currency')||'usd'))).toLowerCase();
 
-    // 予約日時（表示用dateText優先→ISO→旧time）
-    const timeISO  = qs.get('dt') || '';
-    const dateText = qs.get('dateText') || qs.get('time') || (timeISO ? new Date(timeISO).toLocaleString() : '');
-    const minutes  = Number(qs.get('minutes') || 0) || 0;
+    // 日時（ISO優先。表示用dateTextがあればフォールバック）
+    const dtIso    = qs.get('dt') || '';
+    const dateText = qs.get('dateText') || qs.get('time') || '';
+    const dateISO  = (dtIso || '').trim() || new Date(dateText ? Date.parse(dateText) : Date.now()).toISOString();
 
-    // 入力フォーム
-    const name  = (document.getElementById('uf_name')?.value  || '').trim();
-    const email = (document.getElementById('uf_email')?.value || '').trim();
-    const phone = (document.getElementById('uf_phone')?.value || '').trim();
-    const note  = (document.getElementById('uf_note') ?.value || '').trim();
+    // 入力フォームの値（バリデーションは外側で済んでいる）
+    const name  = (document.getElementById('uf_name')?.value||'').trim();
+    const email = (document.getElementById('uf_email')?.value||'').trim();
+    const minutes = Number(qs.get('minutes')||0);
 
-    // API ベースURL
-    const base = (window.BL_PAY?.base||'').replace(/\/$/,''); // 例: https://beautylk.com
+    // 2) bookingId は URL か LS から取得（B案）
+    const bookingId =
+      new URL(location.href).searchParams.get('bookingId') ||
+      localStorage.getItem('bl_current_booking_id') || '';
 
-    // 1) まず予約をサーバに記録（現地/カードどちらでも共通）
+    // 3) 予約レコードを作成（現地/カードどちらでも共通）
+    const base = (window.BL_PAY?.base||'').replace(/\/$/,'');
     const payload = {
       bookingId,
       salonId, salonName,
+      date: dateISO,
       menu: item,
-      date: (timeISO || '').trim() || new Date(Date.parse(dateText||'')||Date.now()).toISOString(),
       minutes,
-      amount,                    // 汎用金額
-      currency: (priceLKR ? 'lkr' : (priceJPY ? 'jpy' : (qs.get('currency')||'usd'))).toLowerCase(),
-      email, name, phone, note
+      amount,
+      currency,
+      email,
+      name
     };
-    if (base) {
-      await fetch(`${base}/api/book`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify(payload)
-      }).then(r=>r.json()).catch(()=>null);
-    }
 
-    // 2) GAS（スプレッドシート）へ“確実に1回だけ”流れるよう sessionStorage に保存（C：標準）
-    try{
-      sessionStorage.setItem('bl_pending_booking', JSON.stringify({
-        bookingId,
-        date: payload.date,
-        menu: payload.menu,
-        minutes,
-        amountJPY: amount,   // ← GAS側は amountJPY キーを読む設計
-        email, name
-      }));
-    }catch(_){}
+    // POST は失敗しても UI を固めすぎない（ユーザー体験優先）
+    await fetch(`${base}/api/book`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    }).catch(()=>null);
 
-    // 3) B：WhatsApp “ワンタップ送信リンク”の生成（承認不要・ユーザー手動）
-    try{
-      const salonPhoneRaw = (localStorage.getItem('bl_salon_phone') || '').trim(); // 例: +9477...
-      const waPhone = salonPhoneRaw.replace(/[^\d]/g, '');
-      if (waPhone) {
-        const when   = (document.getElementById('s_time') ?.textContent||'').replace(/^.*?：\s*/,'');
-        const priceT = (document.getElementById('s_price')?.textContent||'').replace(/^.*?：\s*/,'');
-        const txt = [
-          '【予約内容の共有】',
-          `予約ID: ${bookingId}`,
-          `サロン: ${salonName}`,
-          `メニュー: ${item}`,
-          `施術者: ${(document.getElementById('s_staff_name')?.textContent?.trim() || '') || '—'}`,
-          `日時: ${when || dateText}`,
-          `目安金額: ${priceT || ''}`
-        ].filter(Boolean).join('\n');
-        const waLink = `https://wa.me/${waPhone}?text=${encodeURIComponent(txt)}`;
-        sessionStorage.setItem('bl_wa_link', waLink); // 支払い/サンクスでボタン表示用
-      }
-    }catch(_){}
-
-    // 4) 次ページへ遷移（押したボタンのhrefに従う）
+    // 4) 押したボタンごとの遷移先へ
     location.href = ev.currentTarget.getAttribute('href') || './';
 
   }catch(e){

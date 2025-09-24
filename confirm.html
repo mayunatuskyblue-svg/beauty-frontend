@@ -406,34 +406,74 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   };
 </script>
 
-<!-- ↓↓↓ ここからを confirm.html の </body> の直前に貼る ↓↓↓ -->
+
+<!-- decorative background (purely visual) -->
+<div class="bg-radials"></div>
+<div class="grain"></div>
 <script>
-  // ① GAS へ送る関数（まだ無ければこのまま使う）
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbwJz67fvPpB1tJ7IWggPFWJ-2tBydVOHikzFvviS36_8LOD8YW7jn3vWjWF9f3ngomH/exec'; 
-  const GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';               
+(function(){
+  const footer = document.querySelector('footer');
+  if(!footer) return;
+<script>
+/* ====== 環境に応じて API ベースURLを決定 ====== */
+(function(){
+  var prodBase = 'https://beautylk.com'; // 本番
+  var isFile = location.protocol === 'file:';
+  var isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)/.test(location.origin);
+  // 本番ドメイン上 → 同一オリジン
+  // ローカル(http) → localhost のオリジンを使う（CORSで許可する）
+  // file:// → prod に直で当てる（CORS必要）
+  window.BL_PAY = window.BL_PAY || {};
+  window.BL_PAY.base = (isFile ? prodBase : location.origin).replace(/\/$/,'');
+})();
 
-  async function postBookingToSheet({ bookingId, date, menu, minutes, amountJPY, email, name }) {
-    // 可能なら保存カードから customerId を同梱（任意）
-    let customerId = '';
-    try { customerId = JSON.parse(localStorage.getItem('bl_saved_card')||'null')?.customerId || ''; } catch {}
-    const payload = { key: GAS_KEY, kind: 'booking',
-      data: { bookingId, date, menu, minutes, amountJPY, email, name, customerId }
-    };
-    const res = await fetch(GAS_URL, {
-  method: 'POST',
-  headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // preflight回避
-  body: JSON.stringify(payload)
-});
-const j = await res.json().catch(()=>({}));
-if (!j.ok) console.warn('GAS booking write failed:', j.error);
-return !!j.ok;
+/* ====== GAS へ予約を書き込む（プリフライト回避の text/plain） ====== */
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwJz67fvPpB1tJ7IWggPFWJ-2tBydVOHikzFvviS36_8LOD8YW7jn3vWjWF9f3ngomH/exec';
+const GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
 
-    <script>
+async function postBookingToSheet({ bookingId, date, menu, minutes, amountJPY, email, name }) {
+  let customerId = '';
+  try { customerId = JSON.parse(localStorage.getItem('bl_saved_card')||'null')?.customerId || ''; } catch {}
+  const payload = { key: GAS_KEY, kind: 'booking',
+    data: { bookingId, date, menu, minutes, amountJPY, email, name, customerId }
+  };
+  const res = await fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // preflight回避
+    body: JSON.stringify(payload)
+  });
+  const text = await res.text();
+  let j; try { j = JSON.parse(text); } catch { j = { ok:false, error:'Invalid JSON from GAS' }; }
+  if (!j.ok) console.warn('GAS booking write failed:', j.error);
+  return !!j.ok;
+}
+
+/* ====== confirm ページ → 予約情報の拾い出し ====== */
+function readBookingFromPage() {
+  const qs = new URLSearchParams(location.search);
+  let booking = {
+    bookingId:  qs.get('bookingId') || '',
+    date:       qs.get('date') || new Date().toISOString(),
+    menu:       qs.get('menu') || '',
+    minutes:    Number(qs.get('minutes') || 0) || 0,
+    amountJPY:  Number(qs.get('amountJPY') || 0) || 0,
+    email:      qs.get('email') || '',
+    name:       qs.get('name') || ''
+  };
+  if (!booking.bookingId) {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem('bl_pending_booking') || localStorage.getItem('bl_pending_booking') || 'null');
+      if (saved && saved.bookingId) booking = Object.assign(booking, saved);
+    } catch {}
+  }
+  return booking;
+}
+
+/* ====== カード保存フォーム（Stripe Elements） ====== */
 (() => {
   const holder = document.getElementById('bl-card-box');
   if(!holder) return;
 
-  // 既に保存済みなら表示だけ
   const saved = (()=>{ try{return JSON.parse(localStorage.getItem('bl_saved_card')||'null')}catch(e){return null} })();
   if(saved){
     holder.innerHTML = `
@@ -449,7 +489,7 @@ return !!j.ok;
 
   function mountForm(){
     const base = (window.BL_PAY?.base||'').replace(/\/$/,'');
-    const pk   = window.BL_PAY?.pk;
+    const pk   = window.BL_PAY?.pk || 'pk_test_...'; // 既に head 側で定義済み
     if(!pk || !base){ holder.textContent='設定不足（pk/base）'; return; }
 
     holder.innerHTML = `
@@ -469,10 +509,10 @@ return !!j.ok;
     const $ = id => document.getElementById(id);
     const msg = (t, ok=false) => { $('sp_msg').textContent = t; $('sp_msg').style.color = ok ? '#246A73' : '#6f5a54'; };
 
-    // 既存フォームから自動入力
+    // 予約者フォームから自動補完
     const val = s => {const el=document.querySelector(s); return el && el.value ? el.value.trim() : ''};
-    $('sp_email').value = val('#uf_email') || val('#email') || val('[name="email"]');
-    $('sp_name').value  = val('#uf_name')  || val('#name')  || val('[name="name"]');
+    $('sp_email').value = val('#uf_email') || val('[name="email"]');
+    $('sp_name').value  = val('#uf_name')  || val('[name="name"]');
 
     $('sp_save').addEventListener('click', async () => {
       try{
@@ -482,25 +522,28 @@ return !!j.ok;
 
         msg('カード保存の準備中…');
 
-        // 1) SetupIntent を発行（text/plain でプリフライト回避）
+        // 1) SetupIntent（text/plain でプリフライト回避 → それでもクロスならCORS必要）
         const siRes = await fetch(base + '/api/setup-intent', {
           method:'POST',
           headers:{ 'Content-Type':'text/plain;charset=utf-8' },
           body: JSON.stringify({ email, name })
         });
         const raw = await siRes.text();
-        
-        // 2) 3DS必須で保存
+        let si; try { si = JSON.parse(raw); }
+        catch { throw new Error('Invalid JSON from setup-intent: ' + raw.slice(0,120)); }
+        if(!siRes.ok || !si?.ok) throw new Error(si?.error || `setup-intent failed (${siRes.status})`);
+
+        const clientSecret = si.clientSecret;
+        const customerId   = si.customerId;
+
+        // 2) 保存（3DS必須）
         const {setupIntent, error} = await stripe.confirmCardSetup(clientSecret, {
-          payment_method: {
-            card: cardEl,
-            billing_details: { email, name }
-          },
+          payment_method: { card: cardEl, billing_details: { email, name } },
           payment_method_options:{ card: { request_three_d_secure: 'any' } }
         });
         if(error) throw error;
 
-        // 3) ローカル保存 ＆ 表示更新
+        // 3) ローカル保存＆表示更新
         const payload = { email, name, customerId, paymentMethodId: setupIntent.payment_method, ts: Date.now() };
         localStorage.setItem('bl_saved_card', JSON.stringify(payload));
         msg('カードを保存しました。', true);
@@ -512,7 +555,7 @@ return !!j.ok;
           </div>`;
         document.getElementById('bl-change').onclick = mountForm;
 
-        // 任意：スプレッドシートに記録
+        // 任意：GAS ログ
         const WEBHOOK = (document.querySelector('meta[name="bl-sheet-hook"]')?.content)||'';
         if(WEBHOOK){
           try{ await fetch(WEBHOOK, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: JSON.stringify({ kind:'card_saved', ...payload }) }); }catch(_){}
@@ -524,74 +567,17 @@ return !!j.ok;
     });
   }
 })();
+
+/* ====== 初回1回だけ 予約を書き込む ====== */
+document.addEventListener('DOMContentLoaded', async () => {
+  const b = readBookingFromPage();
+  if (!b.bookingId) { console.warn('bookingId が無いので送信しません'); return; }
+  const sentKey = `bl_booking_sent_${b.bookingId}`;
+  if (localStorage.getItem(sentKey)) return;
+  const ok = await postBookingToSheet(b);
+  if (ok) localStorage.setItem(sentKey, '1');
+});
 </script>
-
-<script>
-// テキストで受け取り、安全にJSONへ
-const raw = await res.text();
-let si; try { si = JSON.parse(raw); }
-catch { throw new Error('Invalid JSON from setup-intent: ' + raw.slice(0,120)); }
-if (!res.ok || !si?.ok) throw new Error(si?.error || `setup-intent failed (${res.status})`);
-
-const clientSecret = si.clientSecret;
-const customerId   = si.customerId;
-
-    if (!j.ok) console.warn('GAS booking write failed:', j.error);
-    return !!j.ok;
-  }
-
-  // ② URL（?bookingId=...）から予約情報を拾う or 事前に保存しておいたデータを拾う
-  function readBookingFromPage() {
-    const qs = new URLSearchParams(location.search);
-    // A. クエリで受け取る運用（推奨）
-    let booking = {
-      bookingId:  qs.get('bookingId') || '',
-      date:       qs.get('date') || new Date().toISOString(),
-      menu:       qs.get('menu') || '',
-      minutes:    Number(qs.get('minutes') || 0) || 0,
-      amountJPY:  Number(qs.get('amountJPY') || 0) || 0,
-      email:      qs.get('email') || '',
-      name:       qs.get('name') || ''
-    };
-    // B. 予約ページで sessionStorage/localStorage に入れてある場合のフォールバック（あれば使う）
-    if (!booking.bookingId) {
-      try {
-        const saved = JSON.parse(sessionStorage.getItem('bl_pending_booking') || localStorage.getItem('bl_pending_booking') || 'null');
-        if (saved && saved.bookingId) booking = Object.assign(booking, saved);
-      } catch {}
-    }
-    return booking;
-  }
-
-  // ③ 1回だけ送る（同じ bookingId での二重送信防止）
-  document.addEventListener('DOMContentLoaded', async () => {
-    const b = readBookingFromPage();
-    if (!b.bookingId) { console.warn('bookingId が無いので送信しません'); return; }
-
-    const sentKey = `bl_booking_sent_${b.bookingId}`;
-    if (localStorage.getItem(sentKey)) return; // 既に送っていれば何もしない
-
-    const ok = await postBookingToSheet({
-      bookingId: b.bookingId,
-      date:      b.date || new Date().toISOString(),
-      menu:      b.menu,
-      minutes:   b.minutes,
-      amountJPY: b.amountJPY,     // ←整数（3500など）
-      email:     b.email,
-      name:      b.name
-    });
-
-    if (ok) localStorage.setItem(sentKey, '1');
-  });
-</script>
-<!-- ↑↑↑ ここまでを </body> の直前に貼る ↑↑↑ -->
-<!-- decorative background (purely visual) -->
-<div class="bg-radials"></div>
-<div class="grain"></div>
-<script>
-(function(){
-  const footer = document.querySelector('footer');
-  if(!footer) return;
 
   const dlg   = document.getElementById('blModal');
   const frame = document.getElementById('blModalFrame');

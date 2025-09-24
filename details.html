@@ -570,30 +570,35 @@ $('#btnBook').onclick = (e)=>{
     if(!raw.length){ main.innerHTML='<div class="notice">写真が未登録です（catalog の photos 列）</div>'; return; }
 
     // 2本1組でフォールバック
-    const groups=[]; for(let i=0;i<raw.length;i+=2) groups.push([raw[i], raw[i+1]||raw[i]]);
-    const show=(alts)=>
-      { const img=new Image(); let k=0;
-      img.onload=()=>{ main.innerHTML=''; main.appendChild(img); };
-      img.onerror=()=>{ if(++k<alts.length) img.src=alts[k]; else throw new Error('all alts failed'); };
-      img.src=alts[k];
-    };
-    // 先頭から順に「読めた組」をメインに採用
-   (function tryShow(i=0){
-     if(i>=groups.length){ main.innerHTML='<div class="notice">画像が見つかりません</div>'; return; }
-     try{
-       show(groups[i]);
-     }catch(_){
-       tryShow(i+1);
-     }
-   })();
-    show(groups[0]);
-    groups.forEach(alts=>{
-      const t=new Image(); let k=0; t.loading='lazy';
-      t.onerror=()=>{ if(++k<alts.length) t.src=alts[k]; else t.remove(); };
-      t.onload =()=>{ t.onclick=()=>show(alts); };
-      t.src=alts[k]; thumbs.appendChild(t);
-    });
+const groups=[]; for(let i=0;i<raw.length;i+=2) groups.push([raw[i], raw[i+1]||raw[i]]);
+
+// メインに表示する（alts のどれかが読めたらOK）
+const show=(alts)=>{
+  const img=new Image(); let k=0;
+  img.onload = ()=>{ main.innerHTML=''; main.appendChild(img); };
+  img.onerror= ()=>{ if(++k<alts.length) img.src=alts[k]; /* 全滅でも何もしない */ };
+  img.src = alts[k];
+};
+
+// 方針：サムネが「初めて1枚ロード成功したタイミング」で、その alts をメインにも適用
+let inited=false;
+groups.forEach(alts=>{
+  const t=new Image(); let k=0; t.loading='lazy';
+  t.onerror=()=>{ if(++k<alts.length) t.src=alts[k]; else t.remove(); };
+  t.onload =()=>{ 
+    if(!inited){ inited=true; show(alts); }  // ← 最初に成功した組をメインへ
+    t.onclick=()=>show(alts);                // ← 以降はクリックで差し替え
+  };
+  t.src=alts[k]; thumbs.appendChild(t);
+});
+
+// 念のため：サムネが1枚も残らなかった場合のみ、メインに注意文を出す
+setTimeout(()=>{
+  if(!inited && !thumbs.children.length){
+    main.innerHTML='<div class="notice">画像が見つかりません</div>';
   }
+}, 800);
+
 
   // ====== Renderer: 地図 ======
   function renderMap(it){

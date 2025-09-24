@@ -219,6 +219,14 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
   const { confirm } = BL_I18N.T[BL_I18N.getLang()];
   return confirm.toast_prompt.replace('{fields}', fields.join('・'));
 }
+    <script>
+// Smart専用運用：現地払いボタンは非表示（削除はしない）
+document.addEventListener('DOMContentLoaded', () => {
+  const br = document.getElementById('btnRecord');
+  if (br) br.style.display = 'none';
+});
+</script>
+
     // Intercept payment clicks: warn if invalid, otherwise allow navigation
     ['btnPay','btnRecord'].forEach(id=>{
   const a = document.getElementById(id);
@@ -236,6 +244,19 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
     } else {
       ev.preventDefault();
       showToast('入力OK。お支払いに進みます…', true);
+  // ここは既存の if(!ok){...} else { の "else" ブロック内（= バリデーションOK直後）に入れる
+// ★ スマート支払い：保存カードが必須
+try {
+  const saved = JSON.parse(localStorage.getItem('bl_saved_card') || 'null');
+  if (!saved || !saved.paymentMethodId) {
+    ev.preventDefault();
+    showToast('まず「カードを保存する」を完了してください。', false);
+    // カード保存ボックスへスクロール
+    document.getElementById('bl-card-box')?.scrollIntoView({behavior:'smooth', block:'center'});
+    return;
+  }
+} catch(_) {}
+
 (async ()=>{
   try{
     const qs = new URLSearchParams(location.search);

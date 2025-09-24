@@ -412,21 +412,44 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 <div class="bg-radials"></div>
 <div class="grain"></div>
 
-<!-- Footer内リンクをモーダルで開く：入れ子禁止＆閉じタグを正しく -->
+<!-- Footer内リンクをモーダルで開く -->
 <script>
 (function(){
   const footer = document.querySelector('footer');
   if(!footer) return;
 
- <script>
-(function(){
-  const footer = document.querySelector('footer');
-  if(!footer) return;
+  const dlg   = document.getElementById('blModal');
+  const frame = document.getElementById('blModalFrame');
+  const title = dlg?.querySelector('.title');
+  const btnX  = dlg?.querySelector('button.close');
 
-  
- 
+  footer.addEventListener('click', (ev)=>{
+    const a = ev.target.closest('a');
+    if(!a) return;
+    const href = a.getAttribute('href');
+    if(!href || !/\.html?$/i.test(href)) return; // htmlだけモーダル
+    ev.preventDefault();
+
+    if(title) title.textContent = (a.textContent||'').trim() || 'Info';
+    if(frame) frame.src = href;
+
+    if(typeof dlg?.showModal === 'function') dlg.showModal();
+
+    const onLoad = ()=>{
+      try{
+        const doc = frame.contentDocument || frame.contentWindow?.document;
+        const t = doc?.title?.trim();
+        if(t && title) title.textContent = t;
+      }catch(_){}
+      frame.removeEventListener('load', onLoad);
+    };
+    frame.addEventListener('load', onLoad);
+  });
+
+  btnX?.addEventListener('click', ()=> dlg.close());
 })();
 </script>
+
 
 <!-- ここからは機能系スクリプト（入れ子にしない） -->
 <script>
@@ -586,39 +609,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 </script>
 
 
-  const dlg   = document.getElementById('blModal');
-  const frame = document.getElementById('blModalFrame');
-  const title = dlg?.querySelector('.title');
-  const btnX  = dlg?.querySelector('button.close');
-
-  // フッターの a をモーダルで開く
-  footer.addEventListener('click', (ev)=>{
-    const a = ev.target.closest('a');
-    if(!a) return;
-    const href = a.getAttribute('href');
-    if(!href || !/\.html?$/i.test(href)) return; // 外部/＃は無視
-    ev.preventDefault();
-
-    if(title) title.textContent = (a.textContent||'').trim() || 'Info';
-    if(frame) frame.src = href;
-
-    if(typeof dlg?.showModal === 'function') dlg.showModal();
-
-    // 読み込み後、iframe内<title>で見出し更新（同一オリジン想定）
-    const onLoad = ()=>{
-      try{
-        const doc = frame.contentDocument || frame.contentWindow?.document;
-        const t = doc?.title?.trim();
-        if(t && title) title.textContent = t;
-      }catch(_){}
-      frame.removeEventListener('load', onLoad);
-    };
-    frame.addEventListener('load', onLoad);
-  });
-
-  btnX?.addEventListener('click', ()=> dlg.close());
-})();
-</script>
 
 
 

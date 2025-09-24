@@ -118,6 +118,13 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
 .bl-steps{display:flex;gap:8px;align-items:center;color:var(--muted);font-weight:700}
 .bl-steps .dot{width:8px;height:8px;border-radius:50%;background:var(--teal);opacity:.35}
 .bl-steps .on{opacity:1}
+
+/* 選択済みスロットの見た目 */
+.timebtn.selected{
+  border-color: var(--teal);
+  background: color-mix(in oklab, var(--teal) 10%, white);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--teal) 20%, transparent);
+}
 </style>
 
 </head>
@@ -365,6 +372,11 @@ function hhmmOf(h,m){ return String(h).padStart(2,'0')+':'+String(m).padStart(2,
     const ws = getWeekStart(addDays(today, offset*7));
     const we = addDays(ws, 6);
     title.textContent = ws.toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'}) + ' — ' + we.toLocaleDateString(undefined,{month:'long',day:'numeric'});
+    // 既存: const ws = getWeekStart(addDays(today, offset*7)); のすぐ下などに
+    const savedIso = (localStorage.getItem('reserve_selected') || '').trim();
+    const savedDt  = savedIso ? new Date(savedIso) : null;
+    const savedYmd = savedDt ? savedDt.toISOString().slice(0,10) : '';
+    const savedHm  = savedDt ? (String(savedDt.getHours()).padStart(2,'0') + ':' + String(savedDt.getMinutes()).padStart(2,'0')) : '';
 
     const times=[];
     for(let h=startHour; h<=endHour; h++){
@@ -413,17 +425,35 @@ times.forEach(([h,m])=>{
       btn.disabled = true;
       btn.setAttribute('aria-disabled','true');
     } else {
-      btn.textContent = '◯';
-      btn.addEventListener('click', ()=>{
-        const dt = new Date(d);
-        dt.setHours(h, m, 0, 0);
-        const iso = dt.toISOString();
-        try { localStorage.setItem('reserve_selected', iso); } catch(_){}
-        document.getElementById('v_date').textContent = dt.toLocaleString();
-        btn.textContent = '✓';
-        setTimeout(()=>btn.textContent='◯', 600);
-      });
-    }
+  btn.textContent = '◯';
+
+  // 事前選択の復元（保存済みISOと一致したら✓＆selected）
+  if (y === savedYmd && slot === savedHm) {
+    btn.textContent = '✓';
+    btn.classList.add('selected');
+
+    // 画面上の日時表示も復元（必要なら）
+    const dt = new Date(y + 'T' + slot + ':00');
+    document.getElementById('v_date').textContent = dt.toLocaleString();
+  }
+
+  btn.addEventListener('click', ()=>{
+    const dt = new Date(d);
+    dt.setHours(h, m, 0, 0);
+    const iso = dt.toISOString();
+    try { localStorage.setItem('reserve_selected', iso); } catch(_){}
+    document.getElementById('v_date').textContent = dt.toLocaleString();
+
+    grid.querySelectorAll('.timebtn.selected').forEach(b=>{
+      b.classList.remove('selected');
+      if (!b.hasAttribute('aria-disabled')) b.textContent = '◯';
+    });
+
+    btn.classList.add('selected');
+    btn.textContent = '✓';
+  });
+}
+
 
     td.appendChild(btn);
     tr.appendChild(td);

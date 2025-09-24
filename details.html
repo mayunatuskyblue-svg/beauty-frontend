@@ -446,29 +446,23 @@ function suggestCultureTags(ctx){
   }
   window.starsEl = starsEl; // フィルタ用にも使う
 
-   // 画像URL候補を超強化：beautylk本番 と onrender の両方を絶対パスで試す
+   // 画像URL候補（必ず絶対URL）：onrender → 現在のオリジン の順で試す
 function parsePhotos(v){
-  // 1) 値を配列化（改行/全角カンマ対応）
-  let names = Array.isArray(v) ? v : String(v||'')
-    .replace(/[\r\n]+/g, ',').replace(/，/g, ',').split(',');
+  let names = Array.isArray(v) ? v : String(v||'').replace(/[\r\n]+/g, ',').replace(/，/g, ',').split(',');
   names = names.map(s => String(s||'').trim()).filter(Boolean);
 
-  // 2) ホスト候補（onrender を先頭＝まずここで出す）
   const HOSTS = [
-    'https://beauty-frontend.onrender.com', // ここに assets が載ってる想定
-    location.origin                          // beautylk.com
+    'https://beauty-frontend.onrender.com', // assets をデプロイしてあるホスト
+    location.origin                          // beautylk.com や localhost など
   ];
 
-  // 3) 1枚ごとに “絶対URLのみ” を量産（相対は入れない = ERR_FILE_NOT_FOUND回避）
   const out = [];
   names.forEach(p => {
-    if (/^https?:\/\//i.test(p)) { out.push(p); return; }  // すでに絶対URLならそのまま
-    // 裸ファイル名なら両パスを生成、すでに /assets/... でもそのまま使う
+    if (/^https?:\/\//i.test(p)) { out.push(p); return; }
     const rels = p.includes('/') ? [p] : [`/assets/images/${p}`, `/assets/img/${p}`];
     rels.forEach(rel => HOSTS.forEach(h => out.push(h + rel)));
   });
 
-  // 重複除去
   return [...new Set(out)];
 }
 

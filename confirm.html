@@ -242,9 +242,18 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
           const salonId   = qs.get('salonId') || '-';
           const salonName = qs.get('salonName') || '';
           const item  = (document.getElementById('s_item')?.textContent || qs.get('item') || 'Reservation').trim();
-          const price = Number(qs.get('price') || 0);
-          const timeISO = qs.get('time') || '';
-          const currency = (qs.get('currency') || 'usd').toLowerCase();
+
+// 新旧パラメータ両対応：LKR優先→JPY→旧price
+const priceLKR = Number(qs.get('price_lkr') || 0);
+const priceJPY = Number(qs.get('price_jpy') || 0);
+const price    = priceLKR || priceJPY || Number(qs.get('price') || 0);
+
+// 予約日時（表示用dateText優先→ISO→旧time）
+const timeISO  = qs.get('dt') || ''; // 後段で ISO が必要ならこちらを使う
+const timeText = qs.get('dateText') || qs.get('time') || (timeISO ? new Date(timeISO).toLocaleString() : '');
+
+// 通貨は LKR を基本（price_lkr があれば lkr、なければ jpy/既定）
+const currency = (priceLKR ? 'lkr' : (priceJPY ? 'jpy' : (qs.get('currency')||'usd'))).toLowerCase();
 
           if(ev.currentTarget && ev.currentTarget.id !== 'btnPay'){
             location.href = ev.currentTarget.getAttribute('href') || './';
@@ -362,25 +371,51 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   function onReady(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
   onReady(function(){
     const qs = new URLSearchParams(location.search);
-    if(!qs.has('item') && !qs.has('time') && !qs.has('salon')) return; // nothing to do
 
+    // 受け取り（新：dt/dateText/price_lkr/price_jpy、旧：time/price にも対応）
+    const salonName = qs.get('salonName') || '';
+    const itemName  = qs.get('item')      || qs.get('menu') || '';
+    const staffName = qs.get('staffName') || '';
+    const coupon    = qs.get('coupon')    || '';
+    const dtIso     = qs.get('dt')        || '';                // ISO
+    const dateText  = qs.get('dateText')  || qs.get('time') || '';// 表示用
+    const priceLKR  = qs.get('price_lkr') || '';
+    const priceJPY  = qs.get('price_jpy') || qs.get('price') || '';
+
+    // 表示要素
     const elItem  = document.getElementById('s_item');
     const elSalon = document.getElementById('s_salon');
     const elTime  = document.getElementById('s_time');
     const elPrice = document.getElementById('s_price');
     const elStaff = document.getElementById('s_staff_name') || document.getElementById('confirmStaffName');
 
-    if(elItem)  elItem.textContent  = qs.get('item')  || elItem.textContent;
-    if(elSalon) elSalon.textContent = (qs.get('salon') ? '# ' + qs.get('salon') : elSalon.textContent);
-    if(elTime)  elTime.textContent  = ( (elTime.textContent.split(':')[0] || '時間') + ' : ' + (qs.get('time')||'') );
-    if(elPrice) elPrice.textContent = ( (elPrice.textContent.split(':')[0] || '支払い') + ' : ' + (qs.get('price')||'') );
-    if(elStaff) {
-      const sn = qs.get('staffName') || '';
-      if(sn) elStaff.textContent = sn;
+    // 値の整形
+    const timeLabel = dateText || (dtIso ? new Date(dtIso).toLocaleString() : '');
+    const priceLabel =
+      priceLKR ? `Rs ${Number(priceLKR||0).toLocaleString('en-US')}` :
+      (priceJPY ? `¥${Number(priceJPY||0).toLocaleString('ja-JP')}` : '');
+
+    // 反映（見出しの「時間:」「支払い:」は元テキストを活かす）
+    if(elItem)  elItem.textContent  = itemName || elItem.textContent;
+    if(elSalon) elSalon.textContent = salonName ? salonName : elSalon.textContent;
+    if(elTime && timeLabel){
+      elTime.textContent = ( (elTime.textContent.split(':')[0] || '時間') + ' : ' + timeLabel );
     }
+    if(elPrice && priceLabel){
+      elPrice.textContent = ( (elPrice.textContent.split(':')[0] || '支払い') + ' : ' + priceLabel );
+    }
+    if(elStaff && staffName){ elStaff.textContent = staffName; }
+
+    // 以降の処理でも使えるよう、必要なら localStorage に保険保存
+    try{
+      if(dtIso)     localStorage.setItem('reserve_selected', dtIso);
+      if(priceLKR)  document.getElementById('s_price')?.setAttribute('data-lkr', String(priceLKR));
+      if(priceJPY)  document.getElementById('s_price')?.setAttribute('data-jpy', String(priceJPY));
+    }catch(_){}
   });
 })();
 </script>
+
   <script src="https://js.stripe.com/v3"></script>
   <script>
   window.BL_PAY = {

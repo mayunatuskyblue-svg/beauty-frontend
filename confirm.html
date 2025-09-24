@@ -432,13 +432,22 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
         msg('カード保存の準備中…');
 
-        // 1) SetupIntent を発行
         const siRes = await fetch(base + '/api/setup-intent', {
-          method:'POST', headers:{ 'Content-Type':'application/json' },
-          body: JSON.stringify({ email, name })
-        });
-        const si = await siRes.json();
-        if(!si.ok) throw new Error(si.error||'setup-intent failed');
+  method:'POST',
+  headers:{ 'Content-Type':'text/plain;charset=utf-8' }, // ← プリフライト回避
+  body: JSON.stringify({ email, name })
+});
+
+// 安全にパース（空/HTMLでも原因が見える）
+const raw = await siRes.text();
+let si;
+try { si = JSON.parse(raw); }
+catch { throw new Error('Invalid JSON from setup-intent: ' + raw.slice(0,120)); }
+
+if(!siRes.ok || !si?.ok) {
+  throw new Error(si?.error || `setup-intent failed (${siRes.status})`);
+}
+
       
         // 2) confirmCardSetup で保存
         const result = await stripe.confirmCardSetup(si.clientSecret, {

@@ -234,7 +234,7 @@ function suggestCultureTags(ctx){
   return out;
 }
 </script>
-
+<script>window.BL_I18N = window.BL_I18N || { i18nApply(){/* no-op */} };</script>
 </head>
 <body>
 <div class="wrap">
@@ -421,505 +421,272 @@ function suggestCultureTags(ctx){
 
 <script>
 (function(){
+  // ====== 設定 / ヘルパ ======
   const GAS = { url: window.__GAS_URL, key: window.__GAS_KEY };
   const $  = s => document.querySelector(s);
 
-  const fmtJPY = v => v ? '¥'+Number(v).toLocaleString('ja-JP') : '-';
-  const setText = (sel, v) => { const el=$(sel); if(el) el.textContent = v||''; };
-  const JPY_TO_LKR = 2.05; // 例：運用時に合わせて更新
-const fmtLKR = v => v ? ('Rs ' + Math.round(Number(v) * JPY_TO_LKR).toLocaleString('en-US')) : '-';
+  // i18n保険: BL_I18N が無い/読み込めない時でも落ちない
+  window.BL_I18N = window.BL_I18N || { i18nApply(){/* no-op */} };
 
-  function parsePhotos(v){
-  const IS_FILE = location.protocol === 'file:';
-  const IMG_BASE     = IS_FILE ? './assets/img/'     : '/assets/img/';
-  const IMAGES_BASE  = IS_FILE ? './assets/images/'  : '/assets/images/';
+  const JPY_TO_LKR = 2.05; // 運用値に合わせて
+  const fmtLKR = v => v ? ('Rs ' + Math.round(Number(v) * JPY_TO_LKR).toLocaleString('en-US')) : '-';
 
-  // 1) 文字列→配列、改行/全角カンマにも対応
-  let arr = Array.isArray(v) ? v : String(v||'')
-    .replace(/[\r\n]+/g, ',').replace(/，/g, ',').split(',');
-  arr = arr.map(s => String(s||'').trim()).filter(Boolean);
-
-  // 2) 裸ファイル名 → images を優先で補完
-  arr = arr.map(p => {
-    // 先頭にスラッシュが付いてたら、file:// の場合は './' に変換
-    if (IS_FILE && p.startsWith('/')) p = '.' + p;
-    // パス区切りが無い＝ファイル名だけ → images で補完
-    if (!p.includes('/')) p = IMAGES_BASE + p;
-    return p;
-  });
-
-  // 3) img / images の両候補を用意（images優先）
-  const out = [];
-  arr.forEach(p => {
-    const pImg    = p.replace(/\/assets\/images\//, IMG_BASE).replace(/(^|[^.])\.\//, './');      // images → img
-    const pImages = p.replace(/\/assets\/img\//,    IMAGES_BASE).replace(/(^|[^.])\.\//, './');    // img → images
-    // 既に相対ならそのまま、絶対なら file:// では './' に
-    const a = IS_FILE && pImages.startsWith('/assets/') ? '.'+pImages : pImages;
-    const b = IS_FILE && pImg.startsWith('/assets/')    ? '.'+pImg    : pImg;
-    out.push(a, b);
-  });
-
-  // 重複除去
-  return [...new Set(out)];
-}
-
-  async function fetchJSON(u){
-    const r = await fetch(u,{cache:'no-store'});
-    return r.json();
+  function getLang(){
+    const pref = localStorage.getItem('bl_lang') || 'auto';
+    if (pref === 'auto') return ((navigator.language||'en').toLowerCase().startsWith('ja') ? 'ja':'en');
+    return pref;
   }
-
-  // ---- Data fetchers ----
-  async function getCatalog(){
-    const u = `${GAS.url}?kind=catalog&key=${encodeURIComponent(GAS.key)}&t=${Date.now()}`;
-    const j = await fetchJSON(u);
-    if (!j.ok) throw new Error(j.error||'catalog not ok');
-    return j.items||[];
-  }
-  async function getMenus(salonId){
-    const u = `${GAS.url}?kind=menus.list&salonId=${encodeURIComponent(salonId)}&key=${encodeURIComponent(GAS.key)}&t=${Date.now()}`;
-    const j = await fetchJSON(u);
-    return (j.ok && j.items)||[];
-  }
-  async function getCoupons(salonId){
-    const u = `${GAS.url}?kind=coupons.list&salonId=${encodeURIComponent(salonId)}&key=${encodeURIComponent(GAS.key)}&t=${Date.now()}`;
-    const j = await fetchJSON(u);
-    return (j.ok && j.items)||[];
-  }
-  async function getReviews(salonId){
-    const u = `${GAS.url}?kind=reviews&salonId=${encodeURIComponent(salonId)}&key=${encodeURIComponent(GAS.key)}&t=${Date.now()}`;
-    const j = await fetchJSON(u);
-    return (j.ok && j.items) ? j : {ok:false, items:[], summary:{}};
-  }
-
-  // ---- helpers ----
-  function pickItem(items){
-    const q = new URLSearchParams(location.search);
-    const target = q.get('salonId') || q.get('id') || (location.hash||'').replace(/^#/, '');
-    let it = items.find(x=>String(x.id)===String(target));
-    if (!it){
-      $('#pickNote').style.display = '';
-      it = items.find(x => (x.name_ja || x.name_en || String(x.photos||'').trim())) || items[0];
-    }
-    return it;
-  }
+  function setText(sel, v){ const el=$(sel); if(el) el.textContent=v||''; }
   function starsEl(score){
     const pct = Math.max(0, Math.min(5, Number(score||0))) / 5 * 100;
     const root = document.createElement('span');
-    root.className = 'stars';
+    root.className='stars';
     root.innerHTML = `<span class="bg">★★★★★</span><span class="fg" style="width:${pct}%">★★★★★</span>`;
     return root;
   }
-  //フィルタ用スクリプトからも使えるように公開
-  window.starsEl = starsEl;
+  window.starsEl = starsEl; // フィルタ用にも使う
 
+  // 画像URLの候補を量産（/assets/images と /assets/img を両方試す）
+  function parsePhotos(v){
+    const IS_FILE = location.protocol==='file:';
+    const IMG_BASE     = IS_FILE ? './assets/img/'     : '/assets/img/';
+    const IMAGES_BASE  = IS_FILE ? './assets/images/'  : '/assets/images/';
+    let arr = Array.isArray(v) ? v : String(v||'').replace(/[\r\n]+/g,',').replace(/，/g,',').split(',');
+    arr = arr.map(s=>String(s||'').trim()).filter(Boolean);
+    arr = arr.map(p => { if(IS_FILE && p.startsWith('/')) p='.'+p; if(!p.includes('/')) p = IMAGES_BASE+p; return p; });
+    const out=[];
+    arr.forEach(p=>{
+      const pImg    = p.replace(/\/assets\/images\//, IMG_BASE);
+      const pImages = p.replace(/\/assets\/img\//,    IMAGES_BASE);
+      const a = IS_FILE && pImages.startsWith('/assets/') ? '.'+pImages : pImages;
+      const b = IS_FILE && pImg.startsWith('/assets/')    ? '.'+pImg    : pImg;
+      out.push(a,b);
+    });
+    return [...new Set(out)];
+  }
+
+  async function fetchJSON(u){ const r=await fetch(u,{cache:'no-store'}); return r.json(); }
+  async function getCatalog(){
+    const u=`${GAS.url}?kind=catalog&key=${encodeURIComponent(GAS.key)}&t=${Date.now()}`;
+    const j=await fetchJSON(u); if(!j.ok) throw new Error(j.error||'catalog not ok'); return j.items||[];
+  }
+  async function getMenus(id){
+    const u=`${GAS.url}?kind=menus.list&salonId=${encodeURIComponent(id)}&key=${encodeURIComponent(GAS.key)}&t=${Date.now()}`;
+    const j=await fetchJSON(u); return (j.ok && j.items)||[];
+  }
+  async function getCoupons(id){
+    const u=`${GAS.url}?kind=coupons.list&salonId=${encodeURIComponent(id)}&key=${encodeURIComponent(GAS.key)}&t=${Date.now()}`;
+    const j=await fetchJSON(u); return (j.ok && j.items)||[];
+  }
+  async function getReviews(id){
+    const u=`${GAS.url}?kind=reviews&salonId=${encodeURIComponent(id)}&key=${encodeURIComponent(GAS.key)}&t=${Date.now()}`;
+    const j=await fetchJSON(u); return (j.ok && j.items) ? j : {ok:false,items:[],summary:{}};
+  }
+
+  function pickItem(items){
+    const q=new URLSearchParams(location.search);
+    const target=q.get('salonId')||q.get('id')||(location.hash||'').replace(/^#/,'');
+    let it=items.find(x=>String(x.id)===String(target));
+    if(!it){ $('#pickNote').style.display=''; it = items.find(x => (x.name_ja||x.name_en||String(x.photos||'').trim())) || items[0]; }
+    return it;
+  }
+
+  // ====== Renderer: 店舗情報 ======
   function renderInfo(it){
-  const L = getLang();
-  const pick = (ja, en) => (L === 'en' ? (en || ja) : (ja || en));
+    const L=getLang(), pick=(ja,en)=>(L==='en'?(en||ja):(ja||en));
+    setText('#salonTitle', pick(it.name_ja,it.name_en)||it.id);
+    setText('#vType',  pick(it.type_ja, it.type_en)  || '-');
+    setText('#vPlace', pick(it.place_ja,it.place_en) || '-');
+    setText('#vPrice', it.price_jpy ? fmtLKR(it.price_jpy) : '-');
 
-  // タイトル
-  setText('#salonTitle', pick(it.name_ja, it.name_en) || it.id);
+    const v=$('#vRating'); v.innerHTML='';
+    const score=Number(it.rating||0);
+    v.appendChild(starsEl(score));
+    const n=document.createElement('span'); n.className='muted'; n.style.marginLeft='6px';
+    n.textContent = score ? score.toFixed(1) : '-'; v.appendChild(n);
 
-  // 基本KV
-  setText('#vType',  pick(it.type_ja,  it.type_en)  || '-');
-  setText('#vPlace', pick(it.place_ja, it.place_en) || '-');
-  setText('#vPrice', it.price_jpy ? fmtLKR(it.price_jpy) : '-');
+    setText('#points', pick(it.points_ja,it.points_en) || '');
 
-  // レーティング：数値ではなく星＋数値に
-  const v = $('#vRating');
-  v.innerHTML = '';
-  const score = Number(it.rating || 0);
-  v.appendChild(starsEl(score));
-  const n = document.createElement('span');
-  n.className = 'muted';
-  n.style.marginLeft = '6px';
-  n.textContent = score ? score.toFixed(1) : '-';
-  v.appendChild(n);
+    $('#btnBook').onclick=(e)=>{ e.preventDefault(); alert('予約導線は後で差し替え'); };
+  }
 
-  // ハイライト文：言語別
-  setText('#points', pick(it.points_ja, it.points_en) || '');
+  // ====== Renderer: ギャラリー ======
+  function renderGallery(it){
+    const main=$('#gMain'), thumbs=$('#gThumbs');
+    main.innerHTML=''; thumbs.innerHTML='';
+    const raw=parsePhotos(it.photos);
+    if(!raw.length){ main.innerHTML='<div class="notice">写真が未登録です（catalog の photos 列）</div>'; return; }
 
-  // 予約ボタン（既存導線は残す）
-  $('#btnBook').onclick = (e)=>{
-    e.preventDefault();
-    alert('予約導線は後で差し替え');
-  };
-}
+    // 2本1組でフォールバック
+    const groups=[]; for(let i=0;i<raw.length;i+=2) groups.push([raw[i], raw[i+1]||raw[i]]);
+    const show=(alts)=>{ const img=new Image(); let k=0;
+      img.onload=()=>{ main.innerHTML=''; main.appendChild(img); };
+      img.onerror=()=>{ if(++k<alts.length) img.src=alts[k]; else main.innerHTML='<div class="notice">画像が見つかりません</div>'; };
+      img.src=alts[k];
+    };
+    show(groups[0]);
+    groups.forEach(alts=>{
+      const t=new Image(); let k=0; t.loading='lazy';
+      t.onerror=()=>{ if(++k<alts.length) t.src=alts[k]; else t.remove(); };
+      t.onload =()=>{ t.onclick=()=>show(alts); };
+      t.src=alts[k]; thumbs.appendChild(t);
+    });
+  }
 
-  // ---- メニュー ----
-  function renderMenus(list){
-    const box = $('#menuList'), empty = $('#menuEmpty');
-    if(!Array.isArray(list) || !list.length){
-      box.innerHTML = ''; empty.style.display = ''; return;
+  // ====== Renderer: 地図 ======
+  function renderMap(it){
+    const lat=Number(it.lat), lng=Number(it.lng);
+    const iframe=$('#map'), route=$('#route'), section=$('#mapSection');
+    if(Number.isFinite(lat)&&Number.isFinite(lng)&&!(lat===0&&lng===0)){
+      const hl=(getLang()==='ja'?'ja':'en');
+      iframe.src=`https://www.google.com/maps?q=${lat},${lng}&z=15&hl=${hl}&output=embed`;
+      route.disabled=false;
+      route.onclick=()=>window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&hl=${hl}`,'_blank');
+    }else{
+      iframe.remove(); route.disabled=true;
+      section.insertAdjacentHTML('beforeend','<div class="notice">地図は未設定です。catalog の lat / lng を入れてください</div>');
     }
-    empty.style.display = 'none';
-    box.innerHTML = list.map(m => {
-      const name  = m.name_ja || m.name_en || m.name || '';
-      const desc  = m.desc || '';
-      const price = (m.price_jpy || m.price) ? `<span class="chip chip-price">${fmtLKR(m.price_jpy || m.price)}</span>` : '';
-      const dur   = m.minutes ? `<span class="chip">${m.minutes}min</span>` : '';
+  }
+
+  // ====== Renderer: メニュー / クーポン ======
+  function renderMenus(list){
+    const box=$('#menuList'), empty=$('#menuEmpty');
+    if(!Array.isArray(list)||!list.length){ box.innerHTML=''; empty.style.display=''; return; }
+    empty.style.display='none';
+    box.innerHTML=list.map(m=>{
+      const name=m.name_ja||m.name_en||m.name||'';
+      const desc=m.desc||'';
+      const price=(m.price_jpy||m.price)?`<span class="chip chip-price">${fmtLKR(m.price_jpy||m.price)}</span>`:'';
+      const dur=m.minutes?`<span class="chip">${m.minutes}min</span>`:'';
       return `<div class="bl-card">
         <div style="font-weight:800;margin-bottom:6px">${name}</div>
-        ${desc ? `<div class="muted" style="margin-bottom:8px">${desc}</div>` : ''}
+        ${desc?`<div class="muted" style="margin-bottom:8px">${desc}</div>`:''}
         <div>${price} ${dur}</div>
       </div>`;
     }).join('');
   }
-
-  // ---- クーポン ----
   function renderCoupons(list){
-    const box = $('#couponList'), empty = $('#couponEmpty');
-    if(!Array.isArray(list) || !list.length){
-      box.innerHTML = ''; empty.style.display = ''; return;
-    }
-    empty.style.display = 'none';
-    box.innerHTML = list.map(c => {
-      const exp = c.exp ? `<div class="muted" style="font-size:12px">有効期限: ${c.exp}</div>` : '';
+    const box=$('#couponList'), empty=$('#couponEmpty');
+    if(!Array.isArray(list)||!list.length){ box.innerHTML=''; empty.style.display=''; return; }
+    empty.style.display='none';
+    box.innerHTML=list.map(c=>{
+      const exp=c.exp?`<div class="muted" style="font-size:12px">有効期限: ${c.exp}</div>`:'';
       return `<div class="bl-card">
         <div style="font-weight:800;margin-bottom:6px">${c.title||''}</div>
-        ${c.body ? `<div class="muted" style="margin-bottom:8px">${c.body}</div>` : ''}
+        ${c.body?`<div class="muted" style="margin-bottom:8px">${c.body}</div>`:''}
         ${exp}
       </div>`;
     }).join('');
   }
 
-  // ---- レビュー ----
-  function renderReviews(it, res){
-    const box = $('#reviewsList'), sumEl = $('#reviewsSummary');
-    const items = (res && res.items) || [];
-    const sum   = (res && res.summary) || {};
-    window.__allReviews = items; // フィルタ用に保持
+  // ====== Renderer: レビュー ======
+  function renderReviews(it,res){
+    const box=$('#reviewsList'), sumEl=$('#reviewsSummary');
+    const items=(res&&res.items)||[]; const sum=(res&&res.summary)||{};
+    window.__allReviews = items; // フィルタ用
 
-    // summary（★ + 平均 + 件数）
-    sumEl.innerHTML = '';
-    sumEl.appendChild(starsEl(sum.avg || 0));
-    const meta = document.createElement('span');
-    meta.className = 'muted';
-    meta.style.marginLeft = '6px';
-    meta.textContent = (sum.avg ? Number(sum.avg).toFixed(1) : '-') + (sum.count ? ` (${sum.count})` : '');
-    sumEl.appendChild(meta);
+    sumEl.innerHTML=''; sumEl.appendChild(starsEl(sum.avg||0));
+    const meta=document.createElement('span'); meta.className='muted'; meta.style.marginLeft='6px';
+    meta.textContent=(sum.avg?Number(sum.avg).toFixed(1):'-') + (sum.count?` (${sum.count})`:''); sumEl.appendChild(meta);
 
-    // list
-    box.innerHTML = '';
-    items.forEach(r => {
-      const el = document.createElement('div'); el.className='rv-item';
-      const head = document.createElement('div'); head.className='rv-head';
+    box.innerHTML='';
+    items.forEach(r=>{
+      const el=document.createElement('div'); el.className='rv-item';
+      const head=document.createElement('div'); head.className='rv-head';
       head.appendChild(starsEl(r.rating));
-      const nm = document.createElement('div'); nm.className='rv-name'; nm.textContent = r.name || '匿名';
-      const ts = document.createElement('div'); ts.className='rv-ts'; ts.textContent = (r.ts||'').slice(0,10);
+      const nm=document.createElement('div'); nm.className='rv-name'; nm.textContent=r.name||'匿名';
+      const ts=document.createElement('div'); ts.className='rv-ts'; ts.textContent=(r.ts||'').slice(0,10);
       head.appendChild(nm); head.appendChild(ts);
 
-      const body = document.createElement('div');
-      const original = String(r.text || '');
-      body.textContent = original;
+      const body=document.createElement('div'); const original=String(r.text||''); body.textContent=original;
 
       // 翻訳トグル
-      const btn = document.createElement('button');
-      btn.className = 'btn secondary'; btn.style.margin = '6px 0';
-      const L = (localStorage.getItem('bl_lang') || 'auto');
-      const isJa = (L === 'ja') || (L === 'auto' && (navigator.language||'').toLowerCase().startsWith('ja'));
-      const target = isJa ? 'en' : 'ja';
-      const TXT_TO = isJa ? '英語に自動翻訳' : 'Translate to Japanese';
-      const TXT_BACK = isJa ? '原文に戻す' : 'Show original';
-      btn.textContent = TXT_TO;
-      let showingTranslated = false;
-      const cacheKey = `${target}:${original.slice(0,200)}`;
-      window.__bl_tr_cache = window.__bl_tr_cache || {};
-      btn.onclick = async () => {
-        if(!showingTranslated){
+      const btn=document.createElement('button'); btn.className='btn secondary'; btn.style.margin='6px 0';
+      const L=(localStorage.getItem('bl_lang')||'auto');
+      const isJa=(L==='ja')||(L==='auto' && (navigator.language||'').toLowerCase().startsWith('ja'));
+      const target=isJa?'en':'ja';
+      const TXT_TO=isJa?'英語に自動翻訳':'Translate to Japanese';
+      const TXT_BACK=isJa?'原文に戻す':'Show original';
+      btn.textContent=TXT_TO;
+      let showing=false; const cacheKey=`${target}:${original.slice(0,200)}`; window.__bl_tr_cache=window.__bl_tr_cache||{};
+      btn.onclick=async()=>{
+        if(!showing){
           try{
             if(!window.__bl_tr_cache[cacheKey]){
-              const u = `${GAS.url}?kind=translate&key=${encodeURIComponent(GAS.key)}&target=${encodeURIComponent(target)}&text=${encodeURIComponent(original)}`;
-              const j = await fetch(u,{cache:'no-store'}).then(r=>r.json());
-              if(!j || !j.ok) throw new Error('translate failed');
-              window.__bl_tr_cache[cacheKey] = j.text || original;
+              const u=`${GAS.url}?kind=translate&key=${encodeURIComponent(GAS.key)}&target=${encodeURIComponent(target)}&text=${encodeURIComponent(original)}`;
+              const j=await fetch(u,{cache:'no-store'}).then(r=>r.json());
+              if(!j||!j.ok) throw new Error('translate failed');
+              window.__bl_tr_cache[cacheKey]=j.text||original;
             }
-            body.textContent = window.__bl_tr_cache[cacheKey];
-            btn.textContent = TXT_BACK; showingTranslated = true;
-          }catch(e){ alert(isJa ? '翻訳に失敗しました' : 'Translation failed'); }
+            body.textContent=window.__bl_tr_cache[cacheKey]; btn.textContent=TXT_BACK; showing=true;
+          }catch(e){ alert(isJa?'翻訳に失敗しました':'Translation failed'); }
         }else{
-          body.textContent = original; btn.textContent = TXT_TO; showingTranslated = false;
+          body.textContent=original; btn.textContent=TXT_TO; showing=false;
         }
       };
 
-      el.appendChild(head);
-      el.appendChild(body);
-      el.appendChild(btn);
+      el.appendChild(head); el.appendChild(body); el.appendChild(btn);
 
-      const tags = Array.isArray(r.cultureTags) ? r.cultureTags : [];
-      if(tags.length){
-        const tagBox = document.createElement('div'); tagBox.className='rv-tags';
-        tags.forEach(t => { const sp=document.createElement('span'); sp.className='tag culture'; sp.textContent=t; tagBox.appendChild(sp); });
-        el.appendChild(tagBox);
+      const tags=Array.isArray(r.cultureTags)?r.cultureTags:[]; if(tags.length){
+        const tbox=document.createElement('div'); tbox.className='rv-tags';
+        tags.forEach(t=>{ const sp=document.createElement('span'); sp.className='tag culture'; sp.textContent=t; tbox.appendChild(sp); });
+        el.appendChild(tbox);
       }
       box.appendChild(el);
     });
   }
 
-
-  
-<script>
-async function translateText(text, target='en'){
-  const url = `${window._GAS_url}?key=${encodeURIComponent(window._GAS_key)}&kind=translate&text=${encodeURIComponent(text)}&target=${encodeURIComponent(target)}`;
-  const res = await fetch(url);
-  const j = await res.json();
-  if (!j.ok) throw new Error(j.error||'translate failed');
-  return j.text || '';
-}
-</script>
-  <script>
+  // ====== UI: 戻る・フィルタ ======
   function setupBack(){
-    $('#btnBack').addEventListener('click', (e)=>{
+    $('#btnBack').addEventListener('click',(e)=>{
       e.preventDefault();
-      try{
-        if (document.referrer && new URL(document.referrer).origin===location.origin) history.back();
-        else location.href='index.html';
-      }catch(e){ location.href='index.html'; }
+      try{ if(document.referrer && new URL(document.referrer).origin===location.origin) history.back();
+           else location.href='index.html'; }
+      catch(_){ location.href='index.html'; }
     });
   }
-
-  function setupVerifiedForm(it){
-    const q = new URLSearchParams(location.search);
-    const rid = q.get('rid');        // bookingId
-    const token = q.get('token');
-    const exp = q.get('exp');
-    if (!rid || !token || !exp) return; // 表示しない
-
-    $('#verifiedBox').style.display = '';
-
-    const form = $('#verifiedForm');
-    const msg  = $('#rvMsg');
-    // ▼ 初期化：文化タグUI
-const tagAuto = document.getElementById('rvTagAuto');
-const tagCustom = document.getElementById('rvTagCustom');
-const tagBox = document.getElementById('rvTagBox');
-
-function refreshTagSuggest(){
-  initCultureTagUI({
-    text: document.getElementById('rvText')?.value || '',
-    nation: document.getElementById('rvNation')?.value || '',
-    menu: document.getElementById('rvMenu')?.value || '',
-    type: (window.__currentSalon && (window.__currentSalon.type_ja || window.__currentSalon.type_en)) || '',
-    place:(window.__currentSalon && (window.__currentSalon.place_ja|| window.__currentSalon.place_en)) || ''
-  });
-}
-
-if (tagAuto) tagAuto.addEventListener('change', refreshTagSuggest);
-if (tagCustom) tagCustom.addEventListener('input', ()=>{/* 手動入力はそのまま */});
-const rvText = document.getElementById('rvText');
-if (rvText) rvText.addEventListener('input', ()=>{ if (tagAuto?.checked) refreshTagSuggest(); });
-
-// 現在サロン情報を覚えていれば context 使える
-if (!window.__currentSalon) window.__currentSalon = it;
-// 初期描画
-refreshTagSuggest();
-// ▲ 初期化
-
-    form.addEventListener('submit', async (ev)=>{
-      ev.preventDefault();
-      msg.textContent = '送信中…';
-            const rating = Number((new FormData(form).get('rvStar'))||5);
-
-      // ▼ 追加：国籍/年代/来店時期/メニュー名の取得
-      const nation = ($('#rvNation') && $('#rvNation').value) || '';
-      const ageGroup = ($('#rvAge') && $('#rvAge').value) || '';
-      const visitedYM = ($('#rvVisit') && $('#rvVisit').value) || ''; // 例: "2025-09"
-
-      // メニュー名：予約リンクから item パラメータが来ている場合に拾う（無ければ空のまま）
-      // ※ 今回の「施術後リンク」には普通は含まれていない想定なので、空で送ってGAS側で予約IDから補完するのが本線
-      const qs2 = new URLSearchParams(location.search);
-      const menuFromQS = qs2.get('item') || '';
-      if ($('#rvMenu')) $('#rvMenu').value = menuFromQS;
-
-      const payload = {
-  bookingId: rid,
-  token, exp,
-  rating,
-  comment: $('#rvText').value || '',
-  salonId: it.id,
-  name: $('#rvName').value || '',
-  nation,
-  ageGroup,
-  visitedYM,
-  menuName: ($('#rvMenu') && $('#rvMenu').value) || '',
-  // ここで同時に入れる
-  cultureTags: collectSelectedTags()
-};
-
-
-      
-      try{
-        const res = await fetch(GAS.url, {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ key:GAS.key, kind:'reviews.addVerified', data: payload })
-        }).then(r=>r.json());
-        if (res && res.ok){
-          msg.textContent = 'ありがとうございました。レビューを受け付けました。';
-          form.querySelectorAll('input,textarea,button').forEach(x=>x.disabled=true);
-        }else{
-          msg.textContent = '投稿に失敗しました（リンク期限切れ/無効の可能性）。';
-        }
-      }catch(e){
-        msg.textContent = '通信に失敗しました。時間をおいて再度お試しください。';
+  document.addEventListener('click',(e)=>{
+    const f=e.target.closest('.chip-filter'); if(!f) return;
+    const tag=f.dataset.tag||''; const base=window.__allReviews||[];
+    const list=(!tag)?base:base.filter(r=>(r.cultureTags||[]).includes(tag));
+    const box=$('#reviewsList'); box.innerHTML='';
+    list.forEach(r=>{
+      const el=document.createElement('div'); el.className='rv-item';
+      const head=document.createElement('div'); head.className='rv-head';
+      head.appendChild(starsEl(r.rating));
+      const nm=document.createElement('div'); nm.className='rv-name'; nm.textContent=r.name||'匿名';
+      const ts=document.createElement('div'); ts.className='rv-ts'; ts.textContent=(r.ts||'').slice(0,10);
+      head.appendChild(nm); head.appendChild(ts);
+      const body=document.createElement('div'); body.textContent=r.text||'';
+      el.appendChild(head); el.appendChild(body);
+      const tags=Array.isArray(r.cultureTags)?r.cultureTags:[]; if(tags.length){
+        const tbox=document.createElement('div'); tbox.className='rv-tags';
+        tags.forEach(t=>{ const sp=document.createElement('span'); sp.className='tag culture'; sp.textContent=t; tbox.appendChild(sp); });
+        el.appendChild(tbox);
       }
+      box.appendChild(el);
     });
-  }
+  });
 
+  // ====== 起動 ======
   document.addEventListener('DOMContentLoaded', async ()=>{
     setupBack();
     try{
-      const items = await getCatalog();
-      if (!items.length){ $('#infoCard').insertAdjacentHTML('afterbegin','<div class="notice">カタログが空です</div>'); return; }
-      const it = pickItem(items);
+      const items=await getCatalog();
+      if(!items.length){ $('#infoCard').insertAdjacentHTML('afterbegin','<div class="notice">カタログが空です</div>'); return; }
+      const it=pickItem(items);
       window.__currentSalon = it;
       renderInfo(it);
       renderGallery(it);
       renderMap(it);
-      // メニュー / クーポン
-      Promise.all([getMenus(it.id), getCoupons(it.id)])
-        .then(([ms,cs])=>{ renderMenus(ms); renderCoupons(cs); })
-        .catch(()=>{});
-      // レビュー表示
+      Promise.all([getMenus(it.id), getCoupons(it.id)]).then(([ms,cs])=>{ renderMenus(ms); renderCoupons(cs); }).catch(()=>{});
       getReviews(it.id).then(res=>renderReviews(it,res)).catch(()=>{ $('#reviewsSummary').textContent='（読み込みに失敗しました）'; });
-      // Verifiedフォーム
-      setupVerifiedForm(it);
     }catch(e){
       console.error(e);
       $('#infoCard').insertAdjacentHTML('afterbegin','<div class="notice">読み込みに失敗しました</div>');
     }
   });
 })();
-</script>
-  <script>
-    function renderGallery(it){
-  const main = document.querySelector('#gMain');
-  const thumbs = document.querySelector('#gThumbs');
-  main.innerHTML = ''; thumbs.innerHTML = '';
-
-  let raw = Array.isArray(it.photos) ? it.photos :
-            String(it.photos||'').replace(/[\r\n]+/g, ',').replace(/，/g, ',').split(',');
-  raw = raw.map(s => String(s||'').trim()).filter(Boolean);
-
-  raw = raw.map(p => {
-    if (!p.includes('/')) p = '/assets/images/' + p;
-    if (!p.startsWith('/')) p = '/' + p;
-    return p;
-  });
-
-  const pairs = raw.map(p => {
-    const a = p.replace('/assets/images/','/assets/img/');
-    const b = p.replace('/assets/img/','/assets/images/');
-    const c1 = p.includes('/assets/images/') ? p : b;
-    const c2 = p.includes('/assets/images/') ? a : p;
-    return [ toAbs(c1), toAbs(c2) ];
-  });
-
-  if (!pairs.length){
-    main.innerHTML = '<div class="notice">写真が未登録です（catalog の photos 列）</div>';
-    return;
-  }
-
-  (function showFirst(list){
-    const img = new Image();
-    let i = 0;
-    img.onload  = () => { main.innerHTML=''; main.appendChild(img); };
-    img.onerror = () => { if (++i < list.length) img.src = list[i]; else main.innerHTML='<div class="notice">画像が見つかりません</div>'; };
-    img.src = list[i];
-  })(pairs[0]);
-
-  pairs.forEach(alts => {
-    const t = new Image();
-    t.loading = 'lazy';
-    let i = 0;
-    t.onerror = () => { if (++i < alts.length) t.src = alts[i]; else t.remove(); };
-    t.onload  = () => {
-      t.onclick = () => {
-        (function show(list){
-          const big = new Image();
-          let j = 0;
-          big.onload  = () => { main.innerHTML=''; main.appendChild(big); };
-          big.onerror = () => { if (++j < list.length) big.src = list[j]; else main.innerHTML='<div class="notice">画像が見つかりません</div>'; };
-          big.src = list[j];
-        })(alts);
-      };
-    };
-    t.src = alts[i];
-    thumbs.appendChild(t);
-  });
-}
-
-function renderMap(it){
-  const lat = Number(it.lat), lng = Number(it.lng);
-  const map = document.querySelector('#map'), route = document.querySelector('#route');
-  if (Number.isFinite(lat)&&Number.isFinite(lng)&&!(lat===0&&lng===0)){
-    map.src = `https://www.google.com/maps?q=${lat},${lng}&z=15&hl=ja&output=embed`;
-    route.disabled = false;
-    route.onclick = ()=> window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving&hl=ja`,'_blank');
-  }else{
-    map.remove(); route.disabled = true;
-    document.querySelector('#mapSection').insertAdjacentHTML('beforeend','<div class="notice">地図は未設定です。catalog の lat / lng を入れてください</div>');
-  }
-}
-
-document.addEventListener('click', (e)=>{
-  const f = e.target.closest('.chip-filter');
-  if (!f) return;
-  const tag = f.dataset.tag || '';
-  const base = window.__allReviews || [];
-  const list = (!tag) ? base : base.filter(r => (r.cultureTags||[]).includes(tag));
-
-  // 直近に取得したサロンID/サマリを再利用するには、直前の res を保持するか、
-  // 手軽に「見た目だけ」更新したいなら一覧部分だけ描き直す関数を分けてもOK。
-  // ここでは“簡易”に一覧だけ作り直します。
-  const box = document.querySelector('#reviewsList');
-  box.innerHTML = '';
-  list.forEach(r => {
-    const el = document.createElement('div');
-    el.className = 'rv-item';
-    const head = document.createElement('div');
-    head.className = 'rv-head';
-    head.appendChild(starsEl(r.rating));
-    const nm = document.createElement('div'); nm.className='rv-name'; nm.textContent = r.name || '匿名';
-    const ts = document.createElement('div'); ts.className='rv-ts'; ts.textContent = (r.ts||'').slice(0,10);
-    head.appendChild(nm); head.appendChild(ts);
-
-    const body = document.createElement('div'); body.textContent = r.text || '';
-
-    el.appendChild(head);
-    el.appendChild(body);
-
-    const tags = Array.isArray(r.cultureTags) ? r.cultureTags : [];
-    if (tags.length){
-      const tagBox = document.createElement('div'); tagBox.className='rv-tags';
-      tags.forEach(t => { const sp=document.createElement('span'); sp.className='tag culture'; sp.textContent=t; tagBox.appendChild(sp); });
-      el.appendChild(tagBox);
-    }
-    box.appendChild(el);
-  });
-});
-</script>
-
-  <script>
-document.addEventListener('click', async (e)=>{
-  const btn = e.target.closest('.btn-translate');
-  if (btn){
-    const item = btn.closest('.review-item');
-    const p = item.querySelector('.text');
-    const orig = p.getAttribute('data-original') || p.textContent;
-    try{
-      p.textContent = '…translating';
-      const target = btn.dataset.target || 'en';
-      const t = await translateText(orig, target);
-      p.textContent = t || orig;
-    }catch(err){ p.textContent = orig; alert('翻訳に失敗しました'); }
-  }
-  if (e.target.matches('.btn-restore')){
-    const item = e.target.closest('.review-item');
-    const p = item.querySelector('.text');
-    const orig = p.getAttribute('data-original');
-    if (orig) p.textContent = orig;
-  }
-});
 </script>
 
   <!-- decorative background (purely visual) -->

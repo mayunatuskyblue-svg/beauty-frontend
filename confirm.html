@@ -246,7 +246,7 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
   function promptText(fields){
   const { confirm } = BL_I18N.T[BL_I18N.getLang()];
   return confirm.toast_prompt.replace('{fields}', fields.join('・'));
-}
+})();
      </script>
     
 <footer id="ft" style="margin:18px 0 40px;text-align:center;color:#6b5e55;font-size:12px">
@@ -419,14 +419,14 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     const payload = { key: GAS_KEY, kind: 'booking',
       data: { bookingId, date, menu, minutes, amountJPY, email, name, customerId }
     };
-    const res = await fetch(`${BL_PAY.base}/api/setup-intent`, {
-  method:'POST',
-  headers:{ 'Content-Type':'text/plain;charset=utf-8' }, // プリフライト回避
-  body: JSON.stringify({
-    email: $$('#uf_email').value.trim(),
-    name:  $$('#uf_name').value.trim()
-  })
+    const res = await fetch(GAS_URL, {
+  method: 'POST',
+  headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // preflight回避
+  body: JSON.stringify(payload)
 });
+const j = await res.json().catch(()=>({}));
+if (!j.ok) console.warn('GAS booking write failed:', j.error);
+return !!j.ok;
 
     <script>
 (() => {
@@ -489,14 +489,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
           body: JSON.stringify({ email, name })
         });
         const raw = await siRes.text();
-        let si;
-        try { si = JSON.parse(raw); }
-        catch { throw new Error('Invalid JSON from setup-intent: ' + raw.slice(0,120)); }
-        if(!siRes.ok || !si?.ok) throw new Error(si?.error || `setup-intent failed (${siRes.status})`);
-
-        const clientSecret = si.clientSecret;
-        const customerId   = si.customerId;
-
+        
         // 2) 3DS必須で保存
         const {setupIntent, error} = await stripe.confirmCardSetup(clientSecret, {
           payment_method: {
@@ -533,7 +526,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 })();
 </script>
 
-
+<script>
 // テキストで受け取り、安全にJSONへ
 const raw = await res.text();
 let si; try { si = JSON.parse(raw); }
@@ -634,6 +627,105 @@ const customerId   = si.customerId;
 })();
 </script>
 
+<script>
+(() => {
+  const holder = document.getElementById('bl-card-box');
+  if(!holder) return;
+
+  const saved = (()=>{ try{return JSON.parse(localStorage.getItem('bl_saved_card')||'null')}catch(e){return null} })();
+  if(saved){
+    holder.innerHTML = `
+      <div class="notice" style="padding:10px;border:1px solid #eadfca;border-radius:10px">
+        カード情報は保存済みです ✅<br>
+        <small>（customerId: ${saved.customerId} / pm: ${saved.paymentMethodId}）</small><br>
+        <button id="bl-change" class="btn" style="margin-top:8px">別のカードにする</button>
+      </div>`;
+    document.getElementById('bl-change').onclick = mountForm;
+  }else{
+    mountForm();
+  }
+
+  function mountForm(){
+    const base = (window.BL_PAY?.base||'').replace(/\/$/,'');
+    const pk   = window.BL_PAY?.pk;
+    if(!pk || !base){ holder.textContent='設定不足（pk/base）'; return; }
+
+    holder.innerHTML = `
+      <div style="max-width:520px">
+        <label>メール<input id="sp_email" placeholder="you@example.com" style="width:100%"></label>
+        <label>お名前<input id="sp_name"  placeholder="Taro Yamada" style="width:100%"></label>
+        <div id="sp_card" style="border:1px solid #eadfca;border-radius:10px;padding:12px;margin:10px 0"></div>
+        <button id="sp_save" class="btn primary">カードを保存する</button>
+        <div id="sp_msg" class="notice" style="margin-top:8px"></div>
+      </div>`;
+
+    const stripe   = Stripe(pk);
+    const elements = stripe.elements();
+    const cardEl   = elements.create('card', { hidePostalCode:true });
+    cardEl.mount('#sp_card');
+
+    const $ = id => document.getElementById(id);
+    const msg = (t, ok=false) => { $('sp_msg').textContent = t; $('sp_msg').style.color = ok ? '#246A73' : '#6f5a54'; };
+
+    // 予約者フォームから自動補完
+    const val = s => {const el=document.querySelector(s); return el && el.value ? el.value.trim() : ''};
+    $('sp_email').value = val('#uf_email') || val('[name="email"]');
+    $('sp_name').value  = val('#uf_name')  || val('[name="name"]');
+
+    $('sp_save').addEventListener('click', async () => {
+      try{
+        const email = ($('sp_email').value||'').trim();
+        const name  = ($('sp_name').value||'').trim();
+        if(!email || !name) return msg('メールとお名前を入力してください');
+
+        msg('カード保存の準備中…');
+
+        // 1) SetupIntent（text/plain でプリフライト回避）
+        const siRes = await fetch(base + '/api/setup-intent', {
+          method:'POST',
+          headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+          body: JSON.stringify({ email, name })
+        });
+        const raw = await siRes.text();
+        let si; try { si = JSON.parse(raw); }
+        catch { throw new Error('Invalid JSON from setup-intent: ' + raw.slice(0,120)); }
+        if(!siRes.ok || !si?.ok) throw new Error(si?.error || `setup-intent failed (${siRes.status})`);
+
+        const clientSecret = si.clientSecret;
+        const customerId   = si.customerId;
+
+        // 2) 保存（3DS必須）
+        const {setupIntent, error} = await stripe.confirmCardSetup(clientSecret, {
+          payment_method: { card: cardEl, billing_details: { email, name } },
+          payment_method_options:{ card: { request_three_d_secure: 'any' } }
+        });
+        if(error) throw error;
+
+        // 3) ローカル保存＆表示更新
+        const payload = { email, name, customerId, paymentMethodId: setupIntent.payment_method, ts: Date.now() };
+        localStorage.setItem('bl_saved_card', JSON.stringify(payload));
+        msg('カードを保存しました。', true);
+        holder.innerHTML = `
+          <div class="notice" style="padding:10px;border:1px solid #eadfca;border-radius:10px">
+            カード情報は保存済みです ✅<br>
+            <small>（customerId: ${payload.customerId} / pm: ${payload.paymentMethodId}）</small><br>
+            <button id="bl-change" class="btn" style="margin-top:8px">別のカードにする</button>
+          </div>`;
+        document.getElementById('bl-change').onclick = mountForm;
+
+        // 任意：GAS ログ
+        const WEBHOOK = (document.querySelector('meta[name="bl-sheet-hook"]')?.content)||'';
+        if(WEBHOOK){
+          try{ await fetch(WEBHOOK, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: JSON.stringify({ kind:'card_saved', ...payload }) }); }catch(_){}
+        }
+      }catch(e){
+        console.error(e);
+        msg('保存に失敗しました：' + (e.message||e));
+      }
+    });
+  }
+})();
+</script>
 
 </body>
 </html>

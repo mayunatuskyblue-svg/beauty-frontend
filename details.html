@@ -446,40 +446,31 @@ function suggestCultureTags(ctx){
   }
   window.starsEl = starsEl; // フィルタ用にも使う
 
-  // 画像URLの候補を量産（/assets/images と /assets/img を両方試す）
-    // 画像URL候補を強化（beautylk.com と beauty-frontend.onrender.com の両方を試す）
-  function parsePhotos(v){
-    // 1) 元データを配列化（改行/全角カンマ対応）
-    let names = Array.isArray(v) ? v : String(v||'').replace(/[\r\n]+/g,',').replace(/，/g,',').split(',');
-    names = names.map(s=>String(s||'').trim()).filter(Boolean);
+   // 画像URL候補を超強化：beautylk本番 と onrender の両方を絶対パスで試す
+function parsePhotos(v){
+  // 1) 値を配列化（改行/全角カンマ対応）
+  let names = Array.isArray(v) ? v : String(v||'')
+    .replace(/[\r\n]+/g, ',').replace(/，/g, ',').split(',');
+  names = names.map(s => String(s||'').trim()).filter(Boolean);
 
-    // 2) すでに https ならそのまま採用
-    const out = [];
-    const HOSTS = [
-      'https://beautylk.com',                    // 本番
-      'https://beauty-frontend.onrender.com'     // 旧/サブ
-    ];
+  // 2) ホスト候補（onrender を先頭＝まずここで出す）
+  const HOSTS = [
+    'https://beauty-frontend.onrender.com', // ここに assets が載ってる想定
+    location.origin                          // beautylk.com
+  ];
 
-    names.forEach(p=>{
-      if (/^https?:\/\//i.test(p)) {
-        out.push(p);
-        return;
-      }
-      // 裸ファイル名 → /assets/images/, /assets/img/ を両方生成
-      const baseNames = p.includes('/') ? [p] : [`/assets/images/${p}`, `/assets/img/${p}`];
+  // 3) 1枚ごとに “絶対URLのみ” を量産（相対は入れない = ERR_FILE_NOT_FOUND回避）
+  const out = [];
+  names.forEach(p => {
+    if (/^https?:\/\//i.test(p)) { out.push(p); return; }  // すでに絶対URLならそのまま
+    // 裸ファイル名なら両パスを生成、すでに /assets/... でもそのまま使う
+    const rels = p.includes('/') ? [p] : [`/assets/images/${p}`, `/assets/img/${p}`];
+    rels.forEach(rel => HOSTS.forEach(h => out.push(h + rel)));
+  });
 
-      baseNames.forEach(rel=>{
-        // 絶対パス（/から始まる）なら各ホストを前置、相対ならそのままも試す
-        if (rel.startsWith('/')) {
-          HOSTS.forEach(h => out.push(h + rel));
-        }
-        out.push(rel); // 相対でも一応試す（ローカル/別構成向け）
-      });
-    });
-
-    // 重複除去
-    return [...new Set(out)];
-  }
+  // 重複除去
+  return [...new Set(out)];
+}
 
 
   async function fetchJSON(u){ const r=await fetch(u,{cache:'no-store'}); return r.json(); }
@@ -617,43 +608,55 @@ function suggestCultureTags(ctx){
 
       const body=document.createElement('div'); const original=String(r.text||''); body.textContent=original;
 
-      // 翻訳トグル
-            // 翻訳トグル（強化版）
-      const btn=document.createElement('button'); btn.className='btn secondary'; btn.style.margin='6px 0';
-      const L=(localStorage.getItem('bl_lang')||'auto');
-      const isJa=(L==='ja')||(L==='auto' && (navigator.language||'').toLowerCase().startsWith('ja'));
-      const target=isJa?'en':'ja';
-      const TXT_TO=isJa?'英語に自動翻訳':'Translate to Japanese';
-      const TXT_BACK=isJa?'原文に戻す':'Show original';
-      const TXT_WAIT=isJa?'翻訳中…':'Translating…';
-      btn.textContent=TXT_TO;
+      // 翻訳トグル（強化版：ローディング＋詳細エラー＋POST fallback）
+const btn=document.createElement('button'); btn.className='btn secondary'; btn.style.margin='6px 0';
+const L=(localStorage.getItem('bl_lang')||'auto');
+const isJa=(L==='ja')||(L==='auto' && (navigator.language||'').toLowerCase().startsWith('ja'));
+const target=isJa?'en':'ja';
+const TXT_TO=isJa?'英語に自動翻訳':'Translate to Japanese';
+const TXT_BACK=isJa?'原文に戻す':'Show original';
+const TXT_WAIT=isJa?'翻訳中…':'Translating…';
+btn.textContent=TXT_TO;
 
-      let showing=false;
-      const cacheKey=`${target}:${original.slice(0,200)}`;
-      window.__bl_tr_cache=window.__bl_tr_cache||{};
+let showing=false;
+const cacheKey=`${target}:${original.slice(0,200)}`;
+window.__bl_tr_cache=window.__bl_tr_cache||{};
 
-      btn.onclick=async()=>{
-        if(!showing){
-          try{
-            btn.disabled = true; btn.textContent = TXT_WAIT;
-            if(!window.__bl_tr_cache[cacheKey]){
-              const u=`${GAS.url}?kind=translate&key=${encodeURIComponent(GAS.key)}&target=${encodeURIComponent(target)}&text=${encodeURIComponent(original)}`;
-              const j=await fetch(u,{cache:'no-store'}).then(r=>r.json());
-              if(!j||!j.ok) throw new Error('translate failed');
-              window.__bl_tr_cache[cacheKey]=j.text||original;
-            }
-            body.textContent=window.__bl_tr_cache[cacheKey];
-            btn.textContent=TXT_BACK; showing=true;
-          }catch(e){
-            alert(isJa?'翻訳に失敗しました':'Translation failed');
-            btn.textContent=TXT_TO;
-          }finally{
-            btn.disabled = false;
-          }
-        }else{
-          body.textContent=original; btn.textContent=TXT_TO; showing=false;
+btn.onclick=async()=>{
+  if(!showing){
+    btn.disabled=true; btn.textContent=TXT_WAIT;
+    try{
+      if(!window.__bl_tr_cache[cacheKey]){
+        // ① GET を試す
+        let j;
+        try{
+          const u=`${GAS.url}?kind=translate&key=${encodeURIComponent(GAS.key)}&target=${encodeURIComponent(target)}&text=${encodeURIComponent(original)}`;
+          j = await fetch(u,{cache:'no-store'}).then(r=>r.json());
+        }catch(_){}
+        // ② 失敗なら POST で再試行（GAS 側 doPost で kind=translate に対応させていれば通る）
+        if(!j || !j.ok){
+          const resp = await fetch(GAS.url, {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ key:GAS.key, kind:'translate', data:{ target, text: original } })
+          }).then(r=>r.json()).catch(()=>null);
+          j = resp;
         }
-      };
+        if(!j || !j.ok) throw new Error(j && j.error ? j.error : 'translate failed');
+        window.__bl_tr_cache[cacheKey]= j.text || original;
+      }
+      body.textContent=window.__bl_tr_cache[cacheKey];
+      btn.textContent=TXT_BACK; showing=true;
+    }catch(e){
+      console.error('[translate failed]', e);
+      alert((isJa?'翻訳に失敗しました: ':'Translation failed: ') + (e && e.message ? e.message : ''));
+      btn.textContent=TXT_TO;
+    }finally{
+      btn.disabled=false;
+    }
+  }else{
+    body.textContent=original; btn.textContent=TXT_TO; showing=false;
+  }
+};
 
 
       el.appendChild(head); el.appendChild(body); el.appendChild(btn);

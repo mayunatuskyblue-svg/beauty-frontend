@@ -430,24 +430,9 @@ return !!j.ok;
 
     
 
-<script>
-// テキストで受け取り、安全にJSONへ
-const raw = await res.text();
-let si; try { si = JSON.parse(raw); }
-catch { throw new Error('Invalid JSON from setup-intent: ' + raw.slice(0,120)); }
-if (!res.ok || !si?.ok) throw new Error(si?.error || `setup-intent failed (${res.status})`);
-
-const clientSecret = si.clientSecret;
-const customerId   = si.customerId;
-
-    if (!j.ok) console.warn('GAS booking write failed:', j.error);
-    return !!j.ok;
-  }
-
   // ② URL（?bookingId=...）から予約情報を拾う or 事前に保存しておいたデータを拾う
   function readBookingFromPage() {
     const qs = new URLSearchParams(location.search);
-    // A. クエリで受け取る運用（推奨）
     let booking = {
       bookingId:  qs.get('bookingId') || '',
       date:       qs.get('date') || new Date().toISOString(),
@@ -457,7 +442,6 @@ const customerId   = si.customerId;
       email:      qs.get('email') || '',
       name:       qs.get('name') || ''
     };
-    // B. 予約ページで sessionStorage/localStorage に入れてある場合のフォールバック（あれば使う）
     if (!booking.bookingId) {
       try {
         const saved = JSON.parse(sessionStorage.getItem('bl_pending_booking') || localStorage.getItem('bl_pending_booking') || 'null');
@@ -473,14 +457,14 @@ const customerId   = si.customerId;
     if (!b.bookingId) { console.warn('bookingId が無いので送信しません'); return; }
 
     const sentKey = `bl_booking_sent_${b.bookingId}`;
-    if (localStorage.getItem(sentKey)) return; // 既に送っていれば何もしない
+    if (localStorage.getItem(sentKey)) return;
 
     const ok = await postBookingToSheet({
       bookingId: b.bookingId,
       date:      b.date || new Date().toISOString(),
       menu:      b.menu,
       minutes:   b.minutes,
-      amountJPY: b.amountJPY,     // ←整数（3500など）
+      amountJPY: b.amountJPY,
       email:     b.email,
       name:      b.name
     });
@@ -488,6 +472,7 @@ const customerId   = si.customerId;
     if (ok) localStorage.setItem(sentKey, '1');
   });
 </script>
+
 <!-- ↑↑↑ ここまでを </body> の直前に貼る ↑↑↑ -->
 <!-- decorative background (purely visual) -->
 <div class="bg-radials"></div>

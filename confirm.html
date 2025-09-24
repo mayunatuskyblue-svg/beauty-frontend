@@ -180,7 +180,7 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
     </div>
 
     <div class="row" style="gap:18px;flex-wrap:wrap;margin-top:24px">
-      <a id="btnPay" class="btn btn-primary" href="./payments.html" data-i18n="ui.pay_with_card">カードで支払う（PayPal/Stripe）</a>
+      <a id="btnPay" class="btn btn-primary" href="./payments.html">予約を確定して進む（カードは保存済み）</a>
       <a id="btnRecord" class="btn btn-primary" style="background:#1F6B72" href="./thankyou.html" data-i18n="ui.pay_on_site">現地で支払う（記録）</a>
       <a href="./index.html" class="btn btn-outline" data-i18n="ui.toTop">トップに戻る</a>
     </div>
@@ -501,8 +501,8 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
     // 既存フォームから自動推測（あれば）
     const val = s => {const el=document.querySelector(s); return el && el.value ? el.value.trim() : ''};
-    $('sp_email').value = val('#email') || val('[name="email"]');
-    $('sp_name').value  = val('#name')  || val('[name="name"]');
+    $('sp_email').value = val('#uf_email') || val('#email') || val('[name="email"]');
+    $('sp_name').value  = val('#uf_name')  || val('#name') ||val('[name="name"]');
 
     $('sp_save').addEventListener('click', async () => {
       try{
@@ -519,25 +519,14 @@ document.addEventListener('DOMContentLoaded', async ()=>{
         });
         const si = await siRes.json();
         if(!si.ok) throw new Error(si.error||'setup-intent failed');
-        // 例：Node/Express 側（サーバ）
-const si = await stripe.setupIntents.create({
-  customer,                       // ← 必須：保存先の customer
-  payment_method_types: ['card'],
-  usage: 'off_session',           // ← 後日オフセッション課金を想定
-  payment_method_options: {
-    card: {
-      request_three_d_secure: 'any'  // ← 3DS チャレンジをここで要求
-    }
-  }
+      
+        // 2) confirmCardSetup で保存
+        const result = await stripe.confirmCardSetup(si.clientSecret, {
+  payment_method: { card, billing_details: { email, name } },
+  //★3DS(SCA)を必須に
+  payment_method_options:{ card: {request_three_d_secure: 'any' }}
 });
 
-
-        // 2) confirmCardSetup で保存
-        const result = await Stripe(pk).confirmCardSetup(si.clientSecret, {
-          payment_method: { card, billing_details: { email, name } },
-          //★3DS(SCA)を必須に
-          payment_method_options:{ card: {request_three_d_secure: 'any' }}
-        });
         if(result.error) throw result.error;
 
         const payload = {

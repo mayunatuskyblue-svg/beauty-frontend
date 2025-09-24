@@ -254,21 +254,24 @@ const timeText = qs.get('dateText') || qs.get('time') || (timeISO ? new Date(tim
 
 // 通貨は LKR を基本（price_lkr があれば lkr、なければ jpy/既定）
 const currency = (priceLKR ? 'lkr' : (priceJPY ? 'jpy' : (qs.get('currency')||'usd'))).toLowerCase();
+// まず予約レコードを共通で作成（現地払い/カード払いどちらでも）
+await fetch(`${base}/api/book`, {
+  method:'POST', headers:{'Content-Type':'application/json'},
+  body: JSON.stringify(payload)
+}).then(r=>r.json()).catch(()=>null);
 
-          if(ev.currentTarget && ev.currentTarget.id !== 'btnPay'){
-            location.href = ev.currentTarget.getAttribute('href') || './';
-            return;
-          }
-
-          // ここから先は既存の予約POST→payments.html遷移ロジックを継続
+// その後、押したボタンごとの遷移先へ
+location.href = ev.currentTarget.getAttribute('href') || './';
           // ★このブロックを挿入（confirm.html）
 const base = (window.BL_PAY?.base||'').replace(/\/$/,'');
 const payload = {
   bookingId:  crypto.randomUUID(),       // 既に持ってるIDがあればそれを使う
-  date:       (new Date()).toISOString(),// 実際は予約日時を入れる
+  date:       (timeISO || '').trim() || new Date(dateText ? Date.parse(dateText) : Date.now()).toISOString(),// 実際は予約日時を入れる
   menu:       item,
   minutes:    Number(qs.get('minutes')||0),
-  amountJPY:  price,
+  //通貨と金額は名称に惑わされず値を正しく:バックエンド側が通過を見るなら両方持たせてもOK
+  amount:     (priceLKR || priceJPY || 0),//汎用金額
+  currency,
   email:      email,
   name:       (document.getElementById('uf_name')?.value||'').trim()
 };
@@ -364,7 +367,23 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   }catch(e){}
 });
 </script>
-
+<!-- ★ これを <script id="confirm-fill-from-query"> の直前に追加 -->
+<script>
+(function ensureBookingIdInURL(){
+  try{
+    var u = new URL(location.href);
+    if(!u.searchParams.get('bookingId')){
+      // 既に発行済みがあれば再利用、なければ新規発行
+      var existing = localStorage.getItem('bl_current_booking_id') || '';
+      var id = existing || (crypto.randomUUID ? crypto.randomUUID()
+                : (Date.now().toString(36)+Math.random().toString(36).slice(2,10)));
+      u.searchParams.set('bookingId', id);
+      history.replaceState(null, '', u.toString()); // 履歴を汚さずURLを書き換え
+      localStorage.setItem('bl_current_booking_id', id);
+    }
+  }catch(e){}
+})();
+</script>
 
 <script id="confirm-fill-from-query">
 (function(){

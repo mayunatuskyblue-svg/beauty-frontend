@@ -235,6 +235,15 @@ function suggestCultureTags(ctx){
 }
 </script>
 <script>window.BL_I18N = window.BL_I18N || { i18nApply(){/* no-op */} };</script>
+  <style>
+/* keep brand color for the main reserve buttons */
+#btnBook,
+.list .bl-card .btn.primary{
+  background: var(--brand) !important;
+  color:#fff !important;
+}
+</style>
+
 </head>
 <body>
 <div class="wrap">
@@ -446,25 +455,44 @@ function suggestCultureTags(ctx){
   }
   window.starsEl = starsEl; // フィルタ用にも使う
 
-   // 画像URL候補（必ず絶対URL）：onrender → 現在のオリジン の順で試す
+   <script>
+// 置換：details.html 内の parsePhotos
 function parsePhotos(v){
+  // 値を配列化（改行・全角カンマ対応）
   let names = Array.isArray(v) ? v : String(v||'').replace(/[\r\n]+/g, ',').replace(/，/g, ',').split(',');
   names = names.map(s => String(s||'').trim()).filter(Boolean);
 
   const HOSTS = [
-    'https://beauty-frontend.onrender.com', // assets をデプロイしてあるホスト
-    location.origin                          // beautylk.com や localhost など
+    'https://beauty-frontend.onrender.com', // 画像置き場
+    location.origin                         // beautylk.com
   ];
+  const TRY_EXTS = ['.webp','.jpg','.jpeg','.png'];
 
   const out = [];
-  names.forEach(p => {
-    if (/^https?:\/\//i.test(p)) { out.push(p); return; }
-    const rels = p.includes('/') ? [p] : [`/assets/images/${p}`, `/assets/img/${p}`];
-    rels.forEach(rel => HOSTS.forEach(h => out.push(h + rel)));
-  });
+  names.forEach(raw => {
+    // https で始まればそのまま
+    if (/^https?:\/\//i.test(raw)) { out.push(raw); return; }
 
+    // 拡張子が付いているか判定
+    const hasExt = /\.\w{3,5}$/.test(raw);
+    const bare   = raw.replace(/^\//,''); // 先頭スラッシュは削る
+    const rels   = bare.includes('/') ? [bare] : [`assets/images/${bare}`, `assets/img/${bare}`];
+
+    rels.forEach(rel => {
+      if (hasExt) {
+        HOSTS.forEach(h => out.push(`${h}/${rel}`));
+      } else {
+        // 拡張子不明なら候補を総当り
+        TRY_EXTS.forEach(ext => {
+          HOSTS.forEach(h => out.push(`${h}/${rel}${ext}`));
+        });
+      }
+    });
+  });
   return [...new Set(out)];
 }
+</script>
+
 
 
   async function fetchJSON(u){ const r=await fetch(u,{cache:'no-store'}); return r.json(); }
@@ -509,7 +537,16 @@ function parsePhotos(v){
 
     setText('#points', pick(it.points_ja,it.points_en) || '');
 
-    $('#btnBook').onclick=(e)=>{ e.preventDefault(); alert('予約導線は後で差し替え'); };
+    <script>
+// 置換：renderInfo 内の btnBook ハンドラ
+$('#btnBook').onclick = (e)=>{
+  e.preventDefault();
+  const it = window.__currentSalon || {};
+  const q  = new URLSearchParams({ salonId: String(it.id||'') });
+  location.href = `reservation.html?${q.toString()}`;
+};
+</script>
+
   }
 
   // ====== Renderer: ギャラリー ======
@@ -555,17 +592,29 @@ function parsePhotos(v){
     const box=$('#menuList'), empty=$('#menuEmpty');
     if(!Array.isArray(list)||!list.length){ box.innerHTML=''; empty.style.display=''; return; }
     empty.style.display='none';
-    box.innerHTML=list.map(m=>{
-      const name=m.name_ja||m.name_en||m.name||'';
-      const desc=m.desc||'';
-      const price=(m.price_jpy||m.price)?`<span class="chip chip-price">${fmtLKR(m.price_jpy||m.price)}</span>`:'';
-      const dur=m.minutes?`<span class="chip">${m.minutes}min</span>`:'';
-      return `<div class="bl-card">
-        <div style="font-weight:800;margin-bottom:6px">${name}</div>
-        ${desc?`<div class="muted" style="margin-bottom:8px">${desc}</div>`:''}
-        <div>${price} ${dur}</div>
-      </div>`;
-    }).join('');
+    <script>
+// 置換：renderMenus の map() 部分
+box.innerHTML=list.map((m, i)=>{
+  const name  = m.name_ja || m.name_en || m.name || '';
+  const desc  = m.desc || '';
+  const price = (m.price_jpy||m.price) ? `<span class="chip chip-price">${fmtLKR(m.price_jpy||m.price)}</span>` : '';
+  const dur   = m.minutes ? `<span class="chip">${m.minutes}min</span>` : '';
+
+  const sid   = (window.__currentSalon && window.__currentSalon.id) ? window.__currentSalon.id : '';
+  const mid   = m.id || m.menu_id || String(i+1); // 安全側フォールバック
+  const q     = new URLSearchParams({ salonId: String(sid), menuId: String(mid), menuName: name });
+
+  return `<div class="bl-card">
+    <div style="font-weight:800;margin-bottom:6px">${name}</div>
+    ${desc ? `<div class="muted" style="margin-bottom:8px">${desc}</div>` : ''}
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px">
+      ${price} ${dur}
+      <a class="btn primary" href="reservation.html?${q.toString()}" style="margin-left:auto">予約へ</a>
+    </div>
+  </div>`;
+}).join('');
+</script>
+.join('');
   }
   function renderCoupons(list){
     const box=$('#couponList'), empty=$('#couponEmpty');

@@ -456,9 +456,8 @@ function suggestCultureTags(ctx){
   window.starsEl = starsEl; // フィルタ用にも使う
 
    <script>
-// 置換：details.html 内の parsePhotos
+// 正: parsePhotos（拡張子フォールバック付き）
 function parsePhotos(v){
-  // 値を配列化（改行・全角カンマ対応）
   let names = Array.isArray(v) ? v : String(v||'').replace(/[\r\n]+/g, ',').replace(/，/g, ',').split(',');
   names = names.map(s => String(s||'').trim()).filter(Boolean);
 
@@ -470,10 +469,8 @@ function parsePhotos(v){
 
   const out = [];
   names.forEach(raw => {
-    // https で始まればそのまま
-    if (/^https?:\/\//i.test(raw)) { out.push(raw); return; }
+    if (/^https?:\/\//i.test(raw)) { out.push(raw); return; } // 完全URLはそのまま
 
-    // 拡張子が付いているか判定
     const hasExt = /\.\w{3,5}$/.test(raw);
     const bare   = raw.replace(/^\//,''); // 先頭スラッシュは削る
     const rels   = bare.includes('/') ? [bare] : [`assets/images/${bare}`, `assets/img/${bare}`];
@@ -482,16 +479,13 @@ function parsePhotos(v){
       if (hasExt) {
         HOSTS.forEach(h => out.push(`${h}/${rel}`));
       } else {
-        // 拡張子不明なら候補を総当り
-        TRY_EXTS.forEach(ext => {
-          HOSTS.forEach(h => out.push(`${h}/${rel}${ext}`));
-        });
+        TRY_EXTS.forEach(ext => { HOSTS.forEach(h => out.push(`${h}/${rel}${ext}`)); });
       }
     });
   });
   return [...new Set(out)];
 }
-</script>
+
 
 
 
@@ -538,14 +532,14 @@ function parsePhotos(v){
     setText('#points', pick(it.points_ja,it.points_en) || '');
 
     <script>
-// 置換：renderInfo 内の btnBook ハンドラ
+// 右上の「予約へ進む」
 $('#btnBook').onclick = (e)=>{
   e.preventDefault();
   const it = window.__currentSalon || {};
   const q  = new URLSearchParams({ salonId: String(it.id||'') });
   location.href = `reservation.html?${q.toString()}`;
 };
-</script>
+
 
   }
 
@@ -614,8 +608,7 @@ box.innerHTML=list.map((m, i)=>{
   </div>`;
 }).join('');
 </script>
-.join('');
-  }
+
   function renderCoupons(list){
     const box=$('#couponList'), empty=$('#couponEmpty');
     if(!Array.isArray(list)||!list.length){ box.innerHTML=''; empty.style.display=''; return; }

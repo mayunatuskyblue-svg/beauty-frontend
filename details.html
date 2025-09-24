@@ -455,7 +455,6 @@ function suggestCultureTags(ctx){
   }
   window.starsEl = starsEl; // フィルタ用にも使う
 
-   <script>
 // 正: parsePhotos（拡張子フォールバック付き）
 function parsePhotos(v){
   let names = Array.isArray(v) ? v : String(v||'').replace(/[\r\n]+/g, ',').replace(/，/g, ',').split(',');
@@ -531,7 +530,6 @@ function parsePhotos(v){
 
     setText('#points', pick(it.points_ja,it.points_en) || '');
 
-    <script>
 // 右上の「予約へ進む」
 $('#btnBook').onclick = (e)=>{
   e.preventDefault();
@@ -586,7 +584,7 @@ $('#btnBook').onclick = (e)=>{
     const box=$('#menuList'), empty=$('#menuEmpty');
     if(!Array.isArray(list)||!list.length){ box.innerHTML=''; empty.style.display=''; return; }
     empty.style.display='none';
-    <script>
+
 // 置換：renderMenus の map() 部分
 box.innerHTML=list.map((m, i)=>{
   const name  = m.name_ja || m.name_en || m.name || '';
@@ -607,7 +605,6 @@ box.innerHTML=list.map((m, i)=>{
     </div>
   </div>`;
 }).join('');
-</script>
 
   function renderCoupons(list){
     const box=$('#couponList'), empty=$('#couponEmpty');

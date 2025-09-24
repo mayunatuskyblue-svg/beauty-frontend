@@ -447,23 +447,40 @@ function suggestCultureTags(ctx){
   window.starsEl = starsEl; // フィルタ用にも使う
 
   // 画像URLの候補を量産（/assets/images と /assets/img を両方試す）
+    // 画像URL候補を強化（beautylk.com と beauty-frontend.onrender.com の両方を試す）
   function parsePhotos(v){
-    const IS_FILE = location.protocol==='file:';
-    const IMG_BASE     = IS_FILE ? './assets/img/'     : '/assets/img/';
-    const IMAGES_BASE  = IS_FILE ? './assets/images/'  : '/assets/images/';
-    let arr = Array.isArray(v) ? v : String(v||'').replace(/[\r\n]+/g,',').replace(/，/g,',').split(',');
-    arr = arr.map(s=>String(s||'').trim()).filter(Boolean);
-    arr = arr.map(p => { if(IS_FILE && p.startsWith('/')) p='.'+p; if(!p.includes('/')) p = IMAGES_BASE+p; return p; });
-    const out=[];
-    arr.forEach(p=>{
-      const pImg    = p.replace(/\/assets\/images\//, IMG_BASE);
-      const pImages = p.replace(/\/assets\/img\//,    IMAGES_BASE);
-      const a = IS_FILE && pImages.startsWith('/assets/') ? '.'+pImages : pImages;
-      const b = IS_FILE && pImg.startsWith('/assets/')    ? '.'+pImg    : pImg;
-      out.push(a,b);
+    // 1) 元データを配列化（改行/全角カンマ対応）
+    let names = Array.isArray(v) ? v : String(v||'').replace(/[\r\n]+/g,',').replace(/，/g,',').split(',');
+    names = names.map(s=>String(s||'').trim()).filter(Boolean);
+
+    // 2) すでに https ならそのまま採用
+    const out = [];
+    const HOSTS = [
+      'https://beautylk.com',                    // 本番
+      'https://beauty-frontend.onrender.com'     // 旧/サブ
+    ];
+
+    names.forEach(p=>{
+      if (/^https?:\/\//i.test(p)) {
+        out.push(p);
+        return;
+      }
+      // 裸ファイル名 → /assets/images/, /assets/img/ を両方生成
+      const baseNames = p.includes('/') ? [p] : [`/assets/images/${p}`, `/assets/img/${p}`];
+
+      baseNames.forEach(rel=>{
+        // 絶対パス（/から始まる）なら各ホストを前置、相対ならそのままも試す
+        if (rel.startsWith('/')) {
+          HOSTS.forEach(h => out.push(h + rel));
+        }
+        out.push(rel); // 相対でも一応試す（ローカル/別構成向け）
+      });
     });
+
+    // 重複除去
     return [...new Set(out)];
   }
+
 
   async function fetchJSON(u){ const r=await fetch(u,{cache:'no-store'}); return r.json(); }
   async function getCatalog(){
@@ -601,29 +618,43 @@ function suggestCultureTags(ctx){
       const body=document.createElement('div'); const original=String(r.text||''); body.textContent=original;
 
       // 翻訳トグル
+            // 翻訳トグル（強化版）
       const btn=document.createElement('button'); btn.className='btn secondary'; btn.style.margin='6px 0';
       const L=(localStorage.getItem('bl_lang')||'auto');
       const isJa=(L==='ja')||(L==='auto' && (navigator.language||'').toLowerCase().startsWith('ja'));
       const target=isJa?'en':'ja';
       const TXT_TO=isJa?'英語に自動翻訳':'Translate to Japanese';
       const TXT_BACK=isJa?'原文に戻す':'Show original';
+      const TXT_WAIT=isJa?'翻訳中…':'Translating…';
       btn.textContent=TXT_TO;
-      let showing=false; const cacheKey=`${target}:${original.slice(0,200)}`; window.__bl_tr_cache=window.__bl_tr_cache||{};
+
+      let showing=false;
+      const cacheKey=`${target}:${original.slice(0,200)}`;
+      window.__bl_tr_cache=window.__bl_tr_cache||{};
+
       btn.onclick=async()=>{
         if(!showing){
           try{
+            btn.disabled = true; btn.textContent = TXT_WAIT;
             if(!window.__bl_tr_cache[cacheKey]){
               const u=`${GAS.url}?kind=translate&key=${encodeURIComponent(GAS.key)}&target=${encodeURIComponent(target)}&text=${encodeURIComponent(original)}`;
               const j=await fetch(u,{cache:'no-store'}).then(r=>r.json());
               if(!j||!j.ok) throw new Error('translate failed');
               window.__bl_tr_cache[cacheKey]=j.text||original;
             }
-            body.textContent=window.__bl_tr_cache[cacheKey]; btn.textContent=TXT_BACK; showing=true;
-          }catch(e){ alert(isJa?'翻訳に失敗しました':'Translation failed'); }
+            body.textContent=window.__bl_tr_cache[cacheKey];
+            btn.textContent=TXT_BACK; showing=true;
+          }catch(e){
+            alert(isJa?'翻訳に失敗しました':'Translation failed');
+            btn.textContent=TXT_TO;
+          }finally{
+            btn.disabled = false;
+          }
         }else{
           body.textContent=original; btn.textContent=TXT_TO; showing=false;
         }
       };
+
 
       el.appendChild(head); el.appendChild(body); el.appendChild(btn);
 

@@ -472,19 +472,35 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   window.BL_PAY.base = 'https://pay-server-uis7.onrender.com';
 })();
 
-/* ====== GAS へ予約を書き込む ====== */
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwJz67fvPpB1tJ7IWggPFWJ-2tBydVOHikzFvviS36_8LOD8YW7jn3vWjWF9f3ngomH/exec';
-const GAS_KEY = 'bl_gas_key_crUS1RnVC07WqAkdtzLfemDla3MBNxvTKsiJFOh5';
+// === GAS 接続情報（meta -> URL -> localStorage の順で解決） ===
+const GAS_URL = (document.querySelector('meta[name="bl-sheet-hook"]')?.content || new URLSearchParams(location.search).get('gas') || '').trim();
+const GAS_KEY = (new URLSearchParams(location.search).get('key') || localStorage.getItem('bl_gas_key') || '').trim();
 
-async function postBookingToSheet({ bookingId, date, menu, minutes, amountJPY, email, name }) {
+async function postBookingToSheet({
+  bookingId, date, time, minutes,
+  salonId, shopName, menu, menuName,
+  amountJPY, email, name,
+  whatsappToCustomer, whatsappToSalon,
+  status = 'reserved'
+}) {
   let customerId = '';
   try { customerId = JSON.parse(localStorage.getItem('bl_saved_card')||'null')?.customerId || ''; } catch {}
-  const payload = { key: GAS_KEY, kind: 'booking',
-    data: { bookingId, date, menu, minutes, amountJPY, email, name, customerId }
+  if(!GAS_URL || !GAS_KEY) { console.warn('GAS_URL/GAS_KEY missing'); return false; }
+
+  const payload = {
+    key: GAS_KEY, kind: 'booking',
+    data: {
+      bookingId, date, time, minutes,
+      salonId, shopName, menu, menuName,
+      amountJPY, email, name, customerId,
+      whatsappToCustomer, whatsappToSalon,
+      status
+    }
   };
+
   const res = await fetch(GAS_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // GAS 側 JSON.parse でOK
     body: JSON.stringify(payload)
   });
   const txt = await res.text();
@@ -493,25 +509,48 @@ async function postBookingToSheet({ bookingId, date, menu, minutes, amountJPY, e
   return !!j.ok;
 }
 
-/* ====== confirm ページ → 予約情報の拾い出し ====== */
+
 function readBookingFromPage() {
   const qs = new URLSearchParams(location.search);
-  let booking = {
-    bookingId:  qs.get('bookingId') || '',
-    date:       qs.get('date') || new Date().toISOString(),
-    menu:       qs.get('menu') || '',
-    minutes:    Number(qs.get('minutes') || 0) || 0,
-    amountJPY:  Number(qs.get('amountJPY') || 0) || 0,
-    email:      qs.get('email') || '',
-    name:       qs.get('name') || ''
+
+  // 予約ID（先行スクリプトでURLに埋め込み済み）
+  const bookingId = qs.get('bookingId') || (localStorage.getItem('bl_current_booking_id') || '');
+
+  // reservation.html から渡ってくる想定の値たち
+  const salonId   = qs.get('salonId')   || qs.get('salon') || '';
+  const shopName  = qs.get('salonName') || qs.get('salon_name') || '';
+  const menuName  = qs.get('item')      || qs.get('menu')  || '';
+  const minutes   = Number(qs.get('minutes') || 0) || 0;
+
+  // 金額（日本円基準で bookings に保持）
+  const amountJPY = Number(qs.get('price_jpy') || 0) || 0;
+
+  // 連絡先（URLに無ければ後で上書きできる）
+  const email = qs.get('email') || '';
+  const name  = qs.get('name')  || '';
+
+  // 日時：localStorage('reserve_selected') に ISO が入っている前提
+  let iso = (localStorage.getItem('reserve_selected') || '').trim();
+  if (!iso) iso = qs.get('dt') || ''; // 念のため URL の dt も確認
+  const d  = iso ? new Date(iso) : new Date();
+
+  const date = d.toISOString().slice(0,10); // 'YYYY-MM-DD'
+  const time = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); // 'HH:MM'
+
+  // WhatsApp 通知先（あれば渡す。無ければ空でOK）
+  const whatsappToCustomer = qs.get('wa_customer') || ''; // +国番号付き '81...', '94...'
+  const whatsappToSalon    = qs.get('wa_salon')    || '';
+
+  return {
+    bookingId,
+    date, time, minutes,
+    salonId, shopName,
+    menu: menuName,   // 互換フィールド
+    menuName,         // 新フィールド
+    amountJPY, email, name,
+    whatsappToCustomer, whatsappToSalon,
+    status: 'reserved'
   };
-  if (!booking.bookingId) {
-    try {
-      const saved = JSON.parse(sessionStorage.getItem('bl_pending_booking') || localStorage.getItem('bl_pending_booking') || 'null');
-      if (saved && saved.bookingId) booking = Object.assign(booking, saved);
-    } catch {}
-  }
-  return booking;
 }
 
 /* ====== カード保存フォーム（Stripe Elements） ====== */

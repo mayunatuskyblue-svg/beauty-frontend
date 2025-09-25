@@ -10,13 +10,13 @@
   "theme_color": "#246A73",
   "icons": [
     {
-      "src": "assets/images/logo_mark.png",
+      "src": "assets/img/logo_mark.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "assets/images/logo_mark.png",
+      "src": "assets/img/logo_mark.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

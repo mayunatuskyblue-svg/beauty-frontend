@@ -2,6 +2,18 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
+  <!-- ★CSP: 外部接続/Stripe/iframe を許可 -->
+<meta http-equiv="Content-Security-Policy"
+  content="
+    default-src 'self';
+    connect-src 'self' https://pay-server-uis7.onrender.com https://api.beautylk.com https://api.stripe.com;
+    script-src 'self' https://js.stripe.com 'unsafe-inline';
+    frame-src https://js.stripe.com https://hooks.stripe.com https://*.stripe.com;
+    img-src 'self' data: https://*.stripe.com;
+    style-src 'self' 'unsafe-inline';
+    font-src 'self' https: data:;
+  ">
+
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="bl-sheet-hook" content="https://script.google.com/macros/s/AKfycbwlpW6ZQ-sOMfWCr_DWbNf27ezZb1ul6Cia9M7kMX4CSL-rRecpIWvh1qCbkVjA2xk/exec">
 

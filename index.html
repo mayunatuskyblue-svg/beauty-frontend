@@ -1160,9 +1160,7 @@ function initFilters(dataSource){
 );
 
     render(items);
-    const hist = readJSON('bl_search_history', []);
-    hist.unshift({ place, type, date:'', guests:'', ts: Date.now() });
-    writeJSON('bl_search_history', hist.slice(0,50));
+  
   });
 }
 
@@ -1418,19 +1416,19 @@ initCatalog();
     else form.dispatchEvent(new Event('submit',{cancelable:true}));
   });
 })();
+<script>
 // ====== 検索履歴（保存＆インライン表示） ======
 (function(){
   const $  = (s, r=document)=>r.querySelector(s);
   const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
 
+  // localStorage のキー
   const KEY = 'bl_search_history';
 
   function readHist(){
     try{ return JSON.parse(localStorage.getItem(KEY) || '[]'); }catch(e){ return []; }
   }
-  function writeHist(arr){
-    localStorage.setItem(KEY, JSON.stringify(arr));
-  }
+  function writeHist(arr){ localStorage.setItem(KEY, JSON.stringify(arr)); }
   function saveHistory(entry){
     const hist = readHist();
     const sig = JSON.stringify({
@@ -1453,7 +1451,7 @@ initCatalog();
     writeHist(filtered.slice(0, 50));
   }
 
-  // ---- i18n helpers for the history row ----
+  // ---- 言語別のデフォルト文言 ----
   function getLangSafe(){
     try{ return (typeof getLang==='function' ? getLang() : (localStorage.getItem('bl_lang')||'auto')); }catch(e){ return 'auto'; }
   }
@@ -1465,6 +1463,7 @@ initCatalog();
       : { place:'Area not set', type:'Category not set', date:'No date', budget:'Budget', kw:'Keywords' };
   }
 
+  // DOM
   const box    = $('#searchHistoryInline');
   const place  = $('#place');
   const type   = $('#type');
@@ -1473,71 +1472,84 @@ initCatalog();
   const kw     = $('#kw');
   const form   = $('#searchForm');
 
-  if(box && form && place && type && date && budget && kw){
-    function fmtRow(r){
-      const D = i18nDefaults();
-      const p = r.place  || D.place;
-      const t = r.type   || D.type;
-      const d = r.date   || D.date;
-      const b = r.budget ? ` / ${r.budget}` : '';
-      const k = r.kw     ? ` / ${r.kw}`     : '';
-      return `${p} / ${t} / ${d}${b}${k}`;
-    }
-/* ...前半の関数/定数は既存のまま... */
+  if(!box || !form || !place || !type || !date || !budget || !kw) return;
 
-function renderInline(){
-  const list = readHist().slice(0,5); // 最新5件
-  if(!list.length){
-    box.removeAttribute('data-open');
-    box.innerHTML = '';
-    return;
+  function fmtRow(r){
+    const D = i18nDefaults();
+    const p = r.place  || D.place;
+    const t = r.type   || D.type;
+    const d = r.date   || D.date;
+    const b = r.budget ? ` / ${r.budget}` : '';
+    const k = r.kw     ? ` / ${r.kw}`     : '';
+    return `${p} / ${t} / ${d}${b}${k}`;
   }
-  const items = list.map((r,i)=>(
-    `<button type="button" class="hitem" data-i="${i}">
-       <div>
-         <div class="title">${fmtRow(r)}</div>
-         <div class="meta">${new Date(r.ts||Date.now()).toLocaleString()}</div>
-       </div>
-       <button type="button" class="del" aria-label="Delete this search" data-del="${i}">×</button>
-     </button>`
-  )).join('');
 
-  box.setAttribute('data-open','1');
-  box.innerHTML = `<div class="hlist" role="listbox" aria-label="Recent searches">${items}</div>`;
+  function renderInline(){
+    const list = readHist().slice(0,5); // 最新5件
+    if(!list.length){ box.removeAttribute('data-open'); box.innerHTML=''; return; }
 
-  // クリックで各フィールドへ反映
-  $$('.hitem', box).forEach(btn=>{
-    btn.addEventListener('click', (ev)=>{
-      // ×クリックは反映させない
-      if(ev.target.closest('.del')) return;
+    const items = list.map((r,i)=>(
+      `<button type="button" class="hitem" data-i="${i}">
+         <div>
+           <div class="title">${fmtRow(r)}</div>
+           <div class="meta">${new Date(r.ts||Date.now()).toLocaleString()}</div>
+         </div>
+         <button type="button" class="del" aria-label="Delete this search" data-del="${i}">×</button>
+       </button>`
+    )).join('');
 
-      const i = Number(btn.getAttribute('data-i')||0);
-      const r = readHist()[i];
-      if(!r) return;
-      place.value  = r.place  || '';
-      type.value   = r.type   || '';
-      date.value   = r.date   || '';
-      budget.value = r.budget || '';
-      kw.value     = r.kw     || '';
+    box.setAttribute('data-open','1');
+    box.innerHTML = `<div class="hlist" role="listbox" aria-label="Recent searches">${items}</div>`;
 
-      box.removeAttribute('data-open');
-      box.innerHTML = '';
+    // 行クリックでフォームへ反映（×クリックは除外）
+    $$('.hitem', box).forEach(btn=>{
+      btn.addEventListener('click', (ev)=>{
+        if(ev.target.closest('.del')) return;
+        const i = Number(btn.getAttribute('data-i')||0);
+        const r = readHist()[i]; if(!r) return;
+        place.value  = r.place  || '';
+        type.value   = r.type   || '';
+        date.value   = r.date   || '';
+        budget.value = r.budget || '';
+        kw.value     = r.kw     || '';
+        box.removeAttribute('data-open'); box.innerHTML='';
+      });
     });
+
+    // ×で対象行だけ削除 → 再描画
+    $$('.del', box).forEach(x=>{
+      x.addEventListener('click', (ev)=>{
+        ev.stopPropagation();
+        const i = Number(x.getAttribute('data-del')||0);
+        const hist = readHist();
+        hist.splice(i,1);
+        writeHist(hist);
+        renderInline();
+      });
+    });
+  }
+
+  // フォーカスで開く / 外側クリックで閉じる
+  [kw, place, type, date, budget].forEach(el=> el.addEventListener('focus', renderInline));
+  document.addEventListener('click', (e)=>{
+    const within = box.contains(e.target) || e.target.closest('.pill') || e.target.closest('.searchbtn');
+    if(!within){ box.removeAttribute('data-open'); box.innerHTML=''; }
   });
 
-  // ×で対象行だけ削除 → 再描画
-  $$('.del', box).forEach(x=>{
-    x.addEventListener('click', (ev)=>{
-      ev.stopPropagation();
-      const i = Number(x.getAttribute('data-del')||0);
-      const hist = readHist();
-      hist.splice(i,1);
-      writeHist(hist);
-      renderInline(); // 再描画
+  // 送信時に履歴保存（既存の検索処理に干渉しない）
+  form.addEventListener('submit', ()=>{
+    saveHistory({
+      place:  place.value || '',
+      type:   type.value  || '',
+      date:   date.value  || '',
+      budget: budget.value|| '',
+      kw:     kw.value    || '',
+      ts: Date.now()
     });
-  });
-}
+  }, {capture:true});
+})();
 </script>
+
 
 <footer>Build v2025-09-18i • Visual refresh add‑on v1</footer>
 </body>

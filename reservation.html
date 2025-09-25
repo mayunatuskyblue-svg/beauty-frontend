@@ -211,7 +211,7 @@ document.getElementById('v_date').textContent  = dateTextParam || '-';
 document.getElementById('v_price').textContent = fmtLKR(priceLKR);
 // ===== GAS 設定（meta / localStorage / URL の順で解決） =====
 const GAS_URL = document.querySelector('meta[name=bl-sheet-hook]')?.content || p.get('gas') || '';
-const GAS_KEY = p.get('key') || localStorage.getItem('bl_gas_key_bR6ZXWwu6kM_nrK25geP97Cs5qCX3auxugX_IUGlg90') || '';
+const GAS_KEY = p.get('key') || localStorage.getItem('bl_gas_key') || '';
 
 // ===== シート反映（bookings 追記） =====
 async function recordBookingToSheet({ bookingId, email }){
@@ -311,7 +311,7 @@ async function fetchTakenSlots(salonId, ymd){
   // const j = await fetch(url).then(r=>r.json()).catch(()=>({ok:false,items:[]}));
   // if(!j.ok) return new Set();
   // return new Set(j.items); // ["09:00","09:30",...]
-}
+
   // === 予約済みスロットの取得（GAS 連動） ===
 function getGasUrlAndKey(){
   const p = new URLSearchParams(location.search);

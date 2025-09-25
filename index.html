@@ -771,14 +771,21 @@ function enPoints(s){
   return x;
 }
 function enTag(t){const map={'マツエク':'Lashes','スパ':'Spa','ハーブ':'Herbs','日本語対応':'Japanese support'};return map[t]||t;}
+// ---------- i18n ----------
 function getLang(){
+  // ① <html lang=".."> が en なら最優先で en
+  const htmlLang = (document.documentElement.getAttribute('lang') || '').toLowerCase();
+  if (htmlLang === 'en') return 'en';
+
+  // ② ユーザー選択を次に優先
   const pref = localStorage.getItem('bl_lang') || 'auto';
-  if(pref==='auto'){
-    const ja = (navigator.language||'en').toLowerCase().startsWith('ja');
-    return ja ? 'ja' : 'en';
-  }
-  return pref;
+  if (pref !== 'auto') return pref;
+
+  // ③ auto のときはブラウザ言語で判定
+  const ja = (navigator.language || 'en').toLowerCase().startsWith('ja');
+  return ja ? 'ja' : 'en';
 }
+
 
 // ---------- Currency helpers (JPY -> target) ----------
 const RATES = { JPY:1, USD:0.0067, EUR:0.0061, LKR:2.05 };
@@ -909,28 +916,19 @@ const $ = s => document.querySelector(s);
 const list = $('#list');
 
 function cardTemplate(s, favOn){
-    // >>> ここから置換 <<<
   const L = getLang();
 
-  // 英語UIのときは「必ず英語」：
-  // 1) s.tagsEn / s.pointsEn を優先
-  // 2) 無ければ日本語から簡易英訳（enTag / enPoints）にフォールバック
+  // 言語別データを優先して利用（なければ従来配列にフォールバック）
   const tags =
     (L === 'en')
-      ? ( (s.tagsEn && s.tagsEn.length)
-            ? s.tagsEn
-            : ((s.tags && s.tags.length)
-                ? s.tags.map(enTag)
-                : ((s.tagsJa || []).map(enTag)) ) )
-      : ( (s.tagsJa && s.tagsJa.length) ? s.tagsJa : (s.tags || []) );
+      ? ((s.tagsEn && s.tagsEn.length) ? s.tagsEn : s.tags)
+      : ((s.tagsJa && s.tagsJa.length) ? s.tagsJa : s.tags);
 
+  // 英語側の本文が空なら簡易変換にフォールバック
   let pts =
     (L === 'en')
-      ? ( (s.pointsEn && s.pointsEn.trim())
-            ? s.pointsEn
-            : enPoints(s.pointsJa || s.points || '') )
-      : ( s.pointsJa || s.points || '' );
-  // >>> ここまで置換 <<<
+      ? (s.pointsEn || enPoints(s.points || ''))
+      : (s.pointsJa || s.points || '');
 
   // 画像の重複候補をまとめてユニーク化
   const photos = (s.photos || []).concat(
@@ -1071,14 +1069,6 @@ function normalizeForUI(raw, L){
   const tagsJa = String(raw.tags_ja||'').split('|').map(s=>s.trim()).filter(Boolean);
   const pointsEn = raw.points_en || '';
   const pointsJa = raw.points_ja || '';
-  let tagsEn = String(raw.tags_en||'').split('|').map(s=>s.trim()).filter(Boolean);
-  let tagsJa = String(raw.tags_ja||'').split('|').map(s=>s.trim()).filter(Boolean);
-  let pointsEn = raw.points_en || '';
-  let pointsJa = raw.points_ja || '';
-
-  // 英語が欠けていたら日本語から英訳して補完（英語UI強制用の保険）
-  if (!tagsEn.length && tagsJa.length) tagsEn = tagsJa.map(enTag);
-  if (!pointsEn && pointsJa) pointsEn = enPoints(pointsJa);
 
   const points = (L==='en' ? pointsEn : pointsJa);
   const tags   = (L==='en' ? tagsEn   : tagsJa);
@@ -1469,42 +1459,6 @@ initCatalog();
       : { place:'Area not set', type:'Category not set', date:'No date', budget:'Budget', kw:'Keywords' };
   }
 
-  <script>
-/* ---- Search history (save & inline dropdown) ---- */
-(function(){
-  const KEY = 'bl_search_history';
-
-  function readHist(){
-    try{ return JSON.parse(localStorage.getItem(KEY) || '[]'); }catch(e){ return []; }
-  }
-  function writeHist(arr){ localStorage.setItem(KEY, JSON.stringify(arr)); }
-  function saveHistory(entry){
-    const hist = readHist();
-    const sig = JSON.stringify({
-      place: entry.place||'', type: entry.type||'', date: entry.date||'',
-      budget: entry.budget||'', kw: entry.kw||''
-    });
-    const filtered = hist.filter(r =>
-      JSON.stringify({place:r.place||'',type:r.type||'',date:r.date||'',budget:r.budget||'',kw:r.kw||''}) !== sig
-    );
-    filtered.unshift(entry);
-    writeHist(filtered.slice(0,50));
-  }
-
-  // ---- i18n defaults for history row ----
-  function getLangSafe(){
-    try{ return (typeof getLang==='function' ? getLang() : (localStorage.getItem('bl_lang')||'auto')); }catch(e){ return 'auto'; }
-  }
-  function i18nDefaults(){
-    const L = getLangSafe();
-    const isJa = (L==='ja') || (L==='auto' && (navigator.language||'en').toLowerCase().startsWith('ja'));
-    return isJa
-      ? { place:'場所未指定', type:'種類未指定', date:'日付なし', budget:'金額', kw:'キーワード' }
-      : { place:'Area not set', type:'Category not set', date:'No date', budget:'Budget', kw:'Keywords' };
-  }
-
-  const $  = s=>document.querySelector(s);
-  const $$ = (s,sc=document)=>Array.from(sc.querySelectorAll(s));
   const box    = $('#searchHistoryInline');
   const place  = $('#place');
   const type   = $('#type');
@@ -1523,66 +1477,60 @@ initCatalog();
       const k = r.kw     ? ` / ${r.kw}`     : '';
       return `${p} / ${t} / ${d}${b}${k}`;
     }
+/* ...前半の関数/定数は既存のまま... */
 
-    function renderInline(){
-      const list = readHist().slice(0,5);
-      if(!list.length){ box.removeAttribute('data-open'); box.innerHTML=''; return; }
-
-      const items = list.map((r,i)=>(
-        `<button type="button" class="hitem" data-i="${i}">
-           <div>
-             <div class="title">${fmtRow(r)}</div>
-             <div class="meta">${new Date(r.ts||Date.now()).toLocaleString()}</div>
-           </div>
-           <button type="button" class="del" aria-label="Delete this search" data-del="${i}">×</button>
-         </button>`
-      )).join('');
-
-      box.setAttribute('data-open','1');
-      box.innerHTML = `<div class="hlist" role="listbox" aria-label="Recent searches">${items}</div>`;
-
-      // クリックで検索条件を反映（×クリックは除外）
-      $$('.hitem', box).forEach(btn=>{
-        btn.addEventListener('click',(ev)=>{
-          if(ev.target.closest('.del')) return;
-          const i = Number(btn.getAttribute('data-i')||0);
-          const r = readHist()[i]; if(!r) return;
-          place.value  = r.place  || '';
-          type.value   = r.type   || '';
-          date.value   = r.date   || '';
-          budget.value = r.budget || '';
-          kw.value     = r.kw     || '';
-          box.removeAttribute('data-open'); box.innerHTML='';
-        });
-      });
-
-      // ×で当該行のみ削除
-      $$('.del', box).forEach(x=>{
-        x.addEventListener('click',(ev)=>{
-          ev.stopPropagation();
-          const i = Number(x.getAttribute('data-del')||0);
-          const hist = readHist(); hist.splice(i,1); writeHist(hist);
-          renderInline();
-        });
-      });
-    }
-
-    // フォーカスで表示 / 外側クリックで閉じる
-    [kw, place, type, date, budget].forEach(el=> el.addEventListener('focus', renderInline));
-    document.addEventListener('click',(e)=>{
-      const within = box.contains(e.target) || e.target.closest('.pill') || e.target.closest('.searchbtn');
-      if(!within){ box.removeAttribute('data-open'); box.innerHTML=''; }
-    });
-
-    // 送信時に履歴保存（実検索の前に）
-    form.addEventListener('submit', ()=>{
-      saveHistory({
-        place:place.value||'', type:type.value||'', date:date.value||'',
-        budget:budget.value||'', kw:kw.value||'', ts:Date.now()
-      });
-    }, {capture:true});
+function renderInline(){
+  const list = readHist().slice(0,5); // 最新5件
+  if(!list.length){
+    box.removeAttribute('data-open');
+    box.innerHTML = '';
+    return;
   }
-})();
+  const items = list.map((r,i)=>(
+    `<button type="button" class="hitem" data-i="${i}">
+       <div>
+         <div class="title">${fmtRow(r)}</div>
+         <div class="meta">${new Date(r.ts||Date.now()).toLocaleString()}</div>
+       </div>
+       <button type="button" class="del" aria-label="Delete this search" data-del="${i}">×</button>
+     </button>`
+  )).join('');
+
+  box.setAttribute('data-open','1');
+  box.innerHTML = `<div class="hlist" role="listbox" aria-label="Recent searches">${items}</div>`;
+
+  // クリックで各フィールドへ反映
+  $$('.hitem', box).forEach(btn=>{
+    btn.addEventListener('click', (ev)=>{
+      // ×クリックは反映させない
+      if(ev.target.closest('.del')) return;
+
+      const i = Number(btn.getAttribute('data-i')||0);
+      const r = readHist()[i];
+      if(!r) return;
+      place.value  = r.place  || '';
+      type.value   = r.type   || '';
+      date.value   = r.date   || '';
+      budget.value = r.budget || '';
+      kw.value     = r.kw     || '';
+
+      box.removeAttribute('data-open');
+      box.innerHTML = '';
+    });
+  });
+
+  // ×で対象行だけ削除 → 再描画
+  $$('.del', box).forEach(x=>{
+    x.addEventListener('click', (ev)=>{
+      ev.stopPropagation();
+      const i = Number(x.getAttribute('data-del')||0);
+      const hist = readHist();
+      hist.splice(i,1);
+      writeHist(hist);
+      renderInline(); // 再描画
+    });
+  });
+}
 </script>
 
 <footer>Build v2025-09-18i • Visual refresh add‑on v1</footer>

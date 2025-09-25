@@ -839,7 +839,7 @@ function applyI18N(){
   document.querySelectorAll('[data-ph]').forEach(el=>{ const k=el.dataset.ph; if(T[L][k]) el.setAttribute('placeholder', T[L][k]); });
   document.getElementById('navLogin').textContent = T[L].login;
   document.getElementById('navSignup').textContent= T[L].signup;
-  document.getElementById('navMypage').setattribute('area-label', T[L].mypage);
+  document.getElementById('navMypage').setAttribute('area-label', T[L].mypage);
   const placeOpt=document.querySelector('#place option[value=""]'); if(placeOpt) placeOpt.textContent=T[L].place;
   const typeOpt=document.querySelector('#type option[value=""]'); if(typeOpt) typeOpt.textContent=T[L].type;
 }
@@ -905,16 +905,21 @@ document.addEventListener('DOMContentLoaded', updateLangFlag);
 // ---------- Card rendering ----------
 function yen(n){ return "¥"+(Number(n)||0).toLocaleString("ja-JP"); }
 const $=s=>document.querySelector(s); const list=$('#list');
+
 function cardTemplate(s, favOn){
   const L = getLang();
-  const tags = (L==='en' ? (s.tagsEn || s.tags) : (s.tagsJa || s.tags));
-  const pts  = (L==='en' ? (s.pointsEn || s.points) : (s.pointsJa || s.points));
-  // …以下そのまま
-}
-  let pts  = (L==='en' ? (s.pointsEn || enPoints(s.points||'')) : s.points);
+  // 言語別の tags / points を素直に使う
+  const tags = (L === 'en' ? (s.tagsEn   || s.tags)   : (s.tagsJa   || s.tags));
+  let   pts  = (L === 'en' ? (s.pointsEn || s.points) : (s.pointsJa || s.points));
+  // 英語側が空のときだけ日本語→英語の簡易変換にフォールバック
+  if (L==='en' && (!pts || !pts.trim())) pts = enPoints(s.points||'');
+
+  // 画像の重複候補をまとめてユニーク化
   const photos = (s.photos||[]).concat((s.photos||[]).map(src=>src.replace('/assets/img/','/assets/images/')));
   const uniqPhotos = [...new Set(photos)];
+
   const priceStr = fmtCurrencyFromJPY(s.price, getCurrency());
+
   return `<article class="card" data-id="${s.id}" data-lat="${s.lat}" data-lng="${s.lng}">
     <div class="media">
       <div class="carousel">${uniqPhotos.map((src,i)=>`<img src="${src}" alt="${s.name} photo ${i+1}">`).join('')}</div>
@@ -943,6 +948,7 @@ function cardTemplate(s, favOn){
     </div></div>
   </article>`;
 }
+
 function readJSON(k, def){ try{ return JSON.parse(localStorage.getItem(k)||JSON.stringify(def)); }catch(e){ return def; } }
 function writeJSON(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
 function favIds(){ const a1=readJSON('bl_favs', []); const a2=readJSON('favorites', []); return Array.from(new Set(a1.concat(a2))); }

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="ja">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -608,12 +608,6 @@ body.hero-header .lang-pill{ left:16px; right:auto; top:108px; }
 .history-pop .hitem .del:hover{ opacity: .9; background: #f2efe8; }
 
 </style>
-  <script>
-  // 英語を強制
-  document.documentElement.setAttribute('lang','en');
-  localStorage.setItem('bl_lang','en');
-</script>
-
   <script src="lang.js" defer></script>
 <script>document.addEventListener('DOMContentLoaded',()=>BL_I18N.i18nApply());</script>
 </head>
@@ -1160,8 +1154,7 @@ function initFilters(dataSource){
 );
 
     render(items);
-  
-  });
+      });
 }
 
 /// --- robust splash boot: full-screen overlay, center line art, scroll lock ---
@@ -1416,7 +1409,6 @@ initCatalog();
     else form.dispatchEvent(new Event('submit',{cancelable:true}));
   });
 })();
-<script>
 // ====== 検索履歴（保存＆インライン表示） ======
 (function(){
   const $  = (s, r=document)=>r.querySelector(s);
@@ -1549,7 +1541,6 @@ initCatalog();
   }, {capture:true});
 })();
 </script>
-
 
 <footer>Build v2025-09-18i • Visual refresh add‑on v1</footer>
 </body>

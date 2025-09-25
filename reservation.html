@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:wght@500;600&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
 
 <!-- Google Apps Script WebApp URL をここに（なければ URL 引数 ?gas=...&key=... を使用） -->
-<meta name="bl-sheet-hook" content="">
+<meta name="bl-sheet-hook" content="https://script.google.com/macros/s/AKfycbwWRpfcZMsGxNqGJ5aNjRT1Y1PChDTqtQE3e0S7sUDAMei8s1wOr6lpKMnOaI1Z-6o/exec">
 <style>
 /* Elegant timetable typography */
 #hpWeekTitle{font-family:'Playfair Display','Shippori Mincho',serif;font-weight:600;letter-spacing:.02em}
@@ -211,7 +211,7 @@ document.getElementById('v_date').textContent  = dateTextParam || '-';
 document.getElementById('v_price').textContent = fmtLKR(priceLKR);
 // ===== GAS 設定（meta / localStorage / URL の順で解決） =====
 const GAS_URL = document.querySelector('meta[name=bl-sheet-hook]')?.content || p.get('gas') || '';
-const GAS_KEY = p.get('key') || localStorage.getItem('bl_gas_key') || '';
+const GAS_KEY = p.get('key') || localStorage.getItem('bl_gas_key_bR6ZXWwu6kM_nrK25geP97Cs5qCX3auxugX_IUGlg90') || '';
 
 // ===== シート反映（bookings 追記） =====
 async function recordBookingToSheet({ bookingId, email }){

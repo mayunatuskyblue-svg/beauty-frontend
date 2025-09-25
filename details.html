@@ -243,6 +243,144 @@ function suggestCultureTags(ctx){
   color:#fff !important;
 }
 </style>
+<script>
+// ==== Verifiedレビューの「施術後のみ投稿可」ガード ====
+// 仕様：URLに rid & token がある場合のみ #verifiedBox を表示し、
+//       GAS(reviews.verify)で「投稿解放時刻 unlockAt」を取得。
+//       いまが unlockAt より前なら：送信ボタンを無効化し、カウントダウン表示。
+//       過ぎたら：自動でボタン解放＆文言切り替え（日本語/英語対応）。
+
+(function() {
+  const $ = (sel) => document.querySelector(sel);
+
+  // ----- 言語判定（html lang / window.__lang / ブラウザ言語の順） -----
+  function getLang() {
+    const attr = (document.documentElement.getAttribute('lang') || '').toLowerCase();
+    if (attr.startsWith('ja')) return 'ja';
+    if (window.__lang && String(window.__lang).toLowerCase().startsWith('ja')) return 'ja';
+    const nav = (navigator.language || '').toLowerCase();
+    return (nav.startsWith('ja') ? 'ja' : 'en');
+  }
+  const LANG = getLang();
+
+  const t = (ja, en) => (LANG === 'ja' ? ja : en);
+
+  // ----- 日時ヘルパ（サーバーはUTCで返すことを想定） -----
+  function parseISO(s) { return s ? new Date(s) : null; }
+  function fmtCountdown(ms) {
+    if (ms < 0) ms = 0;
+    const sec = Math.floor(ms / 1000);
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    if (LANG === 'ja') {
+      return `${h}時間${m}分${s}秒`;
+    } else {
+      const pad = (n)=>String(n).padStart(2,'0');
+      return `${h}:${pad(m)}:${pad(s)}`;
+    }
+  }
+
+  // ----- UIの参照 -----
+  const verifiedBox = $('#verifiedBox');     // 既存フォームのコンテナ
+  const gate = $('#rvGate');                 // 追加したメッセージ枠
+  const btn  = $('#rvSubmit');               // 既存：送信ボタン
+  const msg  = $('#rvMsg');                  // 既存：結果メッセージ
+
+  // ----- URLパラメータ取得 -----
+  const qs = new URLSearchParams(location.search);
+  const rid   = qs.get('rid');               // 予約ID
+  const token = qs.get('token');             // 一回限りトークン
+  const salonId = (window.__currentSalon && window.__currentSalon.id) ? String(window.__currentSalon.id) : (qs.get('salonId') || '');
+
+  // rid & token があるときだけフォームを出す（無ければ従来どおり非表示のまま）
+  if (!verifiedBox || !rid || !token) return;
+  verifiedBox.style.display = '';  // フォーム表示
+
+  // まずは「検証中」表示
+  if (gate) {
+    gate.style.display = '';
+    gate.textContent = t('投稿可能時刻を確認しています…', 'Checking when review becomes available…');
+  }
+
+  // ----- サーバー(GAS)で投稿可否と解放時刻を確認 -----
+  // GAS側 期待レスポンス例：
+  // { ok:true, canPost:true, unlockAtISO:"2025-09-25T07:30:00Z", nowISO:"2025-09-25T07:35:10Z" }
+  // 施術時間はGASで計算（予約開始＋施術メニュー所要時間）
+  async function verifyGate() {
+    try {
+      const resp = await fetch(window.__GAS_URL, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          key: window.__GAS_KEY,
+          kind: 'reviews.verify',
+          data: { rid, token, salonId }
+        })
+      }).then(r => r.json());
+
+      if (!resp || !resp.ok) throw new Error(resp && resp.error ? resp.error : 'verify failed');
+
+      const unlockAt = parseISO(resp.unlockAtISO); // UTC想定
+      const serverNow = parseISO(resp.nowISO) || new Date();
+
+      if (!unlockAt) {
+        // unlockAt が無い = すぐ投稿OK（例：検証スキップ運用）
+        allowPost();
+        return;
+      }
+      const gap = unlockAt.getTime() - serverNow.getTime();
+      if (gap <= 0 || resp.canPost === true) {
+        allowPost();
+      } else {
+        blockUntil(unlockAt, serverNow);
+      }
+    } catch (e) {
+      // 失敗時は安全側でブロック（不正投稿防止）
+      if (gate) {
+        gate.textContent = t(
+          '現在レビュー投稿を開始できません（検証エラー）。時間をおいて再度お試しください。',
+          'You can’t post a review yet (verification error). Please try again later.'
+        );
+      }
+      if (btn) btn.disabled = true;
+    }
+  }
+
+  function allowPost() {
+    if (gate) {
+      gate.style.display = '';
+      gate.textContent = t('投稿できます。施術の感想をお聞かせください。', 'You can post your review now.');
+    }
+    if (btn) btn.disabled = false;
+  }
+
+  function blockUntil(unlockAt, serverNow) {
+    if (btn) btn.disabled = true;
+    const tick = () => {
+      const now = new Date(); // クライアント時間。多少のズレは数十秒レベルなら許容
+      const remain = unlockAt.getTime() - now.getTime();
+      if (remain <= 0) {
+        allowPost();
+        clearInterval(timer);
+      } else {
+        if (gate) {
+          gate.innerHTML = `
+            <strong>${t('施術後に投稿可能になります。', 'Reviews open after your service ends.')}</strong><br>
+            ${t('投稿までの残り時間：', 'Time remaining: ')}${fmtCountdown(remain)}
+          `;
+        }
+      }
+    };
+    tick();
+    const timer = setInterval(tick, 1000);
+  }
+
+  // スタート
+  verifyGate();
+
+})();
+</script>
 
 </head>
 <body>
@@ -331,6 +469,8 @@ function suggestCultureTags(ctx){
 </div>
 
         <!-- Verifiedレビュー投稿：rid/token/exp がURLにある時だけ表示 -->
+        <!-- ▼ 追加：投稿解放メッセージ／カウントダウン表示用 -->
+<div id="rvGate" class="rv-gate" style="display:none;margin:12px 0;padding:10px;border:1px dashed #bbb;border-radius:8px;font-size:.95rem;"></div>
         <div id="verifiedBox" style="display:none;margin-top:12px">
           <div class="notice" data-i18n="details.verified_note">施術後に配布される専用リンクからの投稿フォームです。</div>
           <form class="rv-form" id="verifiedForm">

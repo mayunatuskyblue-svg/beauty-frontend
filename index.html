@@ -580,6 +580,33 @@ body.hero-header .lang-pill{ left:16px; right:auto; top:108px; }
   margin-top: 2px;
   opacity: .8;
 }
+  /* === History list: use the same font as the hero title === */
+.history-pop .hlist,
+.history-pop .hitem .title{
+  font-family: "Shippori Mincho","Playfair Display", serif; /* 見出しと同系 */
+  font-weight: 700;
+  letter-spacing: .01em;
+}
+
+/* 行の右端に × ボタン */
+.history-pop .hitem{
+  position: relative;
+}
+.history-pop .hitem .del{
+  margin-left: auto;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  opacity: .5;
+}
+.history-pop .hitem .del:hover{ opacity: .9; background: #f2efe8; }
+
 </style>
   <script src="lang.js" defer></script>
 <script>document.addEventListener('DOMContentLoaded',()=>BL_I18N.i18nApply());</script>
@@ -1416,77 +1443,63 @@ initCatalog();
       return `${p} / ${t} / ${d}${b}${k}`;
     }
 
-    function renderInline(){
-      const list = readHist().slice(0,5);
-      if(!list.length){
-        box.removeAttribute('data-open');
-        box.innerHTML = '';
-        return;
-      }
-      const items = list.map((r,i)=>(
-        `<button type="button" class="hitem" data-i="${i}">
-           <div>
-             <div class="title">${fmtRow(r)}</div>
-             <div class="meta">${new Date(r.ts||Date.now()).toLocaleString()}</div>
-           </div>
-         </button>`
-      )).join('');
-      box.setAttribute('data-open','1');
-      box.innerHTML = `<div class="hlist" role="listbox" aria-label="Recent searches">${items}</div>`;
-
-      $$('.hitem', box).forEach(btn=>{
-        btn.addEventListener('click', ()=>{
-          const i = Number(btn.getAttribute('data-i')||0);
-          const r = readHist()[i];
-          if(!r) return;
-          place.value  = r.place  || '';
-          type.value   = r.type   || '';
-          date.value   = r.date   || '';
-          budget.value = r.budget || '';
-          kw.value     = r.kw     || '';
-          box.removeAttribute('data-open');
-          box.innerHTML = '';
-        });
-      });
-    }
-
-    // show on focus of any field; hide on outside click
-    function openOnFocus(){ renderInline(); }
-    [kw, place, type, date, budget].forEach(el=> el.addEventListener('focus', openOnFocus));
-
-    document.addEventListener('click', (e)=>{
-      const within = box.contains(e.target) || e.target.closest('.pill') || e.target.closest('.searchbtn');
-      if(!within){
-        box.removeAttribute('data-open');
-        box.innerHTML = '';
-      }
-    });
-
-    // Save on submit (before actual search handler runs)
-    form.addEventListener('submit', ()=>{
-      saveHistory({
-        place:  place.value || '',
-        type:   type.value  || '',
-        date:   date.value  || '',
-        budget: budget.value|| '',
-        kw:     kw.value    || '',
-        ts: Date.now()
-      });
-    }, {capture:true});
-  }
-})();
-</script>
 <script>
-// --- 種類セレクト変更で自動検索 ---
-(function enableTypeAutoSearch(){
-  try{
-    const form = document.getElementById('searchForm');
-    const typeSel = document.getElementById('type');
-    if(form && typeSel){
-      typeSel.addEventListener('change', () => form.requestSubmit());
-    }
-  }catch(e){ console.warn('type autosubmit patch failed', e); }
-})();
+/* ...前半の関数/定数は既存のまま... */
+
+function renderInline(){
+  const list = readHist().slice(0,5); // 最新5件
+  if(!list.length){
+    box.removeAttribute('data-open');
+    box.innerHTML = '';
+    return;
+  }
+  const items = list.map((r,i)=>(
+    `<button type="button" class="hitem" data-i="${i}">
+       <div>
+         <div class="title">${fmtRow(r)}</div>
+         <div class="meta">${new Date(r.ts||Date.now()).toLocaleString()}</div>
+       </div>
+       <button type="button" class="del" aria-label="Delete this search" data-del="${i}">×</button>
+     </button>`
+  )).join('');
+
+  box.setAttribute('data-open','1');
+  box.innerHTML = `<div class="hlist" role="listbox" aria-label="Recent searches">${items}</div>`;
+
+  // クリックで各フィールドへ反映
+  $$('.hitem', box).forEach(btn=>{
+    btn.addEventListener('click', (ev)=>{
+      // ×クリックは反映させない
+      if(ev.target.closest('.del')) return;
+
+      const i = Number(btn.getAttribute('data-i')||0);
+      const r = readHist()[i];
+      if(!r) return;
+      place.value  = r.place  || '';
+      type.value   = r.type   || '';
+      date.value   = r.date   || '';
+      budget.value = r.budget || '';
+      kw.value     = r.kw     || '';
+
+      box.removeAttribute('data-open');
+      box.innerHTML = '';
+    });
+  });
+
+  // ×で対象行だけ削除 → 再描画
+  $$('.del', box).forEach(x=>{
+    x.addEventListener('click', (ev)=>{
+      ev.stopPropagation();
+      const i = Number(x.getAttribute('data-del')||0);
+      const hist = readHist();
+      hist.splice(i,1);
+      writeHist(hist);
+      renderInline(); // 再描画
+    });
+  });
+}
+</script>
+    
 </script>
 
 <footer>Build v2025-09-18i • Visual refresh add‑on v1</footer>

@@ -839,7 +839,8 @@ function applyI18N(){
   document.querySelectorAll('[data-ph]').forEach(el=>{ const k=el.dataset.ph; if(T[L][k]) el.setAttribute('placeholder', T[L][k]); });
   document.getElementById('navLogin').textContent = T[L].login;
   document.getElementById('navSignup').textContent= T[L].signup;
-  document.getElementById('navMypage').setAttribute('area-label', T[L].mypage);
+  const my = document.getElementById('navMypage');
+if (my) my.setAttribute('aria-label', T[L].mypage);
   const placeOpt=document.querySelector('#place option[value=""]'); if(placeOpt) placeOpt.textContent=T[L].place;
   const typeOpt=document.querySelector('#type option[value=""]'); if(typeOpt) typeOpt.textContent=T[L].type;
 }
@@ -904,18 +905,28 @@ document.addEventListener('DOMContentLoaded', updateLangFlag);
 
 // ---------- Card rendering ----------
 function yen(n){ return "¥"+(Number(n)||0).toLocaleString("ja-JP"); }
-const $=s=>document.querySelector(s); const list=$('#list');
+const $ = s => document.querySelector(s);
+const list = $('#list');
 
 function cardTemplate(s, favOn){
   const L = getLang();
-  // 言語別の tags / points を素直に使う
-  const tags = (L === 'en' ? (s.tagsEn   || s.tags)   : (s.tagsJa   || s.tags));
-  let   pts  = (L === 'en' ? (s.pointsEn || s.points) : (s.pointsJa || s.points));
-  // 英語側が空のときだけ日本語→英語の簡易変換にフォールバック
-  if (L==='en' && (!pts || !pts.trim())) pts = enPoints(s.points||'');
+
+  // 言語別データを優先して利用（なければ従来配列にフォールバック）
+  const tags =
+    (L === 'en')
+      ? ((s.tagsEn && s.tagsEn.length) ? s.tagsEn : s.tags)
+      : ((s.tagsJa && s.tagsJa.length) ? s.tagsJa : s.tags);
+
+  // 英語側の本文が空なら簡易変換にフォールバック
+  let pts =
+    (L === 'en')
+      ? (s.pointsEn || enPoints(s.points || ''))
+      : (s.pointsJa || s.points || '');
 
   // 画像の重複候補をまとめてユニーク化
-  const photos = (s.photos||[]).concat((s.photos||[]).map(src=>src.replace('/assets/img/','/assets/images/')));
+  const photos = (s.photos || []).concat(
+    (s.photos || []).map(src => src.replace('/assets/img/', '/assets/images/'))
+  );
   const uniqPhotos = [...new Set(photos)];
 
   const priceStr = fmtCurrencyFromJPY(s.price, getCurrency());

@@ -401,7 +401,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   <script>
   window.BL_PAY = {
     pk: 'pk_test_51S59dhHFHLP5RXi1qkW9cuPEJAlJPuSaFeWFb5GuYhsXs9vkX6RJYfVYwQEdK8TwN3eKF7wEctQftyhYxb2rRIZN00146bOW8U',
-    base: 'https://api.beautylk.com'  <!-- まだDNS未設定なら Render の onrender URL -->
+    base: 'https://pay-server-uis7.onrender.com'  <!-- まだDNS未設定なら Render の onrender URL -->
   };
 </script>
 
@@ -457,7 +457,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   var prodBase = 'https://beautylk.com';
   var isFile = location.protocol === 'file:';
   window.BL_PAY = window.BL_PAY || {};
-  window.BL_PAY.base = 'https://api.beautylk.com';
+  window.BL_PAY.base = 'https://pay-server-uis7.onrender.com';
 })();
 
 /* ====== GAS へ予約を書き込む ====== */

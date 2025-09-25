@@ -6,14 +6,18 @@
 <meta http-equiv="Content-Security-Policy"
   content="
     default-src 'self';
-    connect-src 'self' https://pay-server-uis7.onrender.com https://api.beautylk.com https://api.stripe.com;
-    script-src 'self' https://js.stripe.com 'unsafe-inline';
-    frame-src https://js.stripe.com https://hooks.stripe.com https://*.stripe.com;
-    img-src 'self' data: https://*.stripe.com;
-    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-    font-src 'self' https: data:;
-    font-src 'self' https: data: https://fonts.gstatic.com;
+    script-src  'self' 'unsafe-inline' https://js.stripe.com;
+    style-src   'self' 'unsafe-inline' https://fonts.googleapis.com;
+    font-src    'self' https://fonts.gstatic.com data:;
+    img-src     'self' https: data:;
+    frame-src   https://js.stripe.com;
+    connect-src 'self'
+                https://api.stripe.com
+                https://api.beautylk.com
+                https://script.google.com
+                https://script.googleapis.com;
   ">
+
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="bl-sheet-hook" content="https://script.google.com/macros/s/AKfycbwlpW6ZQ-sOMfWCr_DWbNf27ezZb1ul6Cia9M7kMX4CSL-rRecpIWvh1qCbkVjA2xk/exec">

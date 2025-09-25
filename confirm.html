@@ -10,8 +10,9 @@
     script-src 'self' https://js.stripe.com 'unsafe-inline';
     frame-src https://js.stripe.com https://hooks.stripe.com https://*.stripe.com;
     img-src 'self' data: https://*.stripe.com;
-    style-src 'self' 'unsafe-inline';
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     font-src 'self' https: data:;
+    font-src 'self' https: data: https://fonts.gstatic.com;
   ">
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -620,7 +621,6 @@ function readBookingFromPage() {
 
         const {setupIntent, error} = await stripe.confirmCardSetup(clientSecret, {
           payment_method: { card: cardEl, billing_details: { email, name } },
-          payment_method_options:{ card: { request_three_d_secure: 'any' } }
         });
         if(error) throw error;
 

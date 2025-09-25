@@ -907,8 +907,10 @@ function yen(n){ return "¥"+(Number(n)||0).toLocaleString("ja-JP"); }
 const $=s=>document.querySelector(s); const list=$('#list');
 function cardTemplate(s, favOn){
   const L = getLang();
-  let tags = (L==='en' && s.tagsEn ? s.tagsEn : s.tags);
-  if(L==='en' && (!s.tagsEn || !s.tagsEn.length)){ tags = (s.tags||[]).map(enTag); }
+  const tags = (L==='en' ? (s.tagsEn || s.tags) : (s.tagsJa || s.tags));
+  const pts  = (L==='en' ? (s.pointsEn || s.points) : (s.pointsJa || s.points));
+  // …以下そのまま
+}
   let pts  = (L==='en' ? (s.pointsEn || enPoints(s.points||'')) : s.points);
   const photos = (s.photos||[]).concat((s.photos||[]).map(src=>src.replace('/assets/img/','/assets/images/')));
   const uniqPhotos = [...new Set(photos)];
@@ -1039,26 +1041,34 @@ async function fetchReviewSummary(){
   return j.summary || {};
 }
 function normalizeForUI(raw, L){
-  const tags = (L==='en'
-    ? String(raw.tags_en||'').split('|')
-    : String(raw.tags_ja||'').split('|')
-  ).map(s=>s.trim()).filter(Boolean);
-  const points = (L==='en' ? raw.points_en : raw.points_ja) || '';
+  const tagsEn = String(raw.tags_en||'').split('|').map(s=>s.trim()).filter(Boolean);
+  const tagsJa = String(raw.tags_ja||'').split('|').map(s=>s.trim()).filter(Boolean);
+  const pointsEn = raw.points_en || '';
+  const pointsJa = raw.points_ja || '';
+
+  const points = (L==='en' ? pointsEn : pointsJa);
+  const tags   = (L==='en' ? tagsEn   : tagsJa);
+
   return {
-    id:     raw.id,
-    name:   (L==='en' ? (raw.name_en||raw.name_ja) : (raw.name_ja||raw.name_en)),
-    type:   (L==='en' ? (raw.type_en||raw.type_ja) : (raw.type_ja||raw.type_en)),
-    place:  (L==='en' ? (raw.place_en||raw.place_ja) : (raw.place_ja||raw.place_en)),
-    typeJa:  (raw.type_ja  || raw.type_en  || ''),
-    placeJa: (raw.place_ja || raw.place_en || ''),
-    lat:    raw.lat, lng: raw.lng,
-    price:  raw.price_jpy,
+    id: raw.id,
+    name: (L==='en' ? (raw.name_en||raw.name_ja) : (raw.name_ja||raw.name_en)),
+    type: (L==='en' ? (raw.type_en||raw.type_ja) : (raw.type_ja||raw.type_en)),
+    place:(L==='en' ? (raw.place_en||raw.place_ja): (raw.place_ja||raw.place_en)),
+    typeJa:(raw.type_ja||raw.type_en||''),
+    placeJa:(raw.place_ja||raw.place_en||''),
+    lat: raw.lat, lng: raw.lng,
+    price: raw.price_jpy,
     rating: raw.rating || 0,
-    tags,
-    points,
+    tags,            // 画面用
+    tagsEn,          // 言語別を持たせておく
+    tagsJa,
+    points,          // 画面用
+    pointsEn,
+    pointsJa,
     photos: Array.isArray(raw.photos) ? raw.photos : []
   };
 }
+
 let _DATA_CURRENT = [];
 async function initCatalog(){
   const L = getLang();

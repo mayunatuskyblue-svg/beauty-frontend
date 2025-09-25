@@ -528,6 +528,32 @@ body.hero-header .lang-pill{ left:16px; right:auto; top:108px; }
   width:100%; height:100%;
   border-radius:999px; object-fit:cover; display:block;
 }
+/* --- inline search history dropdown --- */
+.history-pop{
+  position: relative;
+  grid-column: 1 / -1;            /* PCでは検索行の下に横断表示 */
+  margin-top: -6px;
+}
+@media (min-width: 980px){
+  .history-pop{ grid-column: 1 / span 6; }  /* いまの6分割レイアウトに沿う */
+}
+.history-pop[data-open="1"]::before{
+  /* ほんのり境界線 */
+  content:"";
+  display:block;
+  height:6px;
+}
+.history-pop .hlist{
+  position:absolute; left:0; right:0; z-index:20;
+  background:#fff; border:1px solid var(--stroke); border-radius:12px;
+  box-shadow:0 10px 24px rgba(0,0,0,.12); overflow:hidden;
+}
+.history-pop .hitem{
+  display:flex; gap:8px; align-items:center;
+  width:100%; padding:10px 12px; border:0; background:#fff; text-align:left; cursor:pointer;
+}
+.history-pop .hitem:hover{ background:#f7f3ea; }
+.history-pop .hitem .meta{ font-size:12px; color:#6b5e55 }
 
 </style>
   <script src="lang.js" defer></script>
@@ -636,6 +662,8 @@ body.hero-header .lang-pill{ left:16px; right:auto; top:108px; }
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
       <input id="kw" type="search" data-i18n="search.ph_kw" placeholder="サロン名・メニュー名など">
     </label>
+    <!-- キーワードピルの直後に追加 -->
+<div id="searchHistoryInline" class="history-pop" role="listbox" aria-label="検索履歴"></div>
     <button class="btn primary searchbtn reserve-btn" type="submit" data-i18n="search_btn">検索する</button>
   </div>
 </form>
@@ -1296,6 +1324,117 @@ initCatalog();
     if(form.requestSubmit) form.requestSubmit();
     else form.dispatchEvent(new Event('submit',{cancelable:true}));
   });
+})();
+// ====== 検索履歴（保存＆インライン表示） ======
+(function(){
+  const $ = (s, r=document)=>r.querySelector(s);
+  const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
+
+  // 既存と同じキーを使用（マイページでも読んでいる）
+  const KEY = 'bl_search_history';
+
+  function readHist(){
+    try{ return JSON.parse(localStorage.getItem(KEY) || '[]'); }catch(e){ return []; }
+  }
+  function writeHist(arr){
+    localStorage.setItem(KEY, JSON.stringify(arr));
+  }
+  function saveHistory(entry){
+    const hist = readHist();
+
+    // 同一条件の重複は除外（新しい方を前に）
+    const sig = JSON.stringify({place:entry.place||'', type:entry.type||'', date:entry.date||'', budget:entry.budget||'', kw:entry.kw||''});
+    const filtered = hist.filter(r => JSON.stringify({place:r.place||'', type:r.type||'', date:r.date||'', budget:r.budget||'', kw:r.kw||''}) !== sig);
+
+    // 先頭に追加・全体は最大50件程度に丸める
+    filtered.unshift(entry);
+    writeHist(filtered.slice(0, 50));
+  }
+
+  // ===== インライン表示（最新5件） =====
+  const box = $('#searchHistoryInline');
+  const place  = $('#place');
+  const type   = $('#type');
+  const date   = $('#date');
+  const budget = $('#budget');
+  const kw     = $('#kw');
+  const form   = $('#searchForm');
+
+  if(box && form && place && type && date && budget && kw){
+    function fmtRow(r){
+      const p = r.place || '場所未指定';
+      const t = r.type  || '種類未指定';
+      const d = r.date  || '日付なし';
+      const b = r.budget? ` / ${r.budget}` : '';
+      const k = r.kw    ? ` / ${r.kw}`    : '';
+      return `${p} / ${t} / ${d}${b}${k}`;
+    }
+
+    function renderInline(){
+      const list = readHist().slice(0,5); // 先頭が最新
+      if(!list.length){
+        box.removeAttribute('data-open');
+        box.innerHTML = '';
+        return;
+      }
+      const items = list.map((r,i)=>(
+        `<button type="button" class="hitem" data-i="${i}">
+           <div>
+             <div>${fmtRow(r)}</div>
+             <div class="meta">${new Date(r.ts||Date.now()).toLocaleString()}</div>
+           </div>
+         </button>`
+      )).join('');
+      box.setAttribute('data-open','1');
+      box.innerHTML = `<div class="hlist" role="listbox">${items}</div>`;
+
+      // クリックで各フィールドへ反映
+      $$('.hitem', box).forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          const i = Number(btn.getAttribute('data-i')||0);
+          const r = readHist()[i];
+          if(!r) return;
+          if(place)  place.value  = r.place  || '';
+          if(type)   type.value   = r.type   || '';
+          if(date)   date.value   = r.date   || '';
+          if(budget) budget.value = r.budget || '';
+          if(kw)     kw.value     = r.kw     || '';
+          // 反映後は閉じる
+          box.removeAttribute('data-open');
+          box.innerHTML = '';
+        });
+      });
+    }
+
+    // フォーカス時に表示、外側クリックで閉じる
+    function openOnFocus(){
+      renderInline();
+    }
+    kw.addEventListener('focus', openOnFocus);
+    place.addEventListener('focus', openOnFocus);
+    type.addEventListener('focus', openOnFocus);
+    date.addEventListener('focus', openOnFocus);
+    budget.addEventListener('focus', openOnFocus);
+
+    document.addEventListener('click', (e)=>{
+      if(!box.contains(e.target) && !form.contains(e.target)){ 
+        box.removeAttribute('data-open');
+        box.innerHTML = '';
+      }
+    });
+
+    // 送信時に履歴保存（既存の検索処理はそのまま継続）
+    form.addEventListener('submit', ()=>{
+      saveHistory({
+        place:  place.value || '',
+        type:   type.value  || '',
+        date:   date.value  || '',
+        budget: budget.value|| '',
+        kw:     kw.value    || '',
+        ts: Date.now()
+      });
+    }, {capture:true}); // 既存submitより前に走っても害なし
+  }
 })();
 </script>
 <script>

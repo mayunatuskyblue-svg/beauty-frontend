@@ -458,7 +458,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   var prodBase = 'https://beautylk.com';
   var isFile = location.protocol === 'file:';
   window.BL_PAY = window.BL_PAY || {};
-  window.BL_PAY.base = (isFile ? prodBase : location.origin).replace(/\/$/,'');
+  window.BL_PAY.base = ‘https://api.beautylk.com’;
 })();
 
 /* ====== GAS へ予約を書き込む ====== */

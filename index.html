@@ -554,7 +554,32 @@ body.hero-header .lang-pill{ left:16px; right:auto; top:108px; }
 }
 .history-pop .hitem:hover{ background:#f7f3ea; }
 .history-pop .hitem .meta{ font-size:12px; color:#6b5e55 }
+/* === Fix: search history dropdown is clipped === */
+.searchbar{
+  overflow: visible;            /* 親のクリッピングを解除 */
+}
 
+/* 見やすさ向上：余白・行間・最大高さ・スクロール */
+.history-pop .hlist{
+  top: 6px;                     /* ピルと少し離す（position:absolute） */
+  z-index: 1000;                /* カードの上に出す */
+  max-height: 260px;            /* はみ出しは内部スクロール */
+  overflow: auto;
+}
+
+.history-pop .hitem{
+  padding: 12px 14px;
+}
+
+.history-pop .hitem > div{
+  line-height: 1.4;             /* 行間を確保して“割れ”防止 */
+  word-break: break-word;       /* 長い語でのはみ出しを抑制 */
+}
+
+.history-pop .hitem .meta{
+  margin-top: 2px;
+  opacity: .8;
+}
 </style>
   <script src="lang.js" defer></script>
 <script>document.addEventListener('DOMContentLoaded',()=>BL_I18N.i18nApply());</script>
@@ -1327,10 +1352,9 @@ initCatalog();
 })();
 // ====== 検索履歴（保存＆インライン表示） ======
 (function(){
-  const $ = (s, r=document)=>r.querySelector(s);
+  const $  = (s, r=document)=>r.querySelector(s);
   const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
 
-  // 既存と同じキーを使用（マイページでも読んでいる）
   const KEY = 'bl_search_history';
 
   function readHist(){
@@ -1341,18 +1365,39 @@ initCatalog();
   }
   function saveHistory(entry){
     const hist = readHist();
-
-    // 同一条件の重複は除外（新しい方を前に）
-    const sig = JSON.stringify({place:entry.place||'', type:entry.type||'', date:entry.date||'', budget:entry.budget||'', kw:entry.kw||''});
-    const filtered = hist.filter(r => JSON.stringify({place:r.place||'', type:r.type||'', date:r.date||'', budget:r.budget||'', kw:r.kw||''}) !== sig);
-
-    // 先頭に追加・全体は最大50件程度に丸める
+    const sig = JSON.stringify({
+      place: entry.place||'',
+      type: entry.type||'',
+      date: entry.date||'',
+      budget: entry.budget||'',
+      kw: entry.kw||''
+    });
+    const filtered = hist.filter(r =>
+      JSON.stringify({
+        place: r.place||'',
+        type: r.type||'',
+        date: r.date||'',
+        budget: r.budget||'',
+        kw: r.kw||''
+      }) !== sig
+    );
     filtered.unshift(entry);
     writeHist(filtered.slice(0, 50));
   }
 
-  // ===== インライン表示（最新5件） =====
-  const box = $('#searchHistoryInline');
+  // ---- i18n helpers for the history row ----
+  function getLangSafe(){
+    try{ return (typeof getLang==='function' ? getLang() : (localStorage.getItem('bl_lang')||'auto')); }catch(e){ return 'auto'; }
+  }
+  function i18nDefaults(){
+    const L = getLangSafe();
+    const isJa = (L==='ja') || (L==='auto' && (navigator.language||'en').toLowerCase().startsWith('ja'));
+    return isJa
+      ? { place:'場所未指定', type:'種類未指定', date:'日付なし', budget:'金額', kw:'キーワード' }
+      : { place:'Area not set', type:'Category not set', date:'No date', budget:'Budget', kw:'Keywords' };
+  }
+
+  const box    = $('#searchHistoryInline');
   const place  = $('#place');
   const type   = $('#type');
   const date   = $('#date');
@@ -1362,16 +1407,17 @@ initCatalog();
 
   if(box && form && place && type && date && budget && kw){
     function fmtRow(r){
-      const p = r.place || '場所未指定';
-      const t = r.type  || '種類未指定';
-      const d = r.date  || '日付なし';
-      const b = r.budget? ` / ${r.budget}` : '';
-      const k = r.kw    ? ` / ${r.kw}`    : '';
+      const D = i18nDefaults();
+      const p = r.place  || D.place;
+      const t = r.type   || D.type;
+      const d = r.date   || D.date;
+      const b = r.budget ? ` / ${r.budget}` : '';
+      const k = r.kw     ? ` / ${r.kw}`     : '';
       return `${p} / ${t} / ${d}${b}${k}`;
     }
 
     function renderInline(){
-      const list = readHist().slice(0,5); // 先頭が最新
+      const list = readHist().slice(0,5);
       if(!list.length){
         box.removeAttribute('data-open');
         box.innerHTML = '';
@@ -1380,50 +1426,43 @@ initCatalog();
       const items = list.map((r,i)=>(
         `<button type="button" class="hitem" data-i="${i}">
            <div>
-             <div>${fmtRow(r)}</div>
+             <div class="title">${fmtRow(r)}</div>
              <div class="meta">${new Date(r.ts||Date.now()).toLocaleString()}</div>
            </div>
          </button>`
       )).join('');
       box.setAttribute('data-open','1');
-      box.innerHTML = `<div class="hlist" role="listbox">${items}</div>`;
+      box.innerHTML = `<div class="hlist" role="listbox" aria-label="Recent searches">${items}</div>`;
 
-      // クリックで各フィールドへ反映
       $$('.hitem', box).forEach(btn=>{
         btn.addEventListener('click', ()=>{
           const i = Number(btn.getAttribute('data-i')||0);
           const r = readHist()[i];
           if(!r) return;
-          if(place)  place.value  = r.place  || '';
-          if(type)   type.value   = r.type   || '';
-          if(date)   date.value   = r.date   || '';
-          if(budget) budget.value = r.budget || '';
-          if(kw)     kw.value     = r.kw     || '';
-          // 反映後は閉じる
+          place.value  = r.place  || '';
+          type.value   = r.type   || '';
+          date.value   = r.date   || '';
+          budget.value = r.budget || '';
+          kw.value     = r.kw     || '';
           box.removeAttribute('data-open');
           box.innerHTML = '';
         });
       });
     }
 
-    // フォーカス時に表示、外側クリックで閉じる
-    function openOnFocus(){
-      renderInline();
-    }
-    kw.addEventListener('focus', openOnFocus);
-    place.addEventListener('focus', openOnFocus);
-    type.addEventListener('focus', openOnFocus);
-    date.addEventListener('focus', openOnFocus);
-    budget.addEventListener('focus', openOnFocus);
+    // show on focus of any field; hide on outside click
+    function openOnFocus(){ renderInline(); }
+    [kw, place, type, date, budget].forEach(el=> el.addEventListener('focus', openOnFocus));
 
     document.addEventListener('click', (e)=>{
-      if(!box.contains(e.target) && !form.contains(e.target)){ 
+      const within = box.contains(e.target) || e.target.closest('.pill') || e.target.closest('.searchbtn');
+      if(!within){
         box.removeAttribute('data-open');
         box.innerHTML = '';
       }
     });
 
-    // 送信時に履歴保存（既存の検索処理はそのまま継続）
+    // Save on submit (before actual search handler runs)
     form.addEventListener('submit', ()=>{
       saveHistory({
         place:  place.value || '',
@@ -1433,7 +1472,7 @@ initCatalog();
         kw:     kw.value    || '',
         ts: Date.now()
       });
-    }, {capture:true}); // 既存submitより前に走っても害なし
+    }, {capture:true});
   }
 })();
 </script>

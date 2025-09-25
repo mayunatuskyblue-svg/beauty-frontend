@@ -1105,6 +1105,12 @@ DATA_FALLBACK.forEach(s=>{
   s.typeJa  = s.type;
   s.placeJa = s.place;
 });
+DATA_FALLBACK.forEach(s=>{
+  s.typeJa  = s.type;
+  s.placeJa = s.place;
+  // 追加：英語タグを持たせる（既存の簡易マップを活用）
+  s.tagsEn  = (s.tags || []).map(enTag);
+});
 
 // ==== Filters ====
 function initFilters(dataSource){

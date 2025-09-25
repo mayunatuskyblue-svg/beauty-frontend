@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -608,6 +608,12 @@ body.hero-header .lang-pill{ left:16px; right:auto; top:108px; }
 .history-pop .hitem .del:hover{ opacity: .9; background: #f2efe8; }
 
 </style>
+  <script>
+  // 英語を強制
+  document.documentElement.setAttribute('lang','en');
+  localStorage.setItem('bl_lang','en');
+</script>
+
   <script src="lang.js" defer></script>
 <script>document.addEventListener('DOMContentLoaded',()=>BL_I18N.i18nApply());</script>
 </head>

@@ -5,22 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>BeautyLanka | 検索</title>
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@800&family=Zen+Kaku+Gothic+New:wght@700;900&family=RocknRoll+One&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@800&display=swap" rel="stylesheet">
+<!-- head 内のフォントlinkをこれ1本に -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Shippori+Mincho:wght@700;800&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --base:#F7F1E1; --ink:#2E1A16; --stroke:#eadfca; --teal:#246A73; --muted:#6f5a54; --blue:#0A66FF;
+  --base:#F7F1E1; --ink:#2E1A16; --stroke:#eadfca; --teal:#246A73; --muted:#5a4a44; --blue:#0A66FF;
   --chip:#fff8ef; --danger:#74070E;
   --space-1:8px; --space-2:12px; --space-3:16px; --space-4:20px; --space-5:24px;
   /* New accent tokens */
   --accent-1:#8AD5CD; --accent-2:#F9C6B8; --accent-3:#E9D7A5; --accent-4:#B6E3FF;
-  --glass-bg:rgba(255,255,255,.72); --glass-brd:rgba(0,0,0,.06);
+  --glass-bg:rgba(255,255,255,.72); --glass-brd:rgba(0,0,0,.06);--font-body: "Noto Sans JP", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  --font-heading: "Shippori Mincho", serif;
 }
 *{box-sizing:border-box}
 html,body{height:100%}
 body{margin:0;background:var(--base);color:var(--ink);
-  font-family:"Inter","Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
+  font-familyl: var(--font-body); }
+  h1,h2,h3,h4{ font-family: var(--font-heading); font-weight: 800; letter-spacing: .01em; }
 .container{max-width:1200px;margin:0 auto;padding:0 16px}
 a{color:inherit;text-decoration:none}
 
@@ -68,6 +70,8 @@ header{position:sticky;top:0;z-index:40;background:rgba(247,241,225,.72);backdro
 .searchbar input,.searchbar select{height:40px;border-radius:10px;border:1px solid var(--stroke);padding:0 10px;font:inherit;background:#fff}
 @media(max-width:980px){.searchbar form{grid-template-columns:1fr 1fr 1fr} .searchbar button{grid-column:span 3;}}
 @media(max-width:640px){.searchbar form{grid-template-columns:1fr 1fr} .searchbar button{grid-column:span 2;}}
+/* --- overrides: 回転縁取りを抹消 --- */
+.searchbar:before{ content:none !important; animation:none !important; background:none !important; }
 
 /* grid cards */
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin:12px 0 26px;align-items:stretch}
@@ -336,18 +340,16 @@ body.hero-header .header-controls{ position:absolute; left:16px; top:158px; z-in
 /* ここまで差し替え */
 
 /* 旗付きの言語ピル */
+/* MUJI風 言語ピル */
 .lang-pill{
   display:inline-flex; align-items:center; gap:8px;
-  height:38px; padding:0 10px; border-radius:12px;
+  height:38px; padding:0 12px; border-radius: 999px; /* pill感を強める */
   background:#fff; border:1px solid var(--stroke);
-  box-shadow:0 2px 8px rgba(0,0,0,.04);
+  box-shadow: 0 1px 3px rgba(0,0,0,.02); /* ほぼ見えない程度 */
 }
-.lang-pill .flag{ font-size:18px; line-height:1 }
-.langSel{
-  border:0; background:transparent; font:inherit; font-weight:800;
-  padding:0; outline:0; appearance:none;
-}
-.lang-pill .caret{ width:16px; height:16px; opacity:.6 }
+.langSel{ border:0; background:transparent; font:inherit; font-weight:800; padding:0; outline:0; appearance:none; }
+.lang-pill .flag{ font-size:18px; line-height:1; }
+.lang-pill .caret{ width:16px; height:16px; opacity:.5 }
 
 /* ヒーロー上配置時の微調整：旧ボタン依存を無効化 */
 body.hero-header .nav-right .btn,
@@ -606,6 +608,34 @@ body.hero-header .lang-pill{ left:16px; right:auto; top:108px; }
   opacity: .5;
 }
 .history-pop .hitem .del:hover{ opacity: .9; background: #f2efe8; }
+/* --- vertical rhythm --- */
+:root{
+  --space-xs: 8px;  --space-sm: 12px; --space-md: 16px;
+  --space-lg: 24px; --space-xl: 32px; --space-2xl: 48px; --space-3xl: 64px;
+}
+/* セクション系 */
+section{ padding: var(--space-2xl) 0 var(--space-xl); }
+.section-title{ margin: 0 0 var(--space-sm); }
+/* 見出し共通（上16 / 下12） */
+h1,h2,h3,h4{ margin-top: var(--space-md); margin-bottom: var(--space-sm); }
+/* --- CTA standard --- */
+:root{
+  /* 既存の --brand / --teal をそのまま使用 */
+}
+.btn, button, a.btn, input[type="submit"].btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:.5em;
+  height:44px; padding:0 16px; border-radius: var(--radius-card);
+  font-weight:800; text-decoration:none; cursor:pointer; border:1px solid transparent;
+  transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease;
+}
+.btn.primary{
+  background: var(--brand, var(--teal)); color:#fff;
+  box-shadow: var(--shadow-1);
+}
+.btn.primary:hover{ transform: translateY(-1px); box-shadow: 0 10px 24px rgba(0,0,0,.10); }
+.btn.secondary{
+  background:#fff; color:var(--ink); border-color: var(--stroke, #e5dfd0);
+}
 
 </style>
   <script src="lang.js" defer></script>
@@ -653,7 +683,6 @@ body.hero-header .lang-pill{ left:16px; right:auto; top:108px; }
 <section class="hero-visual">
   <div class="hero-head">
     <div class="container">
-      <img class="hero-sri" src="/assets/img/sri-outline.svg" alt="Sri Lanka outline decorative" />
       <h1 data-i18n="hero_title">スリランカで叶える、私だけの美しさ。</h1>
       <p data-i18n="hero_sub">ヘア・ネイル・まつ毛・アーユルヴェーダ・マッサージ/スパ。口コミと予約。</p>
     </div>

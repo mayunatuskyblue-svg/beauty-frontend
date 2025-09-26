@@ -106,6 +106,24 @@ h1,h2,h3,h4{ margin-top: var(--space-md); margin-bottom: var(--space-sm); }
 
 </style>
 <script src="./lang.js" defer></script>
+  <script>
+/* ---- i18n fallback shim (put right after the lang.js line) ---- */
+window.BL_I18N = window.BL_I18N || {};
+BL_I18N.getLang = BL_I18N.getLang || function () {
+  const qp = new URL(location.href).searchParams.get('lang');
+  if (qp === 'ja' || qp === 'en') return qp;
+  return (navigator.language || '').toLowerCase().startsWith('ja') ? 'ja' : 'en';
+};
+BL_I18N.pick = BL_I18N.pick || function (obj, key) {
+  if (!obj) return '';
+  const ja = obj[key + '_ja'] ?? obj[key];
+  const en = obj[key + '_en'] ?? obj[key];
+  return BL_I18N.getLang() === 'en' ? (en || ja || '') : (ja || en || '');
+};
+/* ダミー（存在すれば何もしない） */
+BL_I18N.i18nApply = BL_I18N.i18nApply || function(){};
+</script>
+
 <!-- i18n が無くても落ちない保険 -->
 <script>
   document.addEventListener('DOMContentLoaded', () => {

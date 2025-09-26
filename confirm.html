@@ -714,13 +714,6 @@ function writeBookingOnce() {
   });
 }
 
-
-// 2-2) 画面側に「保存できたよ」イベントを投げる（上の 1) で拾って更新）
-document.dispatchEvent(new CustomEvent('bl:card-saved', { detail: payload }));
-
-  });
-}
-
 // 入力が変わったら同じ bookingId に対して upsert（上書き更新）
 let _saveTimer = null;
 function updateBookingDebounced() {

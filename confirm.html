@@ -680,14 +680,76 @@ localStorage.setItem('bl_saved_card', JSON.stringify(payload));
   }
 })();
 
-/* ====== 初回1回だけ 予約を書き込む ====== */
-document.addEventListener('DOMContentLoaded', async () => {
+// いまのURL/LSに加えて、直近のフォーム入力をマージして booking を作る
+function composeBooking(overrides = {}) {
   const b = readBookingFromPage();
-  if (!b.bookingId) { console.warn('bookingId が無いので送信しません'); return; }
+  const name  = (document.getElementById('uf_name')?.value  || '').trim();
+  const email = (document.getElementById('uf_email')?.value || '').trim();
+  if (name)  b.name  = name;
+  if (email) b.email = email;
+  Object.assign(b, overrides);
+  return b;
+}
+
+// 初回だけは「空でも」1行作っておく（行の土台づくり）
+function writeBookingOnce() {
+  const b = composeBooking();
+  if (!b.bookingId) return;
   const sentKey = `bl_booking_sent_${b.bookingId}`;
   if (localStorage.getItem(sentKey)) return;
-  const ok = await postBookingToSheet(b);
-  if (ok) localStorage.setItem(sentKey, '1');
+  postBookingToSheet(b).then(ok => {
+    if (ok) localStorage.setItem(sentKey, '1');
+    // 2-1) フロント→GAS に customers を upsert
+try {
+  await fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ key: GAS_KEY, kind: 'customer', data: payload })
+  });
+} catch(_) {}
+
+// 2-2) 画面側に「保存できたよ」イベントを投げる（上の 1) で拾って更新）
+document.dispatchEvent(new CustomEvent('bl:card-saved', { detail: payload }));
+
+  });
+}
+
+// 入力が変わったら同じ bookingId に対して upsert（上書き更新）
+let _saveTimer = null;
+function updateBookingDebounced() {
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(() => {
+    const b = composeBooking();
+    if (!b.bookingId) return;
+    postBookingToSheet(b); // 同じ bookingId だから GAS 側 upsert で上書き
+  }, 400);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  writeBookingOnce(); // 土台行を作る
+
+  // 入力が進むたびに上書き
+  const ufMail = document.getElementById('uf_email');
+  const ufName = document.getElementById('uf_name');
+  ['input','change','blur'].forEach(ev => {
+    ufMail?.addEventListener(ev, updateBookingDebounced);
+    ufName?.addEventListener(ev, updateBookingDebounced);
+  });
+
+  // Stripeの簡易フォームと双方向に同期（あれば）
+  document.addEventListener('input', (e) => {
+    if (e.target?.id === 'sp_email') {
+      const v = e.target.value || '';
+      const t = document.getElementById('uf_email'); if (t && !t.value) t.value = v;
+    }
+    if (e.target?.id === 'sp_name') {
+      const v = e.target.value || '';
+      const t = document.getElementById('uf_name');  if (t && !t.value) t.value = v;
+    }
+  });
+
+  // カード保存成功時にも上書きしておく（下の 2) のイベントを受ける）
+  document.addEventListener('bl:card-saved', updateBookingDebounced);
 });
 </script>
 

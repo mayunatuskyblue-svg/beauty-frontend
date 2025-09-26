@@ -425,12 +425,10 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   <script>
   window.BL_PAY = {
     pk: 'pk_test_51S59dhHFHLP5RXi1qkW9cuPEJAlJPuSaFeWFb5GuYhsXs9vkX6RJYfVYwQEdK8TwN3eKF7wEctQftyhYxb2rRIZN00146bOW8U',
-    base: 'https://pay-server-uis7.onrender.com'  <!-- まだDNS未設定なら Render の onrender URL -->
+    base: 'https://pay-server-uis7.onrender.com' // まだDNS未設定なら Render の onrender URL
   };
 </script>
-
-
-
+  
 <!-- decorative background (purely visual) -->
 <div class="bg-radials"></div>
 <div class="grain"></div>
@@ -515,18 +513,6 @@ async function postBookingToSheet({
   let customerId = '';
   try { customerId = JSON.parse(localStorage.getItem('bl_saved_card')||'null')?.customerId || ''; } catch {}
   if(!GAS_URL || !GAS_KEY) { console.warn('GAS_URL/GAS_KEY missing'); return false; }
-
-  const payload = {
-  key: GAS_KEY,               // ここに key
-  kind: 'booking',            // ここに kind
-  data: {                     // これが bookings の実データ
-    bookingId, date, time, minutes,
-    salonId, shopName, menu, menuName,
-    amountJPY, email, name, customerId,
-    whatsappToCustomer, whatsappToSalon,
-    status
-  }
-};
 
 const payload = {
   key: GAS_KEY,

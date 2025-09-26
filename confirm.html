@@ -653,7 +653,6 @@ function readBookingFromPage() {
         });
         if(error) throw error;
 
-        const payload = { email, name, customerId, paymentMethodId: setupIntent.payment_method, ts: Date.now() };
         localStorage.setItem('bl_saved_card', JSON.stringify(payload));
         msg('カードを保存しました。', true);
         holder.innerHTML = `

@@ -679,8 +679,8 @@ function parsePhotos(v){
   function renderInfo(it){
     const L=getLang(), pick=(ja,en)=>(L==='en'?(en||ja):(ja||en));
     setText('#salonTitle', pick(it.name_ja,it.name_en)||it.id);
-    document.getElementById('vType').textContent   = BL_I18N.pick(rec,'type');
-    document.getElementById('vPlace').textContent  = BL_I18N.pick(rec,'place');
+    document.getElementById('vType').textContent   = BL_I18N.pick(it,'type');
+    document.getElementById('vPlace').textContent  = BL_I18N.pick(it,'place');
     document.getElementById('vPrice').textContent  = (BL_I18N.getLang()==='ja')
       ? `${Number(rec.price_jpy||0).toLocaleString('ja-JP')} 円~`
       : `LKR ${Number(rec.price_lkr||rec.price||0).toLocaleString('en-US')}~`;
@@ -691,7 +691,7 @@ function parsePhotos(v){
     const n=document.createElement('span'); n.className='muted'; n.style.marginLeft='6px';
     n.textContent = score ? score.toFixed(1) : '-'; v.appendChild(n);
 
-    document.getElementById('points').textContent  = BL_I18N.pick(rec,'points');
+    document.getElementById('points').textContent  = BL_I18N.pick(it,'points');
     // タグ欄（配列化してチップにする例）
     const tags = (BL_I18N.pick(rec,'tags')||'').split('|').map(s=>s.trim()).filter(Boolean);
 // 右上の「予約へ進む」

@@ -528,7 +528,7 @@ const payload = {
 
 const res = await fetch(GAS_URL, {
   method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+  headers: { 'Content-Type': 'text/plain;charset=utf-8' },
   body: JSON.stringify(payload)
 });
 
@@ -652,8 +652,13 @@ function readBookingFromPage() {
           payment_method: { card: cardEl, billing_details: { email, name } },
         });
         if(error) throw error;
-
-        localStorage.setItem('bl_saved_card', JSON.stringify(payload));
+const payload = {
+  email, name,
+  customerId,
+  paymentMethodId: setupIntent.payment_method,
+  ts: Date.now()
+};
+localStorage.setItem('bl_saved_card', JSON.stringify(payload));
         msg('カードを保存しました。', true);
         holder.innerHTML = `
           <div class="notice" style="padding:10px;border:1px solid #eadfca;border-radius:10px">

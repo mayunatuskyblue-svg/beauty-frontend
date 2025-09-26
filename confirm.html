@@ -659,6 +659,18 @@ const payload = {
   ts: Date.now()
 };
 localStorage.setItem('bl_saved_card', JSON.stringify(payload));
+        // customers シートを upsert（GAS）
+try {
+  await fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ key: GAS_KEY, kind: 'customer', data: payload })
+  });
+} catch (_) {}
+
+// 画面へ「カード保存できた」イベント（bookings 再上書き用）
+document.dispatchEvent(new CustomEvent('bl:card-saved', { detail: payload }));
+
         msg('カードを保存しました。', true);
         holder.innerHTML = `
           <div class="notice" style="padding:10px;border:1px solid #eadfca;border-radius:10px">
@@ -699,14 +711,9 @@ function writeBookingOnce() {
   if (localStorage.getItem(sentKey)) return;
   postBookingToSheet(b).then(ok => {
     if (ok) localStorage.setItem(sentKey, '1');
-    // 2-1) フロント→GAS に customers を upsert
-try {
-  await fetch(GAS_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ key: GAS_KEY, kind: 'customer', data: payload })
   });
-} catch(_) {}
+}
+
 
 // 2-2) 画面側に「保存できたよ」イベントを投げる（上の 1) で拾って更新）
 document.dispatchEvent(new CustomEvent('bl:card-saved', { detail: payload }));

@@ -13,10 +13,14 @@
     frame-src   https://js.stripe.com;
     connect-src 'self'
                 https://api.stripe.com
+                https://m.stripe.com
+                https://q.stripe.com
+                https://pay-server-uis7.onrender.com
                 https://api.beautylk.com
                 https://script.google.com
                 https://script.googleapis.com;
   ">
+
 
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -515,22 +519,23 @@ async function postBookingToSheet({
   if(!GAS_URL || !GAS_KEY) { console.warn('GAS_URL/GAS_KEY missing'); return false; }
 
   const payload = {
-    key: GAS_KEY, kind: 'booking',
-    data: {
-      bookingId, date, time, minutes,
-      salonId, shopName, menu, menuName,
-      amountJPY, email, name, customerId,
-      whatsappToCustomer, whatsappToSalon,
-      status
-    }
-  };
+  key: GAS_KEY,               // ここに key
+  kind: 'booking',            // ここに kind
+  data: {                     // これが bookings の実データ
+    bookingId, date, time, minutes,
+    salonId, shopName, menu, menuName,
+    amountJPY, email, name, customerId,
+    whatsappToCustomer, whatsappToSalon,
+    status
+  }
+};
 
-  const res = await fetch(GAS_URL, {
+const res = await fetch(GAS_URL, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ key: GAS_KEY, kind: 'booking', data: payload })
+  body: JSON.stringify(payload)   // ← そのまま payload を送る
 });
-;
+
   const txt = await res.text();
   let j; try { j = JSON.parse(txt); } catch { j = { ok:false, error:'Invalid JSON from GAS' }; }
   if (!j.ok) console.warn('GAS booking write failed:', j.error);

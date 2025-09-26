@@ -3,9 +3,19 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <!-- head 内のフォントlinkをこれ1本に -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Shippori+Mincho:wght@700;800&display=swap" rel="stylesheet">
 <title>BeautyLanka – サロン詳細</title>
 <style>
-  :root{ --bg:#f5efe6; --card:#fff; --bd:#e9e1d7; --ink:#2b2b2b; --muted:#6b5e55; --brand:#2f776c; --gap:16px; }
+  :root{ --bg:#f5efe6; --card:#fff; --bd:#e9e1d7; --ink:#2b2b2b; --muted:#5a4a44; --brand:#2f776c; --gap:16px; }
+  :root{
+  /* 既存の色・スペース変数はそのまま */
+  --font-body: "Noto Sans JP", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  --font-heading: "Shippori Mincho", serif;
+}
+body{ font-family: var(--font-body); }
+h1,h2,h3,h4{ font-family: var(--font-heading); font-weight: 800; letter-spacing: .01em; }
+
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
   .wrap{max-width:1100px;margin:0 auto;padding:16px}
@@ -65,6 +75,35 @@
   .rv-form input[type="text"], .rv-form textarea {width:100%; padding:10px; border:1px solid #ddd; border-radius:8px}
   .rv-form .stars-input {display:flex; gap:8px; align-items:center}
   .rv-form .stars-input input {accent-color:#f2b01e}
+  /* --- vertical rhythm --- */
+:root{
+  --space-xs: 8px;  --space-sm: 12px; --space-md: 16px;
+  --space-lg: 24px; --space-xl: 32px; --space-2xl: 48px; --space-3xl: 64px;
+}
+/* セクション系 */
+section{ padding: var(--space-2xl) 0 var(--space-xl); }
+.section-title{ margin: 0 0 var(--space-sm); }
+/* 見出し共通（上16 / 下12） */
+h1,h2,h3,h4{ margin-top: var(--space-md); margin-bottom: var(--space-sm); }
+/* --- CTA standard --- */
+:root{
+  /* 既存の --brand / --teal をそのまま使用 */
+}
+.btn, button, a.btn, input[type="submit"].btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:.5em;
+  height:44px; padding:0 16px; border-radius: var(--radius-card);
+  font-weight:800; text-decoration:none; cursor:pointer; border:1px solid transparent;
+  transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease;
+}
+.btn.primary{
+  background: var(--brand, var(--teal)); color:#fff;
+  box-shadow: var(--shadow-1);
+}
+.btn.primary:hover{ transform: translateY(-1px); box-shadow: 0 10px 24px rgba(0,0,0,.10); }
+.btn.secondary{
+  background:#fff; color:var(--ink); border-color: var(--stroke, #e5dfd0);
+}
+
 </style>
 <script src="./lang.js" defer></script>
 <!-- i18n が無くても落ちない保険 -->
@@ -74,6 +113,14 @@
   });
 </script>
   <style>
+    :root{
+  /* 追加 */
+  --radius-card: 16px;
+  --shadow-1: 0 6px 18px rgba(0,0,0,.06);
+}
+/* 代表コンポーネントに適用（既存の .card / .row など） */
+.card{ border-radius: var(--radius-card) !important; box-shadow: var(--shadow-1); }
+
 /* --- BeautyLanka UI Booster (non-breaking) --- */
 :root{
   --base:#F7F1E1; --ink:#2E1A16; --stroke:#eadfca; --teal:#246A73; --muted:#6f5a54; --blue:#0A66FF;

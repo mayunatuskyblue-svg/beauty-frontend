@@ -1540,6 +1540,10 @@ initCatalog();
     });
   }, {capture:true});
 })();
+   window.i18nRefreshDynamic = function(){
+    // 例: 再検索 or キャッシュされたレコードを使って再レンダ（あなたの関数名に置換）
+    if (window.renderCatalog) renderCatalog();
+  };
 </script>
 
 <footer>Build v2025-09-18i • Visual refresh add‑on v1</footer>

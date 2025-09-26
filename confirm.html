@@ -22,7 +22,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="bl-sheet-hook" content="https://script.google.com/macros/s/AKfycbwlpW6ZQ-sOMfWCr_DWbNf27ezZb1ul6Cia9M7kMX4CSL-rRecpIWvh1qCbkVjA2xk/exec">
 <!-- head内に置く（おすすめ） -->
-<meta name="bl-sheet-hook" content="https://script.google.com/macros/s/AKfycbwWRpfcZMsGxNqGJ5aNjRT1Y1PChDTqtQE3e0S7sUDAMei8s1wOr6lpKMnOaI1Z-6o/exec">
 <script>
   window.__GAS_URL = "https://script.google.com/macros/s/AKfycbwWRpfcZMsGxNqGJ5aNjRT1Y1PChDTqtQE3e0S7sUDAMei8s1wOr6lpKMnOaI1Z-6o/exec"; // 最新の /exec
   window.__GAS_KEY = "bl_gas_key_bR6ZXWwu6kM_nrK25geP97Cs5qCX3auxugX_IUGlg90";           // code.gs と同じ
@@ -483,9 +482,26 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   window.BL_PAY.base = 'https://pay-server-uis7.onrender.com';
 })();
 
-// === GAS 接続情報（meta -> URL -> localStorage の順で解決） ===
-const GAS_URL = (document.querySelector('meta[name="bl-sheet-hook"]')?.content || new URLSearchParams(location.search).get('gas') || '').trim();
-const GAS_KEY = (new URLSearchParams(location.search).get('key') || localStorage.getItem('bl_gas_key') || '').trim();
+// === GAS 接続情報（window -> meta -> URL -> localStorage の順で解決） ===
+const q = new URLSearchParams(location.search);
+
+const GAS_URL = (
+  window.__GAS_URL ||
+  document.querySelector('meta[name="bl-sheet-hook"]')?.content ||
+  q.get('gas') ||
+  localStorage.getItem('bl_gas_url') ||
+  ''
+).trim();
+
+const GAS_KEY = (
+  window.__GAS_KEY ||
+  q.get('key') ||
+  localStorage.getItem('bl_gas_key') ||
+  ''
+).trim();
+
+if (!GAS_URL) console.error('GAS_URL missing');
+if (!GAS_KEY) console.error('GAS_KEY missing');
 
 async function postBookingToSheet({
   bookingId, date, time, minutes,
@@ -510,10 +526,11 @@ async function postBookingToSheet({
   };
 
   const res = await fetch(GAS_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // GAS 側 JSON.parse でOK
-    body: JSON.stringify(payload)
-  });
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ key: GAS_KEY, kind: 'booking', data: payload })
+});
+;
   const txt = await res.text();
   let j; try { j = JSON.parse(txt); } catch { j = { ok:false, error:'Invalid JSON from GAS' }; }
   if (!j.ok) console.warn('GAS booking write failed:', j.error);
@@ -619,7 +636,7 @@ function readBookingFromPage() {
 
         const siRes = await fetch(base + '/api/setup-intent', {
           method:'POST',
-          headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+          headers:{ 'Content-Type':'application/json' },
           body: JSON.stringify({ email, name })
         });
         const raw = await siRes.text();

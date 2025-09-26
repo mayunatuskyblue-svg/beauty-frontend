@@ -21,8 +21,6 @@
                 https://script.googleapis.com;
   ">
 
-
-
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="bl-sheet-hook" content="https://script.google.com/macros/s/AKfycbwlpW6ZQ-sOMfWCr_DWbNf27ezZb1ul6Cia9M7kMX4CSL-rRecpIWvh1qCbkVjA2xk/exec">
 <!-- head内に置く（おすすめ） -->
@@ -530,11 +528,24 @@ async function postBookingToSheet({
   }
 };
 
+const payload = {
+  key: GAS_KEY,
+  kind: 'booking',
+  data: {
+    bookingId, date, time, minutes,
+    salonId, shopName, menu, menuName,
+    amountJPY, email, name, customerId,
+    whatsappToCustomer, whatsappToSalon,
+    status
+  }
+};
+
 const res = await fetch(GAS_URL, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify(payload)   // ← そのまま payload を送る
+  body: JSON.stringify(payload)
 });
+
 
   const txt = await res.text();
   let j; try { j = JSON.parse(txt); } catch { j = { ok:false, error:'Invalid JSON from GAS' }; }

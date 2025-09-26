@@ -215,6 +215,19 @@ terms_full_html: `
   return localStorage.getItem('lang') || localStorage.getItem('bl_lang') || 'ja';
 }
   function setLang(l){ try{ localStorage.setItem('lang', l);}catch(e){} }
+  // === ADD: URLクエリ優先の一度きり同期 ===
+(function syncLangFromQuery(){
+  try {
+    const q = new URLSearchParams(location.search).get('lang'); // ja|en|auto
+    if (q === 'ja' || q === 'en' || q === 'auto') {
+      const resolved = (q === 'auto')
+        ? ((navigator.language||'').toLowerCase().startsWith('ja') ? 'ja' : 'en')
+        : q;
+      setLang(resolved);
+    }
+  } catch(e){}
+})();
+
   function i18nApply(root){
     const lang = getLang();
     (root || document).querySelectorAll('[data-i18n]').forEach(el=>{
@@ -232,9 +245,20 @@ terms_full_html: `
     document.documentElement.setAttribute('lang', lang==='ja'?'ja':'en');
     document.body.classList.toggle('ja', lang==='ja');
     document.body.classList.toggle('en', lang==='en');
+        // === ADD: 動的部分の再描画フック ===
+    if (typeof window.i18nRefreshDynamic === 'function') {
+      try { window.i18nRefreshDynamic(); } catch(e){}
+    }
   }
-  
-  global.BL_I18N = { T, getLang, setLang, i18nApply };
+  // === ADD: Sheet用 pickヘルパ（catalogの type/place/tags/points などで使う） ===
+function pick(rec, base){
+  const lang = getLang()==='ja' ? 'ja' : 'en';
+  const ja = rec[base + '_ja'];
+  const en = rec[base + '_en'];
+  return lang==='ja' ? (ja ?? en ?? '') : (en ?? ja ?? '');
+}
+
+  global.BL_I18N = { T, getLang, setLang, i18nApply, pick };
   // 例：lang.js のどこかの辞書に追加
 
 })(window);

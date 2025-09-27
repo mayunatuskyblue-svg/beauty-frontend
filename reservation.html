@@ -273,6 +273,11 @@ document.getElementById('btnConfirm').addEventListener('click', ()=>{
   try{ localStorage.setItem('reserve_selected', dtIso); }catch(_){}
 
   window.location.href = 'confirm.html?' + qs.toString();
+  // 価格の表示直後に追加
+const vprice = document.getElementById('v_price');
+vprice.dataset.lkr = String(priceLKR || '');
+vprice.dataset.jpy = String(Math.round((priceLKR || 0) / JPY_TO_LKR) || '');
+
 });
 
 </script>
@@ -370,15 +375,17 @@ for (const d of days) takenMap[ymdOf(d)] = await fetchTakenSlots(salonId, ymdOf(
 
     // 既に: const table, thead, tbody, hr はできている前提
 
+// ▼ ここから置き換え（times.forEach の中身全体）
 times.forEach(([h,m])=>{
   const tr = document.createElement('tr');
 
-  // 左端の時刻表示
+  // 左端の時刻見出し
   const th = document.createElement('th');
   th.textContent = fmtHm(h,m);
   th.style.padding = '6px 8px';
   tr.appendChild(th);
 
+  // 各日のセル
   days.forEach(d=>{
     const td  = document.createElement('td');
     const btn = document.createElement('button');
@@ -388,7 +395,7 @@ times.forEach(([h,m])=>{
     const y    = ymdOf(d);           // '2025-09-24'
     const isTaken = takenMap[y] && takenMap[y].has(slot);
 
-    // 2時間前ロック（URL ?lead= で上書き可能）
+    // 2時間前ロック（日ごとに判定）
     let isTooSoon = false;
     try{
       const now = new Date();
@@ -420,12 +427,12 @@ times.forEach(([h,m])=>{
       });
     }
 
-    // 事前選択の復元
-    if (savedYmd && savedHm) {
+    // 事前選択の復元（保存済みISOと一致したら✓＆selected）
+    if (savedYmd && savedHm && !btn.disabled) {
       const cur = new Date(y + 'T' + slot + ':00');
       const curY = cur.toISOString().slice(0,10);
       const curHm = String(cur.getHours()).padStart(2,'0') + ':' + String(cur.getMinutes()).padStart(2,'0');
-      if (curY === savedYmd && curHm === savedHm && !btn.disabled) {
+      if (curY === savedYmd && curHm === savedHm) {
         btn.textContent = '✓';
         btn.classList.add('selected');
         document.getElementById('v_date').textContent = cur.toLocaleString();
@@ -439,6 +446,7 @@ times.forEach(([h,m])=>{
 
   tbody.appendChild(tr);
 });
+
 
 
 table.appendChild(thead);

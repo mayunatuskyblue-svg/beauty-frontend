@@ -15,7 +15,7 @@
 #hpGrid th:first-child{font-weight:600}
 #hpGrid td .timebtn{font-family:'Bodoni Moda','Playfair Display',serif;font-weight:600;letter-spacing:.01em}
 
-:root{--base:#F7F1E1;--ink:#2E1A16;--sfetroke:#eadfca;--teal:#246A73;--muted:#6f5a54}
+:root{--base:#F7F1E1;--ink:#2E1A16;--teal:#246A73;--muted:#6f5a54}
 *{box-sizing:border-box}
 body{margin:0;background:var(--base);color:var(--ink);font-family:"Inter","Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
 .container{max-width:980px;margin:20px auto;padding:0 16px}
@@ -292,7 +292,8 @@ document.getElementById('btnConfirm').addEventListener('click', ()=>{
   const title = document.getElementById('hpWeekTitle');
   const btnPrev = document.getElementById('hpPrev');
   const btnNext = document.getElementById('hpNext');
-  const startHour = 9, endHour = 18, stepMin = 30;
+  let startHour = 9, endHour = 18;
+  const stepMin = 30;
   const urlP = new URLSearchParams(location.search);
   const LEAD_MIN = Number(urlP.get('lead') || 120); // 120=2時間
 /// ===== GAS 設定（meta / localStorage / URL の順で解決） =====
@@ -300,12 +301,14 @@ const GAS_URL = document.querySelector('meta[name=bl-sheet-hook]')?.content || p
 const GAS_KEY = p.get('key') || localStorage.getItem('bl_gas_key') || '';
 
 // ▼ ここを置き換え：taken スロット取得を GAS に接続
+let latestMeta = null;
 async function fetchTakenSlots(salonId, ymd){
   try{
     if(!GAS_URL || !GAS_KEY || !salonId || !ymd) return new Set();
     const url = `${GAS_URL}?key=${encodeURIComponent(GAS_KEY)}&kind=taken&salonId=${encodeURIComponent(salonId)}&ymd=${encodeURIComponent(ymd)}`;
     const j = await fetch(url, { method:'GET' }).then(r=>r.json());
     if (!j || !j.ok) return new Set();
+    if (j.meta) latestMeta = j.meta;
     return new Set((j.items||[]).map(s => String(s).slice(0,5)));
   }catch(_e){
     return new Set(); // 失敗時は全枠◯（UI死なせない）
@@ -361,7 +364,14 @@ function hhmmOf(h,m){ return String(h).padStart(2,'0')+':'+String(m).padStart(2,
     // 各日の満枠セットをまとめて取得
 const takenMap = {};
 for (const d of days) takenMap[ymdOf(d)] = await fetchTakenSlots(salonId, ymdOf(d));
-
+  //メタが取れたら営業時間を反映(次回buildから効く)
+  if (latestMeta && latestMeta.openStart && latestMeta.openEnd){
+    const [sh, sm] = String(latestMeta.openStart).split(':').map(n=>parseInt(n||'0',10));
+    const [eh, em] = String(latestMeta.openEnd).split(':').map(n=>parseInt(n||'0',10));
+    // 分はステップ表示に反映しづらいので「時間」だけ合わせる（必要なら分も考慮）
+    startHour = isFinite(sh) ? sh : startHour;
+    endHour   = isFinite(eh) ? eh : endHour;
+ }
     const table = document.createElement('table');
     const thead=document.createElement('thead'), tbody=document.createElement('tbody');
 

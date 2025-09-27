@@ -221,9 +221,8 @@ async function recordBookingToSheet({ bookingId, email }){
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify({
       key: GAS_KEY,
-      kind: 'booking_create',
-      bookingId,
-      email
+      kind: 'booking',
+      data: {bookingId,email}
     })
   });
   const j = await res.json().catch(()=>({}));
@@ -373,72 +372,66 @@ for (const d of days) takenMap[ymdOf(d)] = await fetchTakenSlots(salonId, ymdOf(
 
 times.forEach(([h,m])=>{
   const tr = document.createElement('tr');
+
+  // 左端の時刻表示
   const th = document.createElement('th');
   th.textContent = fmtHm(h,m);
   th.style.padding = '6px 8px';
   tr.appendChild(th);
-  const slot = hhmm(h,m);
-const y    = ymdOf(d);
-const isTaken = takenMap[y] && takenMap[y].has(slot);
-
-// ▼ ここから追加：リードタイム（今+LEAD_MIN 以降のみ ◯）
-let isTooSoon = false;
-try{
-  const now = new Date();
-  const cutoff = new Date(now.getTime() + LEAD_MIN*60*1000);
-  const dt = new Date(y + 'T' + slot + ':00');
-  if (dt.getTime() <= cutoff.getTime()) isTooSoon = true;
-}catch(_){}
 
   days.forEach(d=>{
     const td  = document.createElement('td');
     const btn = document.createElement('button');
     btn.className = 'timebtn';
 
-    const slot = hhmm(h,m);        // '09:30' など
-    const y    = ymdOf(d);         // '2025-09-24' など
+    const slot = hhmm(h,m);          // '09:30'
+    const y    = ymdOf(d);           // '2025-09-24'
     const isTaken = takenMap[y] && takenMap[y].has(slot);
 
+    // 2時間前ロック（URL ?lead= で上書き可能）
+    let isTooSoon = false;
+    try{
+      const now = new Date();
+      const cutoff = new Date(now.getTime() + LEAD_MIN*60*1000);
+      const dt = new Date(y + 'T' + slot + ':00');
+      if (dt.getTime() <= cutoff.getTime()) isTooSoon = true;
+    }catch(_){}
+
     if (isTaken || isTooSoon) {
-  btn.textContent = '×';
-  btn.disabled = true;
-  btn.setAttribute('aria-disabled','true');
-} else {
-  // 既存の ◯/クリック処理（✓選択など）をそのまま
-  btn.textContent = '◯';
-  // …既存の選択復元と click ハンドラ…
-}
+      btn.textContent = '×';
+      btn.disabled = true;
+      btn.setAttribute('aria-disabled','true');
+    } else {
+      btn.textContent = '◯';
+      btn.addEventListener('click', ()=>{
+        const dt = new Date(d);
+        dt.setHours(h, m, 0, 0);
+        const iso = dt.toISOString();
+        try { localStorage.setItem('reserve_selected', iso); } catch(_){}
+        document.getElementById('v_date').textContent = dt.toLocaleString();
 
+        grid.querySelectorAll('.timebtn.selected').forEach(b=>{
+          b.classList.remove('selected');
+          if (!b.hasAttribute('aria-disabled')) b.textContent = '◯';
+        });
+        btn.classList.add('selected');
+        btn.textContent = '✓';
+        updateConfirmButtonEnabled();
+      });
+    }
 
-  // 事前選択の復元（保存済みISOと一致したら✓＆selected）
-  if (y === savedYmd && slot === savedHm) {
-    btn.textContent = '✓';
-    btn.classList.add('selected');
-
-    // 画面上の日時表示も復元（必要なら）
-    const dt = new Date(y + 'T' + slot + ':00');
-    document.getElementById('v_date').textContent = dt.toLocaleString();
-    updateConfirmButtonEnabled();
-  }
-
-  btn.addEventListener('click', ()=>{
-    const dt = new Date(d);
-    dt.setHours(h, m, 0, 0);
-    const iso = dt.toISOString();
-    try { localStorage.setItem('reserve_selected', iso); } catch(_){}
-    document.getElementById('v_date').textContent = dt.toLocaleString();
-
-    grid.querySelectorAll('.timebtn.selected').forEach(b=>{
-      b.classList.remove('selected');
-      if (!b.hasAttribute('aria-disabled')) b.textContent = '◯';
-    });
-
-    btn.classList.add('selected');
-    btn.textContent = '✓';
-    updateConfirmButtonEnabled();
-  });
-}
-
+    // 事前選択の復元
+    if (savedYmd && savedHm) {
+      const cur = new Date(y + 'T' + slot + ':00');
+      const curY = cur.toISOString().slice(0,10);
+      const curHm = String(cur.getHours()).padStart(2,'0') + ':' + String(cur.getMinutes()).padStart(2,'0');
+      if (curY === savedYmd && curHm === savedHm && !btn.disabled) {
+        btn.textContent = '✓';
+        btn.classList.add('selected');
+        document.getElementById('v_date').textContent = cur.toLocaleString();
+        updateConfirmButtonEnabled();
+      }
+    }
 
     td.appendChild(btn);
     tr.appendChild(td);
@@ -446,6 +439,7 @@ try{
 
   tbody.appendChild(tr);
 });
+
 
 table.appendChild(thead);
 table.appendChild(tbody);

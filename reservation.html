@@ -288,6 +288,8 @@ document.getElementById('btnConfirm').addEventListener('click', ()=>{
   const btnPrev = document.getElementById('hpPrev');
   const btnNext = document.getElementById('hpNext');
   const startHour = 9, endHour = 18, stepMin = 30;
+  const urlP = new URLSearchParams(location.search);
+  const LEAD_MIN = Number(urlP.get('lead') || 120); // 120=2時間
 /// ===== GAS 設定（meta / localStorage / URL の順で解決） =====
 const GAS_URL = document.querySelector('meta[name=bl-sheet-hook]')?.content || p.get('gas') || '';
 const GAS_KEY = p.get('key') || localStorage.getItem('bl_gas_key') || '';
@@ -375,6 +377,18 @@ times.forEach(([h,m])=>{
   th.textContent = fmtHm(h,m);
   th.style.padding = '6px 8px';
   tr.appendChild(th);
+  const slot = hhmm(h,m);
+const y    = ymdOf(d);
+const isTaken = takenMap[y] && takenMap[y].has(slot);
+
+// ▼ ここから追加：リードタイム（今+LEAD_MIN 以降のみ ◯）
+let isTooSoon = false;
+try{
+  const now = new Date();
+  const cutoff = new Date(now.getTime() + LEAD_MIN*60*1000);
+  const dt = new Date(y + 'T' + slot + ':00');
+  if (dt.getTime() <= cutoff.getTime()) isTooSoon = true;
+}catch(_){}
 
   days.forEach(d=>{
     const td  = document.createElement('td');
@@ -385,12 +399,16 @@ times.forEach(([h,m])=>{
     const y    = ymdOf(d);         // '2025-09-24' など
     const isTaken = takenMap[y] && takenMap[y].has(slot);
 
-    if (isTaken) {
-      btn.textContent = '×';
-      btn.disabled = true;
-      btn.setAttribute('aria-disabled','true');
-    } else {
+    if (isTaken || isTooSoon) {
+  btn.textContent = '×';
+  btn.disabled = true;
+  btn.setAttribute('aria-disabled','true');
+} else {
+  // 既存の ◯/クリック処理（✓選択など）をそのまま
   btn.textContent = '◯';
+  // …既存の選択復元と click ハンドラ…
+}
+
 
   // 事前選択の復元（保存済みISOと一致したら✓＆selected）
   if (y === savedYmd && slot === savedHm) {

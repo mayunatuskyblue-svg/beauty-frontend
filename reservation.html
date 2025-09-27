@@ -1,4 +1,4 @@
-<!doctype html>
+  <!doctype html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8"/>
@@ -209,6 +209,11 @@ document.getElementById('v_menu').textContent  = itemName;
 document.getElementById('v_staff').textContent = staffName || '指名なし';
 document.getElementById('v_date').textContent  = dateTextParam || '-';
 document.getElementById('v_price').textContent = fmtLKR(priceLKR);
+// ▼ これを直後に（移動）
+const vprice = document.getElementById('v_price');
+vprice.dataset.lkr = String(priceLKR || '');
+vprice.dataset.jpy = String(Math.round((priceLKR || 0) / JPY_TO_LKR) || '');
+
 // ===== GAS 設定（meta / localStorage / URL の順で解決） =====
 const GAS_URL = document.querySelector('meta[name=bl-sheet-hook]')?.content || p.get('gas') || '';
 const GAS_KEY = p.get('key') || localStorage.getItem('bl_gas_key') || '';
@@ -226,7 +231,7 @@ async function recordBookingToSheet({ bookingId, email }){
     })
   });
   const j = await res.json().catch(()=>({}));
-  if(!j || !j.ok) throw new Error((j&&j.error)||'booking_create failed');
+  if(!j || !j.ok) throw new Error((j&&j.error)||'booking failed');
 }
 
 // ===== UI 操作 =====
@@ -273,10 +278,6 @@ document.getElementById('btnConfirm').addEventListener('click', ()=>{
   try{ localStorage.setItem('reserve_selected', dtIso); }catch(_){}
 
   window.location.href = 'confirm.html?' + qs.toString();
-  // 価格の表示直後に追加
-const vprice = document.getElementById('v_price');
-vprice.dataset.lkr = String(priceLKR || '');
-vprice.dataset.jpy = String(Math.round((priceLKR || 0) / JPY_TO_LKR) || '');
 
 });
 

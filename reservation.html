@@ -1,4 +1,4 @@
-  <!doctype html>
+<!doctype html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8"/>
@@ -172,7 +172,7 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
     <span id="spin" style="display:none" data-i18n="reserve.process">処理中…</span>
   </div>
 
-  <div id="msg"></div>
+  <div id="msg" aria-live="polite"></div>
 
   <footer>
     <a href="terms.html">Terms</a> ・ <a href="privacy.html">Privacy</a> ・ <a href="cancel.html">Cancel Policy</a> ・ <a href="contact.html">Contact</a>
@@ -192,7 +192,7 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
 // ===== LKR専用ユーティリティ =====
 const JPY_TO_LKR = 2.05; // 実運用のレートに合わせて調整可
 function fmtLKR(v){
-　const n = Math.max(0, Number(v)||0);
+  const n = Math.max(0, Number(v)||0);
   return n ? ('Rs ' + Math.round(n).toLocaleString('en-US')) : '-';
 }
 // ===== URL パラメータから表示を構成 =====

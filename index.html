@@ -43,7 +43,7 @@ body.no-scroll{ overflow:hidden; }
 header{position:sticky;top:0;z-index:40;background:rgba(247,241,225,.72);backdrop-filter:blur(8px);border-bottom:1px solid var(--stroke)}
 .hwrap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0}
 .brand-left{display:flex;align-items:center;gap:10px;text-decoration:none}
-.logo-img{width:140px;height:auto;border-radius:14px;box-shadow:0 10px 24px rgba(36,106,115,.18)}
+.logo-img{width:140px;height:auto;border-radius:14px;box-shadow:none;background:var(--base);}
 .nav-right{display:flex;gap:8px;align-items:center}
 .btn{height:38px;border-radius:12px;border:1px solid var(--stroke);background:#fff;padding:0 12px;font-weight:700;cursor:pointer}
 .btn.primary{background:var(--teal);border-color:var(--teal);color:#fff;box-shadow:0 6px 14px rgba(36,106,115,.18)}
@@ -265,7 +265,7 @@ body.hero-header .header-controls{ position:absolute; left:16px; top:158px; z-in
 }
 .searchrow2{
   display:grid;
-  grid-template-columns: 1fr 200px;
+  grid-template-columns: 1fr 150px;
   gap:10px;
   margin-top:10px;
 }
@@ -864,7 +864,7 @@ const T = {
     price_hint: '料金目安', details:'詳細', book:'予約へ進む', view_map:'地図で見る', only_this_store:'（この店舗だけ）', recommend_points:'おすすめポイント：'
   },
   en: {
-    hero_title: 'Unveiling My True Beauty in Sri Lanka',
+    hero_title: 'Your beauty, your way in Sri Lanka',
     hero_sub: 'Hair, nails, lashes, Ayurveda, massage/spa. Reviews and booking.',
     ph_kw: 'Keywords (e.g., lashes, spa)',
     search_btn: 'Search',

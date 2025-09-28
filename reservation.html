@@ -296,6 +296,11 @@ document.getElementById('btnConfirm').addEventListener('click', ()=>{
   const stepMin = 30;
   const urlP = new URLSearchParams(location.search);
   const LEAD_MIN = Number(urlP.get('lead') || 120); // 120=2時間
+    // 予約ウィンドウ（週数）を全体共有
+  const DEFAULT_MAX_WEEKS = 8;            // meta.maxWeeks が無い場合の既定
+  let   maxOffset = DEFAULT_MAX_WEEKS - 1; // 0始まり（今日=0 → n週先=n）
+  let   lastBookableDate = null;           // 「この日まで予約可」（当日0時基準）
+
 /// ===== GAS 設定（meta / localStorage / URL の順で解決） =====
 const GAS_URL = document.querySelector('meta[name=bl-sheet-hook]')?.content || p.get('gas') || '';
 const GAS_KEY = p.get('key') || localStorage.getItem('bl_gas_key') || '';
@@ -308,7 +313,21 @@ async function fetchTakenSlots(salonId, ymd){
     const url = `${GAS_URL}?key=${encodeURIComponent(GAS_KEY)}&kind=taken&salonId=${encodeURIComponent(salonId)}&ymd=${encodeURIComponent(ymd)}`;
     const j = await fetch(url, { method:'GET' }).then(r=>r.json());
     if (!j || !j.ok) return new Set();
-    if (j.meta) latestMeta = j.meta;
+    if (j.meta) {
+  latestMeta = j.meta;
+
+  const mw = Number(j.meta.maxWeeks);
+  if (Number.isFinite(mw) && mw > 0) {
+    maxOffset = Math.max(0, mw - 1);
+    const t0 = today0();
+    lastBookableDate = new Date(t0.getTime() + (mw*7 - 1) * 24*60*60*1000);
+  } else {
+    // meta に maxWeeks が無い場合はデフォルト
+    const t0 = today0();
+    lastBookableDate = new Date(t0.getTime() + (DEFAULT_MAX_WEEKS*7 - 1) * 24*60*60*1000);
+  }
+}
+
     return new Set((j.items||[]).map(s => String(s).slice(0,5)));
   }catch(_e){
     return new Set(); // 失敗時は全枠◯（UI死なせない）
@@ -331,7 +350,18 @@ function getGasUrlAndKey(){
 }
 
 function hhmm(h,m){ return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); }
-function ymdOf(d){ return d.toISOString().slice(0,10); }
+function ymdOf(d){
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${dd}`;
+}
+// 追加：'YYYY-MM-DD' と 'HH:mm' からローカル時刻の Date を作る
+function localDateFromYmdHm(y, hm){
+  const [Y, M, D] = String(y).split('-').map(Number);
+  const [H, I]    = String(hm).split(':').map(Number);
+  return new Date(Y, (M||1)-1, D||1, H||0, I||0, 0, 0);
+}
 
 function fmtYmd(d){ return d.toISOString().slice(0,10); }
 function hhmmOf(h,m){ return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); }
@@ -339,19 +369,39 @@ function hhmmOf(h,m){ return String(h).padStart(2,'0')+':'+String(m).padStart(2,
   let weekOffset = 0;
 
   function addDays(d, n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
-  function getWeekStart(d){ const dt = new Date(d); const day=(dt.getDay()+6)%7; dt.setDate(dt.getDate()-day); dt.setHours(0,0,0,0); return dt; }
+  function today0() { const t = new Date();
+                      t.setHours(0,0,0,0);
+                      return t;
+                    }
   function fmtHm(h,m){ return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); }
 
   async function buildWeek(offset){
-    const today = new Date();
-    const ws = getWeekStart(addDays(today, offset*7));
-    const we = addDays(ws, 6);
-    title.textContent = ws.toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'}) + ' — ' + we.toLocaleDateString(undefined,{month:'long',day:'numeric'});
-    // 既存: const ws = getWeekStart(addDays(today, offset*7)); のすぐ下などに
-    const savedIso = (localStorage.getItem('reserve_selected') || '').trim();
-    const savedDt  = savedIso ? new Date(savedIso) : null;
-    const savedYmd = savedDt ? savedDt.toISOString().slice(0,10) : '';
-    const savedHm  = savedDt ? (String(savedDt.getHours()).padStart(2,'0') + ':' + String(savedDt.getMinutes()).padStart(2,'0')) : '';
+    const base = new Date(today0().getTime() + offset * 7 * 24*60*60*1000);
+    const end = new Date(base.getTime() + 6 * 24*60*60*1000);
+    const days = Array.from({length:7}, (_,i)=> new Date(base.getTime() + i*24*60*60*1000));
+    title.textContent = base.toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'})
+                       + ' — ' +
+                     end.toLocaleDateString(undefined,{month:'long',day:'numeric'});
+        // 既存: const ws = getWeekStart(addDays(today, offset*7)); のすぐ下などに
+       const savedIso = (localStorage.getItem('reserve_selected') || '').trim();
+const savedDt  = savedIso ? new Date(savedIso) : null;
+// ローカル日付ベースで ymd を作成（UTC由来のズレを防止）
+const savedYmd = savedDt ? ymdOf(savedDt) : '';
+const savedHm  = savedDt ? (String(savedDt.getHours()).padStart(2,'0') + ':' + String(savedDt.getMinutes()).padStart(2,'0')) : '';
+ // メタが取れたら「今の buildWeek では表示を作らず」再ビルド
+let appliedMeta = false;
+if (latestMeta && latestMeta.openStart && latestMeta.openEnd){
+  const [sh] = String(latestMeta.openStart).split(':').map(Number);
+  const [eh] = String(latestMeta.openEnd).split(':').map(Number);
+  if (isFinite(sh) && sh !== startHour){ startHour = sh; appliedMeta = true; }
+  if (isFinite(eh) && eh !== endHour){   endHour   = eh; appliedMeta = true; }
+}
+
+if (appliedMeta){
+  // 営業時間を反映した再ビルド（このbuildは一旦中止）
+  await buildWeek(offset);
+  return;
+}
 
     const times=[];
     for(let h=startHour; h<=endHour; h++){
@@ -360,8 +410,7 @@ function hhmmOf(h,m){ return String(h).padStart(2,'0')+':'+String(m).padStart(2,
         times.push([h,m]);
       }
     }
-    const days = Array.from({length:7},(_,i)=>addDays(ws,i));
-    // 各日の満枠セットをまとめて取得
+        // 各日の満枠セットをまとめて取得
 const takenMap = {};
 for (const d of days) takenMap[ymdOf(d)] = await fetchTakenSlots(salonId, ymdOf(d));
   //メタが取れたら営業時間を反映(次回buildから効く)
@@ -404,18 +453,27 @@ times.forEach(([h,m])=>{
 
     const slot = hhmm(h,m);          // '09:30'
     const y    = ymdOf(d);           // '2025-09-24'
-    const isTaken = takenMap[y] && takenMap[y].has(slot);
+    
+       const isTaken = takenMap[y] && takenMap[y].has(slot);
 
-    // 2時間前ロック（日ごとに判定）
+    // 2時間前ロック（日ごとに判定／ローカル時刻）
     let isTooSoon = false;
     try{
       const now = new Date();
       const cutoff = new Date(now.getTime() + LEAD_MIN*60*1000);
-      const dt = new Date(y + 'T' + slot + ':00');
+      const dt = localDateFromYmdHm(y, slot);
       if (dt.getTime() <= cutoff.getTime()) isTooSoon = true;
     }catch(_){}
 
-    if (isTaken || isTooSoon) {
+    // 予約ウィンドウ外（maxWeeks を越えたら ×）
+    let isBeyondWindow = false;
+    if (lastBookableDate) {
+      const day0 = new Date(d); day0.setHours(0,0,0,0);
+      if (day0.getTime() > lastBookableDate.getTime()) isBeyondWindow = true;
+    }
+
+    // ここを唯一の分岐に
+    if (isTaken || isTooSoon || isBeyondWindow) {
       btn.textContent = '×';
       btn.disabled = true;
       btn.setAttribute('aria-disabled','true');
@@ -437,11 +495,10 @@ times.forEach(([h,m])=>{
         updateConfirmButtonEnabled();
       });
     }
-
     // 事前選択の復元（保存済みISOと一致したら✓＆selected）
     if (savedYmd && savedHm && !btn.disabled) {
-      const cur = new Date(y + 'T' + slot + ':00');
-      const curY = cur.toISOString().slice(0,10);
+      const cur = localDateFromYmdHm(y, slot);
+      const curY = y;
       const curHm = String(cur.getHours()).padStart(2,'0') + ':' + String(cur.getMinutes()).padStart(2,'0');
       if (curY === savedYmd && curHm === savedHm) {
         btn.textContent = '✓';
@@ -464,12 +521,24 @@ table.appendChild(thead);
 table.appendChild(tbody);
 grid.innerHTML = '';
 grid.appendChild(table);
+
+    btnPrev.disabled = (weekOffset <= 0);
+btnNext.disabled = (weekOffset >= maxOffset);
+
   }
 
   buildWeek(weekOffset);
   updateConfirmButtonEnabled(); 
-  btnPrev.addEventListener('click', ()=>{ weekOffset--; buildWeek(weekOffset); });
-  btnNext.addEventListener('click', ()=>{ weekOffset++; buildWeek(weekOffset); });
+  btnPrev.addEventListener('click', ()=>{
+  if (weekOffset <= 0) return;      // 過去へ戻さない
+  weekOffset--;
+  buildWeek(weekOffset);
+});
+btnNext.addEventListener('click', ()=>{
+  if (weekOffset >= maxOffset) return; // 上限超えない
+  weekOffset++;
+  buildWeek(weekOffset);
+});
 })();
 </script>
  <script>

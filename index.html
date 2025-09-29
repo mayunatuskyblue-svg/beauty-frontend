@@ -699,6 +699,50 @@ h1,h2,h3,h4{ margin-top: var(--space-md); margin-bottom: var(--space-sm); }
   .searchbar .searchbtn{ flex-basis: 100%; max-width: 520px; }
 }
 */
+/* === 2025-09-29: lang-pill と pill 配置の最終調整 === */
+
+/* ① PC時：hero-header で左寄りになっている .lang-pill を右上へ */
+@media (min-width: 981px){
+  body.hero-header .lang-pill{
+    position: absolute;    /* 既存に合わせて明示 */
+    left: auto !important; /* 左寄り指定を打ち消し */
+    right: 20px !important;
+    top: 16px !important;
+    z-index: 10;
+  }
+}
+
+/* ② PC時：検索ピル群を“中央を軸に”均等に見せるため、フォーム幅を適度に制限して中央寄せ */
+@media (min-width: 980px){
+  /* searchbar 自体の横幅を少しだけ絞って中央に固定 */
+  .searchwrap .searchbar{
+    max-width: 1040px;      /* 好みで 960～1120px の範囲で微調整可 */
+    margin-left: auto;
+    margin-right: auto;
+  }
+  /* 親グリッドは 6 等分のまま中央に据える */
+  .searchwrap .searchbar form{
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    max-width: 1040px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  /* 各ピルの左右パディングは視覚バランス用に少しだけ広げる（任意） */
+  .searchwrap .searchbar .pill{
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  /* 検索ボタン高さはピルと揃える（保険） */
+  .searchwrap .searchrow2 .searchbtn{
+    height: 56px;
+  }
+}
+
+/* ③ もし“やや左に詰まって見える”場合の追加のひと押し（任意・好み）
+   ピル群のアイコン幅差で“左重心”に見えることがあるので、アイコンの占有幅を統一 */
+.searchbar .pill svg{
+  width: 20px; height: 20px; flex: 0 0 20px; /* 幅を固定して左右の見た目を揃える */
+}
 
 </style>
   <script src="lang.js" defer></script>

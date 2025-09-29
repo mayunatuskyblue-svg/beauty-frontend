@@ -642,6 +642,12 @@ h1,h2,h3,h4{ margin-top: var(--space-md); margin-bottom: var(--space-sm); }
     gap: 10px;
     align-items: center;
   }
+  .pill .iconbtn{
+  border:0; background:transparent; padding:0;
+  display:flex; align-items:center; cursor:pointer;
+}
+.pill .iconbtn:focus-visible{ outline:2px solid var(--stroke); border-radius:8px; }
+
   /* 中のラッパーを“透過”させて、子要素を親グリッドに流し込む */
   .searchwrap .searchgrid,
   .searchwrap .searchrow2{
@@ -762,7 +768,10 @@ h1,h2,h3,h4{ margin-top: var(--space-md); margin-bottom: var(--space-sm); }
   <!-- 下段：キーワード + 検索ボタン -->
   <div class="searchrow2">
     <label class="pill big" aria-label="キーワード">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      <button type="button" id="histBtn" aria-label="検索履歴を開く" class="iconbtn">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      </button>
       <input id="kw" type="search" data-i18n="search.ph_kw" placeholder="サロン名・メニュー名など">
     </label>
     <!-- キーワードピルの直後に追加 -->
@@ -1572,12 +1581,27 @@ initCatalog();
     });
   }
 
-  // フォーカスで開く / 外側クリックで閉じる
-  [kw, place, type, date, budget].forEach(el=> el.addEventListener('focus', renderInline));
-  document.addEventListener('click', (e)=>{
-    const within = box.contains(e.target) || e.target.closest('.pill') || e.target.closest('.searchbtn');
-    if(!within){ box.removeAttribute('data-open'); box.innerHTML=''; }
-  });
+ // ① フォーカス起動をやめる
+// （削除）[kw, place, type, date, budget].forEach(el=> el.addEventListener('focus', renderInline));
+
+// ② 虫眼鏡ボタンでトグル表示
+const histBtn = document.getElementById('histBtn');
+histBtn?.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  // 開いていれば閉じる、閉じていれば描画
+  if (box.getAttribute('data-open') === '1') {
+    box.removeAttribute('data-open'); box.innerHTML = '';
+  } else {
+    renderInline();
+  }
+});
+
+// ③ 画面外クリックで閉じる（虫眼鏡ボタンも“内側扱い”へ）
+document.addEventListener('click', (e)=>{
+  const within = box.contains(e.target) || e.target.closest('#histBtn') || e.target.closest('.searchbtn');
+  if(!within){ box.removeAttribute('data-open'); box.innerHTML=''; }
+});
+
 
   // 送信時に履歴保存（既存の検索処理に干渉しない）
   form.addEventListener('submit', ()=>{

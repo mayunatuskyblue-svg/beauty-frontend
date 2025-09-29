@@ -638,20 +638,51 @@ function readBookingFromPage() {
         msg('カード保存の準備中…');
 
         const siRes = await fetch(base + '/api/setup-intent', {
-          method:'POST',
-          headers:{ 'Content-Type':'application/json' },
-          body: JSON.stringify({ email, name })
-        });
-        const raw = await siRes.text();
-        let si; try { si = JSON.parse(raw); }
-        catch { throw new Error('Invalid JSON from setup-intent: ' + raw.slice(0,120)); }
-        if(!siRes.ok || !si?.ok) throw new Error(si?.error || `setup-intent failed (${siRes.status})`);
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ email, name })
+});
+const raw = await siRes.text();
 
-        const { clientSecret, customerId } = si;
+// --- helper: mask clientSecret in raw string for safe logging ---
+function _maskSecrets(str) {
+  try {
+    return str.replace(/("clientSecret"\s*:\s*")([^"]+)(")/g, (m, p1, p2, p3) => {
+      // マスクは先頭以外を*にする（最後6文字は残す）
+      const masked = p2.replace(/.(?=.{6})/g, '*');
+      return p1 + masked + p3;
+    });
+  } catch (e) {
+    return '***masked***';
+  }
+}
 
-        const {setupIntent, error} = await stripe.confirmCardSetup(clientSecret, {
-          payment_method: { card: cardEl, billing_details: { email, name } },
-        });
+let si;
+try {
+  si = JSON.parse(raw);
+} catch (e) {
+  // 生の client_secret を UI に出さない（console はマスクして出す）
+  console.error('Invalid JSON from setup-intent (masked):', _maskSecrets(raw));
+  throw new Error('サーバからの応答が不正です（開発者へ確認して下さい）');
+}
+
+if (!siRes.ok || !si?.ok) {
+  console.error('setup-intent error response (masked):', _maskSecrets(raw));
+  throw new Error(si?.error || `setup-intent failed (${siRes.status})`);
+}
+
+// ← 重要：変数名のtypo修正。serverが返すキー名が "clientSecret" の場合はそのまま取得
+const { clientSecret, customerId, livemode } = si; // livemode が返るならここで受け取れる
+
+// （任意）console に livemode を安全に出す（デバッグ用）
+if (typeof livemode !== 'undefined') console.log('setup-intent livemode:', livemode);
+
+// 実際の Stripe 確認呼び出し
+const { setupIntent, error } = await stripe.confirmCardSetup(clientSecret, {
+  payment_method: { card: cardEl, billing_details: { email, name } },
+});
+if (error) throw error;
+
         if(error) throw error;
 const payload = {
   email, name,

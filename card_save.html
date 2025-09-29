@@ -263,13 +263,27 @@ $('#saveBtn').addEventListener('click', async () => {
 
   $('#saveBtn').disabled = true; show($('#spin'), true); setMsg('通信中…');
   try{
-    const {secret, customerId} = await getClientSecret(email, name);
-    const {setupIntent, error} = await stripe.confirmCardSetup(secret, {
-      payment_method: { card: cardElement, billing_details: { email, name } }
-    });
-    if (error) throw new Error(error.message || String(error));
-　　if (!setupIntent || setupIntent.status !== 'succeeded') {
-　　throw new Error('カード保存に失敗しました（未確定）');
+    // getClientSecret の返り値を検査する
+const resp = await getClientSecret(email, name);
+if (!resp || typeof resp.secret === 'undefined') {
+  console.error('getClientSecret returned invalid response:', resp && JSON.stringify(resp).slice(0,200));
+  throw new Error('サーバから client_secret が取得できませんでした（開発者へ）');
+}
+const { secret, customerId } = resp;
+
+// 確認呼び出し
+const { setupIntent, error } = await stripe.confirmCardSetup(secret, {
+  payment_method: { card: cardElement, billing_details: { email, name } }
+});
+if (error) {
+  // Stripe からのエラーはそのまま投げる（UI側で捕まえる前提）
+  throw new Error(error.message || String(error));
+}
+if (!setupIntent || setupIntent.status !== 'succeeded') {
+  console.error('setupIntent invalid or not succeeded:', setupIntent && { id: setupIntent.id, status: setupIntent.status });
+  throw new Error('カード保存に失敗しました（status:' + (setupIntent && setupIntent.status) + ')');
+}
+
     }
    if (!customerId) {
    throw new Error('顧客IDの取得に失敗しました（serverのレスポンスを確認してください）。');

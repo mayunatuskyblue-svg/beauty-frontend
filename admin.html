@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Smart Pay Admin</title>
+  <style>
+    :root{--ink:#1d1b1a;--teal:#246A73;--muted:#6b5e55;--brd:#eadfca;--bg:#faf6ef}
+    *{box-sizing:border-box} body{margin:0;background:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,'Noto Sans JP',sans-serif;color:var(--ink)}
+    header{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--brd);z-index:10}
+    .wrap{max-width:1100px;margin:0 auto;padding:14px 16px}
+    h1{font-size:20px;margin:0 0 6px}
+    .grid{display:grid;gap:14px}
+    @media(min-width:960px){.grid{grid-template-columns:2fr 1fr}}
+    .card{background:#fff;border:1px solid var(--brd);border-radius:12px;box-shadow:0 10px 24px rgba(0,0,0,.06)}
+    .card>.hd{padding:12px 14px;border-bottom:1px solid var(--brd);font-weight:800}
+    .card>.bd{padding:12px 14px}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    label{display:block;font-weight:700;margin:8px 0 4px}
+    input,select,textarea{width:100%;padding:10px 12px;border:1px solid var(--brd);border-radius:10px;background:#fff;font:inherit}
+    input:read-only{background:#fafafa}
+    .muted{color:var(--muted)}
+    .pill{display:inline-flex;gap:6px;align-items:center;padding:6px 10px;border:1px solid var(--brd);border-radius:999px}
+    .btn{display:inline-flex;gap:.5em;align-items:center;justify-content:center;height:42px;padding:0 16px;border-radius:12px;font-weight:800;border:1px solid var(--brd);background:#fff;cursor:pointer}
+    .btn.primary{background:var(--teal);border-color:var(--teal);color:#fff}
+    .btn:disabled{opacity:.55;cursor:not-allowed}
+    .total{font-size:28px;font-weight:900}
+    .warn{color:#7a2e13}
+    .ok{color:#0b684e}
+    .tbl{width:100%;border-collapse:collapse}
+    .tbl td{padding:6px 4px}
+    .tbl tr td:first-child{opacity:.8}
+    .hr{height:1px;background:var(--brd);margin:8px 0}
+    .badge{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border-radius:999px;border:1px solid var(--brd);font-size:12px}
+    .right{display:flex;flex-direction:column;gap:12px}
+    .tag{padding:4px 8px;border:1px solid var(--brd);border-radius:8px;background:#fff}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <h1>Smart Pay — Admin</h1>
+      <div class="row muted" id="ctx">Loading…</div>
+    </div>
+  </header>
+
+  <main class="wrap grid" id="app" hidden>
+    <!-- 左：コンポーザー -->
+    <section class="card">
+      <div class="hd">Bill Composer</div>
+      <div class="bd">
+        <div class="row">
+          <div class="pill"><b>Booking</b> <span id="bkId">-</span></div>
+          <div class="pill"><b>Salon</b> <span id="salonName">-</span></div>
+          <div class="pill"><b>Customer</b> <span id="custName">-</span></div>
+          <div class="pill"><b>Scheduled</b> <span id="scheduled">-</span></div>
+        </div>
+
+        <div class="hr"></div>
+
+        <label>Menu</label>
+        <div id="menuBox">Loading…</div>
+
+        <label style="margin-top:10px">Add-ons</label>
+        <div id="addonBox" class="row"></div>
+
+        <div class="row" style="margin-top:10px">
+          <div style="flex:1">
+            <label>Discount</label>
+            <select id="discountSel"></select>
+          </div>
+          <div style="width:180px">
+            <label>Manual adjust (±)</label>
+            <input id="manualAdj" type="number" step="1" value="0"/>
+            <div class="muted" style="font-size:12px">Limit: <span id="adjLimit">±1500</span> LKR</div>
+          </div>
+        </div>
+        <div>
+          <label>Reason for manual adjust</label>
+          <input id="manualReason" placeholder="ex: Oil upgrade / Extension 30m"/>
+        </div>
+      </div>
+    </section>
+
+    <!-- 右：サマリー＆アクション -->
+    <aside class="right">
+      <section class="card">
+        <div class="hd">Summary</div>
+        <div class="bd">
+          <table class="tbl">
+            <tr><td>Base</td><td id="sumBase" style="text-align:right">-</td></tr>
+            <tr><td>Add-ons</td><td id="sumAdd" style="text-align:right">-</td></tr>
+            <tr><td>Discount</td><td id="sumDis" style="text-align:right">-</td></tr>
+            <tr><td>Manual</td><td id="sumMan" style="text-align:right">-</td></tr>
+            <tr><td>Service</td><td id="sumSvc" style="text-align:right">-</td></tr>
+            <tr><td>Tax</td><td id="sumTax" style="text-align:right">-</td></tr>
+          </table>
+          <div class="hr"></div>
+          <div class="total" id="grand">Rs 0</div>
+          <div class="muted" id="deltaInfo"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="hd">Approval</div>
+        <div class="bd">
+          <div class="row">
+            <div style="flex:1">
+              <label>Customer phone (WhatsApp / SMS)</label>
+              <input id="custPhone" placeholder="+94xxxxxxxxx"/>
+            </div>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <button id="sendLink" class="btn">Send approval link</button>
+            <span id="apStatus" class="badge">Not sent</span>
+          </div>
+          <div id="apTips" class="muted" style="margin-top:6px;font-size:12px">
+            We will send a short link to the customer. When the customer taps <b>Approve</b>,
+            the status turns green and the Charge button unlocks.
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="hd">Charge</div>
+        <div class="bd">
+          <button id="btnCharge" class="btn primary" disabled>Charge saved card</button>
+          <div id="chargeMsg" class="muted" style="margin-top:8px"></div>
+        </div>
+      </section>
+    </aside>
+  </main>
+
+  <script>
+    // ====== CONFIG ======
+    const API_BASE = 'http://localhost:8080';
+    const MAX_MANUAL = 1500; 
+    const DELTA_WARN_RATE = 0.2; // 20% from scheduled
+    const MOCK = false;              
+    const APPROVE_FILE = 'approve.html'; 
+    // ====== STATE ======
+    const S = {
+      salonId: '', bookingId: '', customerId: '', scheduledPrice: 0, tenantName: '',
+      catalog: { menus: [], addons: [], discounts: [], taxRate: 0, serviceRate: 0 },
+      sel: { menuId: '', addonIds: new Set(), discountId: '', manual: 0, reason: '' },
+      approval: { id: '', ok: false }
+    };
+
+    // ====== HELPERS ======
+    const $ = (q) => document.querySelector(q);
+    const fmt = n => `Rs ${Number(n||0).toLocaleString('en-US')}`;
+    const qs = new URLSearchParams(location.search);
+
+    function readCtx(){
+      S.salonId = qs.get('salonId')||'';
+      S.bookingId = qs.get('bookingId')||'';
+      S.customerId = qs.get('customerId')||'';
+      S.scheduledPrice = Number(qs.get('scheduled')||0);
+      S.tenantName = qs.get('salonName')||'';
+      $('#ctx').innerHTML = `Salon <b>${S.tenantName||S.salonId}</b> · Booking <b>${S.bookingId||'-'}</b>`;
+      $('#bkId').textContent = S.bookingId||'-';
+      $('#salonName').textContent = S.tenantName||S.salonId||'-';
+      $('#scheduled').textContent = fmt(S.scheduledPrice);
+      $('#adjLimit').textContent = `±${MAX_MANUAL}`;
+    }
+
+async function fetchCatalog(){
+  if(!MOCK){
+    const u = `${API_BASE}/api/catalog?salonId=${encodeURIComponent(S.salonId)}`;
+    const r = await fetch(u); if(!r.ok) throw new Error('catalog fetch failed');
+    const j = await r.json(); S.catalog = Object.assign({menus:[],addons:[],discounts:[],taxRate:0,serviceRate:0}, j||{});
+  }else{
+    // ← サーバ無しのダミーカタログ（必要なら値を変えてOK）
+    S.catalog = {
+      menus: [
+        { id: "M_BASIC", name: "Basic Treatment", price: 5000 },
+        { id: "M_PREMIUM", name: "Premium Treatment", price: 9000 }
+      ],
+      addons: [
+        { id: "A_EXT30", name: "Extend 30 min", price: 2000 },
+        { id: "A_AROMA", name: "Aroma Oil", price: 1500 }
+      ],
+      discounts: [
+        { id: "D_10P", type: "percent", value: 10, name: "10% OFF" },
+        { id: "D_500", type: "flat", value: 500, name: "LKR 500 OFF" }
+      ],
+      taxRate: 18, serviceRate: 10
+    };
+  }
+  if(!S.sel.menuId && S.catalog.menus[0]) S.sel.menuId = S.catalog.menus[0].id;
+  renderComposer(); calc();
+}
+
+function renderComposer(){
+  const mbox = $('#menuBox');
+  mbox.innerHTML = (S.catalog.menus||[]).map(m => `
+    <label class="row" style="align-items:flex-start">
+      <input type="radio" name="menu" value="${m.id}" ${S.sel.menuId===m.id?'checked':''} />
+      <div style="margin-left:8px">
+        <div><b>${m.name}</b></div>
+        <div class="muted">${fmt(m.price)}</div>
+      </div>
+    </label>
+  `).join('') || '<div class="muted">No menus</div>';
+
+  // メニュー選択
+  mbox.querySelectorAll('input[name="menu"]').forEach(r=>{
+    r.addEventListener('change', e => { S.sel.menuId = e.target.value; calc(); });
+  });
+
+  // Add-on
+  const abox = $('#addonBox');
+  abox.innerHTML = (S.catalog.addons||[]).map(a => {
+    const on = S.sel.addonIds.has(a.id);
+    return `<label class="tag"><input type="checkbox" value="${a.id}" ${on?'checked':''}/> ${a.name} (+${fmt(a.price)})</label>`;
+  }).join('') || '<div class="muted">No add-ons</div>';
+
+  // Add-on トグル
+  abox.querySelectorAll('input[type="checkbox"]').forEach(c=>{
+    c.addEventListener('change', e => {
+      const id = e.target.value;
+      if (e.target.checked) S.sel.addonIds.add(id);
+      else S.sel.addonIds.delete(id);
+      calc();
+    });
+  });
+
+  // Discount
+  const dsel = $('#discountSel');
+  dsel.innerHTML = `<option value="">None</option>` + (S.catalog.discounts||[]).map(d=>{
+    const label = d.type==='percent'
+      ? `${d.name} (-${d.value}% )`
+      : `${d.name} (-${fmt(d.value)})`;
+    return `<option value="${d.id}">${label}</option>`;
+  }).join('');
+  dsel.value = S.sel.discountId||'';
+  dsel.onchange = ()=>{ S.sel.discountId = dsel.value||''; calc(); };
+
+  // Manual adjust
+  const man = $('#manualAdj');
+  man.value = S.sel.manual||0;
+  man.oninput = ()=>{ S.sel.manual = Number(man.value||0); calc(); };
+
+  const rea = $('#manualReason');
+  rea.value = S.sel.reason||'';
+  rea.oninput = ()=>{ S.sel.reason = rea.value.trim(); };
+
+  document.getElementById('app').hidden = false;
+}
+
+    function currentAmounts(){
+      const menu = (S.catalog.menus||[]).find(m=>m.id===S.sel.menuId);
+      const base = menu? Number(menu.price||0):0;
+      const add = [...S.sel.addonIds].map(id => (S.catalog.addons||[]).find(a=>a.id===id)?.price||0).reduce((a,b)=>a+b,0);
+      const disc = (()=>{
+        const d = (S.catalog.discounts||[]).find(x=>x.id===S.sel.discountId);
+        if(!d) return 0; if(d.type==='percent') return - Math.round((base+add) * (d.value/100));
+        return - Number(d.value||0);
+      })();
+      const man = Number(S.sel.manual||0);
+      return { base, add, disc, man };
+    }
+
+    function calc(){
+      const { base, add, disc, man } = currentAmounts();
+      // guard
+      const limit = MAX_MANUAL; const warnAdj = Math.abs(man) > limit; const needReason = man!==0 && !S.sel.reason;
+      $('#sumBase').textContent = fmt(base);
+      $('#sumAdd').textContent  = fmt(add);
+      $('#sumDis').textContent  = fmt(disc);
+      $('#sumMan').textContent  = fmt(man) + (warnAdj? '  ⚠ over limit':'') + (needReason?' ⚠ reason required':'');
+
+      const sub = base + add + disc + man;
+      const svc = Math.round(sub * (Number(S.catalog.serviceRate||0)/100));
+      const tax = Math.round((sub+svc) * (Number(S.catalog.taxRate||0)/100));
+      const grand = Math.max(0, sub + svc + tax);
+
+      $('#sumSvc').textContent = fmt(svc); $('#sumTax').textContent = fmt(tax); $('#grand').textContent = fmt(grand);
+
+      // delta from scheduled
+      const diff = grand - Number(S.scheduledPrice||0);
+      const rate = (S.scheduledPrice? diff/ S.scheduledPrice : 0);
+      const di = $('#deltaInfo');
+      di.textContent = `Δ from scheduled: ${fmt(diff)} (${(rate*100).toFixed(1)}%)`;
+      di.className = 'muted ' + (Math.abs(rate) > DELTA_WARN_RATE ? 'warn':'');
+
+      // charge button lock conditions
+      const allow = !warnAdj && !needReason && S.approval.ok && grand>0;
+      $('#btnCharge').disabled = !allow;
+      return { grand };
+    }
+
+    // ====== Approval ======
+function rid(){ return (Date.now().toString(36)+Math.random().toString(36).slice(2,8)).toUpperCase(); }
+
+async function startApproval(){
+  const phone = $('#custPhone').value.trim();
+  const { grand } = calc();
+  if(!phone){ alert('Enter customer phone'); return; }
+
+  // 送る明細をlocalStorageに保存（キー: appr_<id>）
+  const approvalId = 'APPR_' + rid();
+  const payload = {
+    id: approvalId,
+    salonId: S.salonId, bookingId: S.bookingId, customerId: S.customerId,
+    amountLKR: grand,
+    items: { menuId: S.sel.menuId, addonIds: [...S.sel.addonIds], discountId: S.sel.discountId, manual: S.sel.manual||0, reason: S.sel.reason||'' },
+    approved: false, declined: false, createdAt: Date.now()
+  };
+  localStorage.setItem('appr_' + approvalId, JSON.stringify(payload));
+
+  // 顧客に渡すURL（同フォルダの approve.html を開けばOK）
+  const url = `${APPROVE_FILE}?aid=${encodeURIComponent(approvalId)}`;
+  setApStatus('Link created'); 
+  S.approval.id = approvalId;
+
+  // 共有：1) その場で開く or 2) 右クリックコピーで送る
+  window.open(url, '_blank');
+
+  // 承認ポーリング開始
+  pollApproval();
+}
+
+    function setApStatus(t, ok=false){ const el = $('#apStatus'); el.textContent=t; el.style.color = ok? '#0b684e':'#333'; }
+
+function readApproval(aid){
+  try{ return JSON.parse(localStorage.getItem('appr_' + aid) || 'null'); }
+  catch(e){ return null; }
+}
+
+async function pollApproval(){
+  if(!S.approval.id) return;
+  let tries = 0;
+  const tick = ()=>{
+    tries++; if(tries>600 || S.approval.ok) return; // 最大 ~50分
+    const ap = readApproval(S.approval.id);
+    if(ap?.approved){ S.approval.ok = true; setApStatus('Approved ✔', true); calc(); return; }
+    setTimeout(tick, 5000);
+  };
+  tick();
+}
+
+    // ====== Charge ======
+async function doCharge(){
+  const { grand } = calc();
+  const btn = document.getElementById('btnCharge');
+  const msg = document.getElementById('chargeMsg');
+  btn.disabled = true; msg.textContent = 'Charging…';
+
+  try{
+    // approvalId を使ってるなら S.approval.id を渡す（任意）
+    const body = {
+      salonId: S.salonId,
+      bookingId: S.bookingId || 'BOOK_001', // 無ければ固定でもOK（デモ/初期運用）
+      amountLKR: grand,
+      approvalId: S.approval?.id || null
+    };
+    const r = await fetch(`${API_BASE}/api/charge`, {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify(body)
+    });
+    const j = await r.json();
+    if(r.ok && j.ok){
+      msg.textContent = `Success! PaymentIntent: ${j.paymentIntentId} (${j.status})`;
+    }else{
+      msg.textContent = `Error: ${j.error || 'charge failed'}`;
+      btn.disabled = false; // リトライ可
+    }
+  }catch(e){
+    msg.textContent = 'Request failed: ' + e.message;
+    btn.disabled = false;
+  }
+}
+
+    // ====== INIT ======
+    (async function init(){
+      try{
+        readCtx();
+        await fetchCatalog();
+        $('#custName').textContent = qs.get('customerName') || '-';
+        $('#sendLink').onclick = startApproval;
+        $('#btnCharge').onclick = doCharge;
+      }catch(e){
+        document.body.innerHTML = `<div style="padding:30px">Init failed: ${e?.message||e}</div>`;
+      }
+    })();
+  </script>
+</body>
+</html>

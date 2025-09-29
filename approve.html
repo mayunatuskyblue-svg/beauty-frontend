@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BeautyLK | Approve</title>
+  <style>
+    body{font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif; margin:0; background:#faf7f2; color:#202428}
+    .wrap{max-width:720px; margin:40px auto; background:#fff; border-radius:16px; box-shadow:0 6px 24px rgba(0,0,0,.08); padding:24px}
+    h1{font-size:22px; margin:0 0 8px}
+    .meta{color:#667085; font-size:14px; margin-bottom:16px}
+    .box{background:#fafafa; border:1px solid #eee; border-radius:12px; padding:16px; margin:16px 0}
+    .amount{font-weight:700; font-size:24px; letter-spacing:.3px}
+    .row{display:flex; gap:12px; margin-top:18px}
+    button{flex:1; height:44px; border-radius:10px; border:0; cursor:pointer; font-weight:600}
+    .ok{background:#0ea5e9; color:#fff}
+    .ng{background:#e5e7eb; color:#111827}
+    .note{font-size:12px; color:#6b7280; margin-top:8px}
+    .done{padding:12px 14px; background:#ecfdf5; border:1px solid #d1fae5; color:#065f46; border-radius:10px; margin-top:14px; display:none}
+    .err{padding:12px 14px; background:#fef2f2; border:1px solid #fee2e2; color:#991b1b; border-radius:10px; margin-top:14px; display:none}
+    code{background:#f3f4f6; padding:2px 6px; border-radius:6px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Confirm your bill</h1>
+    <div class="meta" id="meta"></div>
+    <div class="box">
+      <div>Salon: <b id="salonId">-</b></div>
+      <div>Booking: <b id="bookingId">-</b></div>
+      <div>Customer: <b id="customerId">-</b></div>
+      <div class="amount" id="amount">Rs –––</div>
+      <div class="note">Tap Approve to authorize this total. If you don't recognize this, tap Decline.</div>
+    </div>
+    <div class="row">
+      <button class="ok" id="btnApprove">Approve</button>
+      <button class="ng" id="btnDecline">Decline</button>
+    </div>
+    <div class="done" id="done">✅ Thank you! Approval received.</div>
+    <div class="err" id="err"></div>
+  </div>
+
+  <script>
+  const qs = new URLSearchParams(location.search);
+  const aid = qs.get("aid");
+  const key = 'appr_' + aid;
+
+  const meta = document.getElementById("meta");
+  const salonId = document.getElementById("salonId");
+  const bookingId = document.getElementById("bookingId");
+  const customerId = document.getElementById("customerId");
+  const amount = document.getElementById("amount");
+  const done = document.getElementById("done");
+  const err = document.getElementById("err");
+
+  function fmtLKR(v){ return "Rs " + Number(v).toLocaleString("en-LK"); }
+  function read(){ try{ return JSON.parse(localStorage.getItem(key)||'null'); }catch(e){return null;} }
+  function write(obj){ localStorage.setItem(key, JSON.stringify(obj)); }
+
+  async function load(){
+    const ap = read();
+    if(!aid || !ap){ err.style.display="block"; err.textContent="Invalid approval link"; return; }
+    meta.textContent = "Approval ID: " + ap.id;
+    salonId.textContent = ap.salonId || '-';
+    bookingId.textContent = ap.bookingId || '-';
+    customerId.textContent = ap.customerId || '-';
+    amount.textContent = fmtLKR(ap.amountLKR || 0);
+  }
+
+  async function finish(approved){
+    const ap = read();
+    if(!ap){ err.style.display="block"; err.textContent="Invalid approval link"; return; }
+    ap.approved = !!approved; ap.declined = !approved; ap.approvedAt = Date.now();
+    write(ap);
+    if(approved){ done.style.display="block"; } else { err.textContent="Declined"; err.style.display="block"; }
+  }
+
+  document.getElementById("btnApprove").onclick = ()=> finish(true);
+  document.getElementById("btnDecline").onclick = ()=> finish(false);
+
+  load();
+</script>
+</body>
+</html>

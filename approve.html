@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://js.stripe.com/v3/"></script>
   <title>BeautyLK | Approve</title>
   <style>
     body{font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif; margin:0; background:#faf7f2; color:#202428}
@@ -34,6 +35,12 @@
     </div>
     <div class="row">
       <button class="ok" id="btnApprove">Approve</button>
+      <div id="card-zone" style="margin-top:12px">
+  <div id="card-element" style="padding:10px;border:1px solid #eee;border-radius:8px"></div>
+  <button id="btnSaveCard" style="margin-top:10px">Save card</button>
+  <div id="cardMsg" class="muted"></div>
+</div>
+
       <button class="ng" id="btnDecline">Decline</button>
     </div>
     <div class="done" id="done">✅ Thank you! Approval received.</div>
@@ -44,7 +51,47 @@
   const qs = new URLSearchParams(location.search);
   const aid = qs.get("aid");
   const key = 'appr_' + aid;
+  const stripe = Stripe("pk_live_51S59dFHdBVQmE5fF7PDsSNxtL0mVlv4jOp6TBiC87kmpJEKSfCJZCYOXJzcM2BFiT2nXMLsiOJ3boivba2UNhVjl00gNGKgJS4"); // 公開鍵（Publishable key）
 
+async function ensureCustomerAndGetClientSecret(bookingId){
+  // 1) 顧客Upsert
+  await fetch("http://localhost:8787/api/customer/upsert", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ bookingId })
+  });
+
+  // 2) SetupIntent開始
+  const r = await fetch("http://localhost:8787/api/setup/start", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ bookingId })
+  });
+  const j = await r.json();
+  if(!j.ok) throw new Error(j.error || "setup start failed");
+  return j.client_secret;
+}
+
+(async()=>{
+  const bookingId = new URLSearchParams(location.search).get("bookingId") || "BOOK_001";
+  const elements = stripe.elements();
+  const card = elements.create("card");
+  card.mount("#card-element");
+
+  document.getElementById("btnSaveCard").onclick = async ()=>{
+    const m = document.getElementById("cardMsg");
+    m.textContent = "Saving card…";
+
+    try{
+      const clientSecret = await ensureCustomerAndGetClientSecret(bookingId);
+      const { setupIntent, error } = await stripe.confirmCardSetup(clientSecret, {
+        payment_method: { card }
+      });
+      if(error){ m.textContent = "Error: " + error.message; return; }
+      m.textContent = "Card saved! " + setupIntent.payment_method;
+    }catch(e){
+      m.textContent = "Failed: " + e.message;
+    }
+  };
+})();
   const meta = document.getElementById("meta");
   const salonId = document.getElementById("salonId");
   const bookingId = document.getElementById("bookingId");

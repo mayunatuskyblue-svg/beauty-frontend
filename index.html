@@ -664,6 +664,41 @@ h1,h2,h3,h4{ margin-top: var(--space-md); margin-bottom: var(--space-sm); }
     grid-column: 1 / -1;
   }
 }
+/* === Small screens: searchbar を中央寄せ＆均等に並べる === */
+@media (max-width: 960px){
+  /* 並びの主役（フォーム全体の横並びラッパ）が .searchbar だと仮定 */
+  .searchbar{
+    display: flex;           /* 既に flex でもOK。とにかく wrap させて中央寄せ */
+    flex-wrap: wrap;
+    justify-content: center; /* 左寄せ→中央寄せ */
+    gap: 12px;               /* ちょい余白で“詰まり”防止 */
+  }
+
+  /* pill（Area/Category/日付/金額/キーワード）を同じ幅で2列に収めやすくする */
+  .searchbar .pill{
+    flex: 1 1 280px;         /* 280px を下限に、余白あれば広がる */
+    max-width: 360px;        /* 広がりすぎ防止（見た目の均衡用） */
+  }
+
+  /* 検索ボタンも同じ列幅で並べる（状況に応じて1〜2列目に入る） */
+  .searchbar .searchbtn{
+    flex: 1 1 280px;
+    max-width: 360px;
+    height: 48px;            /* pill と高さを揃えるなら */
+  }
+
+  /* 虫眼鏡ボタン（履歴トグル）を pill 内アイコン扱いにしててもOK */
+  .searchbar .pill .iconbtn{
+    flex: 0 0 auto;
+  }
+}
+
+/* さらに狭い端末で1列にしたい場合のオプション（必要なら有効化）
+@media (max-width: 560px){
+  .searchbar .pill,
+  .searchbar .searchbtn{ flex-basis: 100%; max-width: 520px; }
+}
+*/
 
 </style>
   <script src="lang.js" defer></script>

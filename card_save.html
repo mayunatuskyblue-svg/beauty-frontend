@@ -264,11 +264,14 @@ $('#saveBtn').addEventListener('click', async () => {
   $('#saveBtn').disabled = true; show($('#spin'), true); setMsg('通信中…');
   try{
     // getClientSecret の返り値を検査する
-const resp = await getClientSecret(email, name);
-if (!resp || typeof resp.secret === 'undefined') {
-  console.error('getClientSecret returned invalid response:', resp && JSON.stringify(resp).slice(0,200));
+// サーバが clientSecret / secret / client_secret のどれで返しても対応する
+const secret = resp.clientSecret || resp.secret || resp.client_secret;
+const customerId = resp.customerId || resp.customer_id || resp.customerId;
+if (!secret || typeof secret !== 'string') {
+  console.error('getClientSecret returned invalid response (no secret):', JSON.stringify(resp).slice(0,200));
   throw new Error('サーバから client_secret が取得できませんでした（開発者へ）');
 }
+
 const { secret, customerId } = resp;
 
 // 確認呼び出し

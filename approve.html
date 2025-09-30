@@ -101,6 +101,21 @@
     bookingIdEl.textContent = j.bookingId || (bookingId || '-');
     customerIdEl.textContent = customerId || '-';
     amountEl.textContent = fmtJPY(j.amountJPY || 0);
+    // メニュー名を補足表示（admin 側で menuId を保存している場合）
+const menuj = await apiGet('menus.list', { salonId: j.salonId || salonId });
+if (menuj.ok && menuj.items && j.items && j.items.menuId) {
+  const hit = (menuj.items||[]).find(x =>
+    String(x.menu_id||x.id||'') === String(j.items.menuId)
+  );
+  if (hit) {
+    amountEl.insertAdjacentHTML(
+      'afterend',
+      `<div class="meta" style="margin-top:6px">
+         Menu: <b>${hit.name_en || hit.name_ja || hit.desc || '—'}</b>
+       </div>`
+     );
+    }
+   }
   }
 
   function showErr(msg){

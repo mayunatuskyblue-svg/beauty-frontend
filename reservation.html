@@ -254,8 +254,8 @@ document.getElementById('btnConfirm').addEventListener('click', ()=>{
   const dateText = dt.toLocaleString();
 
   // すでにURLに載っている値も拾う（salon/menu/staff/price/coupon 等）
-  const minutes = p.get('minutes') || p.get('duration_min') || '';
   const p = new URLSearchParams(location.search);
+  const minutes = p.get('minutes') || p.get('duration_min') || '';
   const salonId    = p.get('salonId')   || p.get('salon')     || '';
   const salonName  = p.get('salonName') || p.get('salon_name')|| (document.getElementById('v_salon')?.textContent?.trim() || 'Salon');
   const itemName   = p.get('item')      || p.get('menu')      || (document.getElementById('v_menu')?.textContent?.trim()  || 'Menu');

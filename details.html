@@ -839,8 +839,17 @@ box.innerHTML=list.map((m, i)=>{
 
   const sid   = (window.__currentSalon && window.__currentSalon.id) ? window.__currentSalon.id : '';
   const mid   = m.id || m.menu_id || String(i+1); // 安全側フォールバック
-  const q     = new URLSearchParams({ salonId: String(sid), menuId: String(mid), menuName: name });
-
+ const priceJPY     = Number(m.price_jpy || m.price || 0);
+const minutesValue = Number(m.minutes   || m.duration_min || 0);
+const q = new URLSearchParams({
+  salonId: String(sid),
+  menuId:  String(mid),
+  item:    name,          // ← reservation.html が読むキー
+  menuName: name,         // ← 互換のため残す（将来用）
+  price_jpy: String(priceJPY || ''),
+  minutes:   String(minutesValue || '')
+});
+  
   return `<div class="bl-card">
     <div style="font-weight:800;margin-bottom:6px">${name}</div>
     ${desc ? `<div class="muted" style="margin-bottom:8px">${desc}</div>` : ''}

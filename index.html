@@ -912,19 +912,17 @@ function enPoints(s){
 function enTag(t){const map={'マツエク':'Lashes','スパ':'Spa','ハーブ':'Herbs','日本語対応':'Japanese support'};return map[t]||t;}
 // ---------- i18n ----------
 function getLang(){
-  // ① <html lang=".."> が en なら最優先で en
   const htmlLang = (document.documentElement.getAttribute('lang') || '').toLowerCase();
-  if (htmlLang === 'en') return 'en';
+  // JP/EN 版サイトはここで固定
+  if (htmlLang === 'ja' || htmlLang === 'en') return htmlLang;
 
-  // ② ユーザー選択を次に優先
+  // 以降は予備（多言語単一サイトで使うなら残す）
   const pref = localStorage.getItem('bl_lang') || 'auto';
   if (pref !== 'auto') return pref;
 
-  // ③ auto のときはブラウザ言語で判定
   const ja = (navigator.language || 'en').toLowerCase().startsWith('ja');
   return ja ? 'ja' : 'en';
 }
-
 
 // ---------- Currency helpers (JPY -> target) ----------
 const RATES = { JPY:1, USD:0.0067, EUR:0.0061, LKR:2.05 };
@@ -1009,11 +1007,35 @@ function updateLangFlag(){
 document.addEventListener('DOMContentLoaded', updateLangFlag);
 (function(){
   const sel = document.getElementById('langSelect');
-  const pref = localStorage.getItem('bl_lang') || 'auto';
-  sel.value = pref;
-  sel.onchange = ()=>{ localStorage.setItem('bl_lang', sel.value); location.reload(); };
-  applyI18N();
+  const siteLang = (document.documentElement.getAttribute('lang') || '').toLowerCase();
+  if (!sel) return;
+
+  // 現在のサイト言語をそのまま表示
+  sel.value = siteLang || 'auto';
+
+  // ▼ ここはあなたのサイト構成に合わせて設定してください ▼
+  const URL_JA = '/index.html';     // 日本語版トップのURL
+  const URL_EN = '/en/index.html';  // 英語版トップのURL（例）
+  // ▲ 例：/en/ 配下が英語版ならこのままでOK。別構成ならここだけ直す ▲
+
+  sel.onchange = ()=>{
+    const v = sel.value;
+    // 旧設定を掃除（万一残っていても影響しないが安全のため）
+    localStorage.removeItem('bl_lang');
+
+    if (v === 'ja' && siteLang !== 'ja') {
+      location.href = URL_JA;
+    } else if (v === 'en' && siteLang !== 'en') {
+      location.href = URL_EN;
+    } else {
+      // 何もしない（同じ言語を選んだ場合）
+    }
+  };
+
+  updateLangFlag();
+  applyI18N();  // 既存：文言反映
 })();
+
 </script>
   <script>
 // header nav + user pill

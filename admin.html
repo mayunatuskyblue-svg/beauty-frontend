@@ -132,12 +132,14 @@
   </main>
 
   <script>
-    // ====== CONFIG ======
-    const API_BASE = 'http://localhost:8787';
-    const MAX_MANUAL = 1500; 
-    const DELTA_WARN_RATE = 0.2; // 20% from scheduled
-    const MOCK = false;              
-    const APPROVE_FILE = 'approve.html'; 
+   // ====== CONFIG ======
+  const API_BASE = 'https://script.google.com/macros/s/AKfycbwWRpfcZMsGxNqGJ5aNjRT1Y1PChDTqtQE3e0S7sUDAMei8s1wOr6lpKMnOaI1Z-6o/exec';  // ← GASのWebアプリURL
+  const GAS_KEY  = 'bl_gas_key_bR6ZXWwu6kM_nrK25geP97Cs5qCX3auxugX_IUGlg90';         // ← code.gs と同じ
+  const MAX_MANUAL = 1500;
+  const DELTA_WARN_RATE = 0.2;
+  const MOCK = false;
+  const APPROVE_FILE = 'https://beautylk.com/approve.html'; // 公開中のapprove.html URL
+
     // ====== STATE ======
     const S = {
       salonId: '', bookingId: '', customerId: '', scheduledPrice: 0, tenantName: '',
@@ -165,28 +167,47 @@
     }
 
 async function fetchCatalog(){
-  if(!MOCK){
-    const u = `${API_BASE}/api/catalog?salonId=${encodeURIComponent(S.salonId)}`;
-    const r = await fetch(u); if(!r.ok) throw new Error('catalog fetch failed');
-    const j = await r.json(); S.catalog = Object.assign({menus:[],addons:[],discounts:[],taxRate:0,serviceRate:0}, j||{});
-  }else{
-    // ← サーバ無しのダミーカタログ（必要なら値を変えてOK）
+  if(MOCK){
     S.catalog = {
       menus: [
         { id: "M_BASIC", name: "Basic Treatment", price: 5000 },
         { id: "M_PREMIUM", name: "Premium Treatment", price: 9000 }
       ],
-      addons: [
-        { id: "A_EXT30", name: "Extend 30 min", price: 2000 },
-        { id: "A_AROMA", name: "Aroma Oil", price: 1500 }
-      ],
+      addons: [], // addons を使う場合は別途シート/エンドポイント用意
       discounts: [
         { id: "D_10P", type: "percent", value: 10, name: "10% OFF" },
-        { id: "D_500", type: "flat", value: 500, name: "LKR 500 OFF" }
+        { id: "D_500", type: "flat", value: 500, name: "¥500 OFF" }
       ],
-      taxRate: 18, serviceRate: 10
+      taxRate: 10, serviceRate: 0
+    };
+  }else{
+    // 1) メニュー取得
+    const q1 = new URLSearchParams({ kind:'menus.list', key:GAS_KEY, salonId:S.salonId });
+    const m = await fetch(`${API_BASE}?${q1}`).then(r=>r.json());
+    const menus = (m.ok ? (m.items||[]) : []).map(x => ({
+      id: (x.menu_id || x.name_en || x.name_ja || '').trim() || 'MENU',
+      name: x.name_en || x.name_ja || x.desc || 'Menu',
+      price: Number(x.price_jpy || 0) // 課金はJPYで統一
+    }));
+
+    // 2) クーポン（＝Discount）取得
+    const q2 = new URLSearchParams({ kind:'coupons.list', key:GAS_KEY, salonId:S.salonId });
+    const c = await fetch(`${API_BASE}?${q2}`).then(r=>r.json());
+    const discounts = (c.ok ? (c.items||[]) : []).map(x => {
+      // シートの持ち方に合わせて type/value を決める（ここでは簡易に flat を想定）
+      const off = Number(x.value || x.off_jpy || 0);
+      return { id: String(x.menu_id || x.code || x.name_en || x.name_ja || 'DISC'), type:'flat', value: off, name: (x.name_en||x.name_ja||'Discount') };
+    });
+
+    S.catalog = {
+      menus,
+      addons: [],                 // 使うなら別途
+      discounts,
+      taxRate: 10,                // 必要に応じて salons シート等から参照に変更可
+      serviceRate: 0
     };
   }
+
   if(!S.sel.menuId && S.catalog.menus[0]) S.sel.menuId = S.catalog.menus[0].id;
   renderComposer(); calc();
 }
@@ -294,51 +315,64 @@ function renderComposer(){
 function rid(){ return (Date.now().toString(36)+Math.random().toString(36).slice(2,8)).toUpperCase(); }
 
 async function startApproval(){
-  const phone = $('#custPhone').value.trim();
+  const phone = $('#custPhone').value.trim(); // いまはUIに保持だけ（送信は任意）
   const { grand } = calc();
-  if(!phone){ alert('Enter customer phone'); return; }
 
-  // 送る明細をlocalStorageに保存（キー: appr_<id>）
-  const approvalId = 'APPR_' + rid();
-  const payload = {
-    id: approvalId,
-    salonId: S.salonId, bookingId: S.bookingId, customerId: S.customerId,
-    amountLKR: grand,
-    items: { menuId: S.sel.menuId, addonIds: [...S.sel.addonIds], discountId: S.sel.discountId, manual: S.sel.manual||0, reason: S.sel.reason||'' },
-    approved: false, declined: false, createdAt: Date.now()
-  };
-  localStorage.setItem('appr_' + approvalId, JSON.stringify(payload));
+  // GAS: approval.start
+  const res = await fetch(API_BASE, {
+    method:'POST',
+    body: JSON.stringify({
+      key: GAS_KEY,
+      kind: 'approval.start',
+      data: {
+        bookingId: S.bookingId,
+        salonId: S.salonId,
+        items: { menuId: S.sel.menuId, addonIds: [...S.sel.addonIds], discountId: S.sel.discountId, manual: S.sel.manual||0, reason: S.sel.reason||'' },
+        amountJPY: grand,   // ← JPY で統一
+        ttlMin: 60
+      }
+    })
+  }).then(r=>r.json());
 
-  // 顧客に渡すURL（同フォルダの approve.html を開けばOK）
-  const url = `${APPROVE_FILE}?aid=${encodeURIComponent(approvalId)}`;
-  setApStatus('Link created'); 
-  S.approval.id = approvalId;
+  if(!res.ok){ alert(res.error || 'approval start failed'); return; }
 
-  // 共有：1) その場で開く or 2) 右クリックコピーで送る
+  // 顧客リンク（approve 側に必要情報を付与）
+  // customerEmail / customerName が取れるなら付ける（カード保存時の upsertCustomer 用）
+  const url = `${APPROVE_FILE}?aid=${encodeURIComponent(res.approvalId)}`
+    + `&customerId=${encodeURIComponent(S.customerId||'')}`
+    + `&customerEmail=${encodeURIComponent(qs.get('customerEmail')||'')}`
+    + `&customerName=${encodeURIComponent(qs.get('customerName')||'')}`
+    + `&salonId=${encodeURIComponent(S.salonId||'')}`
+    + `&bookingId=${encodeURIComponent(S.bookingId||'')}`;
+
+  setApStatus('Link created');
+  S.approval.id = res.approvalId;
+
+  // 共有（開いて確認 or コピーして送る）
   window.open(url, '_blank');
 
   // 承認ポーリング開始
   pollApproval();
 }
 
-    function setApStatus(t, ok=false){ const el = $('#apStatus'); el.textContent=t; el.style.color = ok? '#0b684e':'#333'; }
+function setApStatus(t, ok=false){ const el = $('#apStatus'); el.textContent=t; el.style.color = ok? '#0b684e':'#333'; }
 
-function readApproval(aid){
-  try{ return JSON.parse(localStorage.getItem('appr_' + aid) || 'null'); }
-  catch(e){ return null; }
-}
-
+// GAS からステータス取得
 async function pollApproval(){
   if(!S.approval.id) return;
   let tries = 0;
-  const tick = ()=>{
+  const tick = async ()=>{
     tries++; if(tries>600 || S.approval.ok) return; // 最大 ~50分
-    const ap = readApproval(S.approval.id);
-    if(ap?.approved){ S.approval.ok = true; setApStatus('Approved ✔', true); calc(); return; }
+    const q = new URLSearchParams({ kind:'approval.status', key:GAS_KEY, approvalId:S.approval.id });
+    const j = await fetch(`${API_BASE}?${q}`).then(r=>r.json());
+    if (j.ok && j.status === 'approved') {
+      S.approval.ok = true; setApStatus('Approved ✔', true); calc(); return;
+    }
     setTimeout(tick, 5000);
   };
   tick();
 }
+
 
     // ====== Charge ======
 async function doCharge(){
@@ -348,24 +382,25 @@ async function doCharge(){
   btn.disabled = true; msg.textContent = 'Charging…';
 
   try{
-    // approvalId を使ってるなら S.approval.id を渡す（任意）
-    const body = {
-      salonId: S.salonId,
-      bookingId: S.bookingId || 'BOOK_001', // 無ければ固定でもOK（デモ/初期運用）
-      amountLKR: grand,
-      approvalId: S.approval?.id || null
-    };
-    const r = await fetch(`${API_BASE}/api/charge`, {
+    // ここでは paymentMethodId を送らず、code.gs 側で customerId から補完する運用
+    const r = await fetch(API_BASE, {
       method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify(body)
+      body: JSON.stringify({
+        key: GAS_KEY,
+        kind: "charge",
+        data: {
+          amountJPY: grand,
+          customerId: S.customerId || ''
+          // paymentMethodId: 省略（code.gs 側で補完する or admin に追加実装する）
+        }
+      })
     });
     const j = await r.json();
-    if(r.ok && j.ok){
+    if(j.ok){
       msg.textContent = `Success! PaymentIntent: ${j.paymentIntentId} (${j.status})`;
     }else{
       msg.textContent = `Error: ${j.error || 'charge failed'}`;
-      btn.disabled = false; // リトライ可
+      btn.disabled = false;
     }
   }catch(e){
     msg.textContent = 'Request failed: ' + e.message;
@@ -388,4 +423,5 @@ async function doCharge(){
   </script>
 </body>
 </html>
+
 

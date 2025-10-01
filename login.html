@@ -164,11 +164,24 @@
     if(!salonId || !password){ msg.textContent = 'Salon ID / Password を入力してください'; return; }
     try{
       const r = await fetch("/api/auth/login", {
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ salonId, password })
-      });
-      const j = await r.json();
-      if(!r.ok || !j.ok){ msg.textContent = j.error || 'Login failed'; return; }
+  method:"POST", headers:{"Content-Type":"application/json"},
+  body: JSON.stringify({ salonId, password })
+});
+
+let j = {};
+try {
+  // JSONを安全に読む
+  j = await r.json();
+} catch (e) {
+  msg.textContent = "サーバーが正しいJSONを返しませんでした";
+  return;
+}
+
+if(!r.ok || !j.ok){
+  msg.textContent = j.error || `Login failed (status ${r.status})`;
+  return;
+}
+
       const salonName = encodeURIComponent(j.salon.name);
       // Admin に遷移（ダミーの予約文脈を付与。実運用では実データに置換）
       location.href = `admin.html?salonId=${encodeURIComponent(salonId)}&salonName=${salonName}&bookingId=BOOK_001&customerId=CUST_001&scheduled=5000&customerName=Mayu`;

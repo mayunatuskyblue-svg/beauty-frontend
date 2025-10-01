@@ -168,19 +168,23 @@
   body: JSON.stringify({ salonId, password })
 });
 
-let j = {};
-try {
-  // JSONを安全に読む
-  j = await r.json();
-} catch (e) {
-  msg.textContent = "サーバーが正しいJSONを返しませんでした";
-  return;
-}
+ let j = null;
+ try {
+   const ct = r.headers.get('content-type') || '';
+   if (ct.includes('application/json')) {
+     j = await r.json();
+   } else {
+     const t = await r.text();             // デバッグ用
+     console.warn('Non-JSON response:', r.status, t);
+   }
+ } catch (_e) {
+   // JSONパース失敗
+ }
+ if(!r.ok || !j || j.ok !== true){
+   msg.textContent = (j && j.error) ? j.error : `Login failed (status ${r.status})`;
+   return;
+ }
 
-if(!r.ok || !j.ok){
-  msg.textContent = j.error || `Login failed (status ${r.status})`;
-  return;
-}
 
       const salonName = encodeURIComponent(j.salon.name);
       // Admin に遷移（ダミーの予約文脈を付与。実運用では実データに置換）

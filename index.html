@@ -962,6 +962,21 @@ header .nav-right #langPill{
   margin: 0 !important;
   z-index: auto !important;
 }
+/* === Header: 右に少し寄せる（コンテナの右パディングだけ増やす） === */
+header .container.hwrap{ padding-right: 28px; }          /* 16 → 28px くらいがちょうど */
+@media (min-width: 1280px){
+  header .container.hwrap{ padding-right: 36px; }        /* ワイド時はもう少しだけ */
+}
+
+/* === MyPage丸ボタン：画像を“中にフィット”＋アイコンはフォールバック化 === */
+.icon-btn{ position: relative; overflow: hidden; }       /* はみ出し防止 */
+.icon-btn img.avatar{
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; border-radius: 999px; display: block;
+}
+/* 画像があるときはSVGの人型は非表示（フォールバックとして残すならopacity:0でも可） */
+.icon-btn svg{ display: none; }
 
 </style>
   <script src="lang.js" defer></script>

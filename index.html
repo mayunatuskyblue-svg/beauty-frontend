@@ -901,10 +901,13 @@ header .nav-right{
   position: static !important;
   display: flex !important;
   align-items: center !important;
-  gap: 12px !important;
+  gap: 16px !important;
   flex-wrap: nowrap !important;   /* 1行死守 */
 }
-
+.nav-right > * {
+  margin: 0 !important;  /* 余計な margin を打ち消す */
+  position: static !important; /* 言語ピルやアイコンが絶対配置されないように */
+}
 /* 4要素をフレックスの子として素直に並べる */
 header .nav-right > .nav-link,
 header .nav-right > .icon-btn,

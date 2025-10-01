@@ -199,20 +199,32 @@ body.hero-header .header-controls{ position:absolute; left:16px; top:158px; z-in
   padding: 88px 0 32px; /* 既存より少し余白を増やす */
   background: linear-gradient(180deg,#CFA8B1, #F8EEF1 60%, transparent);
 }
+/* === Hero visual: right-side image like the mock === */
+.hero-head {
+  position: relative;
+  padding: 96px 0 40px;  /* 既存値でOK */
+  background: linear-gradient(180deg,#CFA8B1, #F8EEF1 60%, transparent);
+}
+
+/* 右側の人物ビジュアル：ここだけ差し替えればOK */
 .hero-head::after{
-  /* 右側の人物ビジュアル。適宜パス変更OK */
   content:"";
-  position:absolute; inset:0 0 0 auto;
-  width:min(42%,520px);
-  background-image:url("/assets/img/hero_model.webp");
-  background-size:cover; background-position:center;
+  position:absolute;
+  inset:0 0 0 auto;       /* 右側に張り付け */
+  width:min(42%,520px);   /* PDFのバランスに近い幅 */
+  background-image:url("/assets/img/beauty-hero.jpg"); /* ←ここをあなたの画像に */
+  background-size:cover;
+  background-position:center;
   filter: drop-shadow(0 8px 24px rgba(0,0,0,.18));
   border-bottom-left-radius:24px;
   opacity:.98;
 }
+
+/* モバイルでは隠す（既存ルールのまま） */
 @media(max-width:980px){
-  .hero-head::after{ display:none; } /* モバイルは隠す（既存優先で読みやすく） */
+  .hero-head::after{ display:none; }
 }
+
 
 /* Title block spacing */
 .hero-head .container { position:relative; z-index:1 }

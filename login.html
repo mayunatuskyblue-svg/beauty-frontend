@@ -153,8 +153,7 @@
 <script>
 // SmartPay 簡易ログイン(A案) → /api/auth/login へ
 (() => {
-  const API_BASE = "http://beautylk.com/api";  // server.js の PORT に合わせる
-  const btn = document.getElementById('salonQuickBtn');
+    const btn = document.getElementById('salonQuickBtn');
   if(!btn) return;
 
   btn.addEventListener('click', async ()=>{
@@ -164,7 +163,7 @@
     msg.textContent = '';
     if(!salonId || !password){ msg.textContent = 'Salon ID / Password を入力してください'; return; }
     try{
-      const r = await fetch(API_BASE + "/api/auth/login", {
+      const r = await fetch("/api/auth/login", {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ salonId, password })
       });

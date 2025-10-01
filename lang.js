@@ -33,7 +33,8 @@ T.en.smartpay = {
     card:{ card_no:'カード番号', save_btn:'カードを保存する', go_input:'カード情報の入力へ', title:'カード情報の保存（SmartPay : 後払い）', shop:'サロン', menu:'メニュー', staff:'施術者', when:'日時', price:'目安金額', i_agree:'利用規約に同意します', email:'メール', name:'お名前', check_then_go:'チェックしてから「カード情報の入力へ」を押してください。' },
     thanks:{ title:'ご予約ありがとうございます', msg:'この店舗の口コミ投稿ができるようになりました。', back_to_shop:'店舗ページへ戻る' },
 });
-  T.ja.legal = Object.assign({}, T.ja.legal, { terms_full_html: `
+  T.ja.legal = Object.assign({}, T.ja.legal, {
+  terms_full_html: `
     <div class="container">
       <h1 data-i18n="footer.terms">利用規約</h1>
       <h2>1. サービス内容</h2>
@@ -76,8 +77,8 @@ T.en.smartpay = {
       <p>予約時間の24時間前までのキャンセルは無料です。</p>
       <h2>24時間以内：50%</h2>
       <p>・ご予約3日前～24時間前まで：予約金額の30%<br>
-     ・ご予約24時間以内：予約金額の50%<br>
-     ・無断キャンセル（No-show）：予約金額の100%</p></p>
+         ・ご予約24時間以内：予約金額の50%<br>
+         ・無断キャンセル（No-show）：予約金額の100%</p>
       <h2>無断キャンセル</h2>
       <p>予約金額の最大100%の請求および以後のご利用制限となる場合があります。</p>
       <h2>キャンセル方法</h2>
@@ -87,36 +88,17 @@ T.en.smartpay = {
       <p><a href="index.html" data-i18n="ui.back">&larr; ホームへ戻る</a></p>
     </div>
   `,
-  // Booking.com/HotPepperBeauty のトーンを参考にした問い合わせページ案
   contact_full_html: `
     <div class="container">
       <h1 data-i18n="footer.contact">お問い合わせ</h1>
-      <p>ご不明点やご要望は、以下の方法でご連絡ください。</p>
-
-      <h2>連絡方法</h2>
       <ul>
-        <li><b>Email</b>：<a href="mayunatu.skyblue@gmail.com">mayunatu.skyblue@gmail.com</a></li>
-        <li><b>WhatsApp</b>： +94 77-031-5691</li>
+        <li><b>Email</b>：<a href="mailto:mayunatu.skyblue@gmail.com">mayunatu.skyblue@gmail.com</a></li>
+        <li><b>WhatsApp</b>：<a href="https://wa.me/94770315691">+94 770 315 691</a></li>
       </ul>
-
-      <h2>よくあるご用件</h2>
-      <ul>
-        <li>予約の確認・変更・キャンセル（<a href="cancel.html">キャンセルポリシー</a>参照）</li>
-        <li>支払い・領収書に関するお問い合わせ</li>
-        <li>アカウント／ログインに関するサポート</li>
-        <li>掲載・提携に関するご相談（サロン様向け）</li>
-      </ul>
-
-      <h2>対応時間</h2>
-      <p>平日 10:00–18:00（現地時間）。内容により返信までお時間をいただく場合があります。</p>
-
-      <h2>データの開示/削除請求</h2>
-      <p>個人データの開示・訂正・削除をご希望の方は、登録メールアドレスからご連絡ください。</p>
-
       <p><a href="index.html" data-i18n="ui.back">&larr; ホームへ戻る</a></p>
     </div>
   `
-    });
+});
   T.en = Object.assign({}, T.en, {
     ui:{ phone:'Phone', close:'Close', process:'Processing…', mypage:'My page', currency:'Currency', back_to_search:'Back to search', back:'← Back', toTop:'Back to top', show:'Show', your_name:'Your information', email:'Email', password:'Password', pay_with_card:'Pay with card (PayPal)', pay_on_site:'Pay at venue', done:'Done', confirm:'Confirm', yourInfo:'Your information', notes:'Notes', name:'Name', phone:'Phone' },
     auth:{ login:'Log in', signup:'Sign up', goto_signup:'Create an account', signup_here:'Create an account', login_with_password:'Log in with password', login_with_magic:'Log in via email link', send_magic:'Send sign-up link', magic_hint:'Open the link in the email to complete sign-up.', email:'Email', password:'Password' },
@@ -129,15 +111,32 @@ T.en.smartpay = {
     confirm:{ title:'Review your reservation', uf_desc:'Enter an email and a phone number we can reach you at.', time_prefix:'Time:', pay_prefix:'Payment:SmartPay(pay later)', staff_default:'No preference', toast_missing:'Some fields are missing.', close:'Close', field_name:'name', field_email:'email', field_phone:'phone number', toast_prompt:'To proceed to payment, please enter {fields}.' },
     card:{ card_no:'Card number', save_btn:'Save card', go_input:'Go to card input', title:'Save your card (SmartPay: pay later)', shop:'Shop', menu:'Menu', staff:'Staff', when:'Date & time', price:'Est. price', i_agree:'I agree to the Terms', email:'Email', name:'Name', check_then_go:'Please check the box, then press “Go to card input”.' },
 });
+
+  function getLang(){
+  return localStorage.getItem('lang') || localStorage.getItem('bl_lang') || 'ja';
+}
+  function setLang(l){ try{ localStorage.setItem('lang', l);}catch(e){} }
+  // === ADD: URLクエリ優先の一度きり同期 ===
+(function syncLangFromQuery(){
+  try {
+    const q = new URLSearchParams(location.search).get('lang'); // ja|en|auto
+    if (q === 'ja' || q === 'en' || q === 'auto') {
+      const resolved = (q === 'auto')
+        ? ((navigator.language||'').toLowerCase().startsWith('ja') ? 'ja' : 'en')
+        : q;
+      setLang(resolved);
+    }
+  } catch(e){}
+})();
 T.en.legal = Object.assign({}, T.en.legal, {
-terms_full_html: `
+  terms_full_html: `
     <div class="container">
       <h1 data-i18n="footer.terms">Terms of Service</h1>
       <h2>1. Scope</h2>
       <p>We provide a platform to discover salons and make bookings. We are not a party to the treatment agreement between guests and salons.</p>
       <h2>2. Accounts</h2>
       <p>Provide accurate information and keep it updated. Accounts violating our policies may be suspended.</p>
-      <h2>3. Bookings & Payments</h2>
+      <h2>3. Bookings &amp; Payments</h2>
       <p>Bookings use SmartPay (pay later). Your card is securely saved by Stripe and will be charged automatically after the service. Charges and cancellation fees follow our <a href="cancel.html">Cancel Policy</a>.</p>
       <h2>4. Cancellations</h2>
       <p>See our <a href="cancel.html">Cancel Policy</a> for details.</p>
@@ -169,67 +168,31 @@ terms_full_html: `
   cancel_full_html: `
     <div class="container">
       <h1 data-i18n="footer.cancel">Cancel Policy</h1>
-      <h2>Cancellation fees</h2>
-      <p>・Within 3 days but more than 24 hours before: 30% of the booking amount<br>
-     ・Within 24 hours: 50% of the booking amount<br>
-     ・No-show: 100% of the booking amount</p>      <h2>Within 24 hours: 50% fee</h2>
-      <p>Cancellations within 24 hours incur a 50% fee of the booking amount.</p>
+      <h2>Fees</h2>
+      <p>・Up to 24h before: Free<br>
+         ・3 days–24h before: 30% of booking price<br>
+         ・Within 24h: 50% of booking price<br>
+         ・No-show: 100% of booking price</p>
       <h2>No-show</h2>
-      <p>No-show may result in up to 100% charge and future restrictions.</p>
+      <p>May result in up to 100% charge and restriction of future use.</p>
       <h2>How to cancel</h2>
-      <p>Use the link in your confirmation email or contact us via My Page / Contact.</p>
-      <h2>Card authorization</h2>
-      <p>We may authorize your saved card to secure the booking. Final charge is made after the service.</p>
+      <p>Please use the link in your confirmation email, or contact us/my page.</p>
+      <h2>Card pre-authorization</h2>
+      <p>A temporary authorization may be placed on your saved card to secure the booking. Final charge occurs after the service.</p>
       <p><a href="index.html" data-i18n="ui.back">&larr; Back to home</a></p>
     </div>
   `,
-  // Tone inspired by booking.com & HotPepper Beauty: succinct, action-oriented, helpful
   contact_full_html: `
     <div class="container">
       <h1 data-i18n="footer.contact">Contact</h1>
-      <p>If you have questions or requests, reach out via the options below.</p>
-
-      <h2>Channels</h2>
       <ul>
         <li><b>Email</b>: <a href="mailto:mayunatu.skyblue@gmail.com">mayunatu.skyblue@gmail.com</a></li>
-        <li><b>WhatsApp</b>: +94 77-031-5691</li>
+        <li><b>WhatsApp</b>: <a href="https://wa.me/94770315691">+94 770 315 691</a></li>
       </ul>
-
-      <h2>Common topics</h2>
-      <ul>
-        <li>Check / change / cancel a booking (<a href="cancel.html">Cancel Policy</a>)</li>
-        <li>Payments and receipts</li>
-        <li>Account & login support</li>
-        <li>Listing & partnerships (for salons)</li>
-      </ul>
-
-      <h2>Hours</h2>
-      <p>Weekdays 10:00–18:00 (local time). Replies may take time depending on your request.</p>
-
-      <h2>Data requests</h2>
-      <p>To access, correct, or delete your personal data, please contact us from your registered email address.</p>
-
       <p><a href="index.html" data-i18n="ui.back">&larr; Back to home</a></p>
     </div>
   `
-  });
-  function getLang(){
-  return localStorage.getItem('lang') || localStorage.getItem('bl_lang') || 'ja';
-}
-  function setLang(l){ try{ localStorage.setItem('lang', l);}catch(e){} }
-  // === ADD: URLクエリ優先の一度きり同期 ===
-(function syncLangFromQuery(){
-  try {
-    const q = new URLSearchParams(location.search).get('lang'); // ja|en|auto
-    if (q === 'ja' || q === 'en' || q === 'auto') {
-      const resolved = (q === 'auto')
-        ? ((navigator.language||'').toLowerCase().startsWith('ja') ? 'ja' : 'en')
-        : q;
-      setLang(resolved);
-    }
-  } catch(e){}
-})();
-
+});
   function i18nApply(root){
     const lang = getLang();
     (root || document).querySelectorAll('[data-i18n]').forEach(el=>{

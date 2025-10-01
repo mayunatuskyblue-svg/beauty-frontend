@@ -936,6 +936,32 @@ header .nav-right > .lang-pill{
 @media (max-width: 420px){
   header .nav-right{ flex-wrap: wrap !important; row-gap: 8px; }
 }
+/* === FINAL: header を1行に固定（Signup / Login / MyPage / Language） === */
+header .nav-right{
+  position: static !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 14px !important;
+  flex-wrap: nowrap !important;
+  padding-bottom: 0 !important;      /* 余計な下マージン殺す */
+}
+header .nav-right > *{
+  position: static !important;        /* 全員 flow に戻す */
+  margin: 0 !important;
+}
+
+/* 言語ピルの絶対配置を完全に解除（IDが最強なのでこれで確実に勝つ） */
+header .nav-right #langPill{
+  position: static !important;
+  top: auto !important;
+  right: auto !important;
+  left: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  z-index: auto !important;
+}
 
 </style>
   <script src="lang.js" defer></script>

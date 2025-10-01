@@ -821,24 +821,6 @@ h1,h2,h3,h4{ margin-top: var(--space-md); margin-bottom: var(--space-sm); }
     </a>
     <nav class="nav-right">
   <!-- 旗付きの言語ピル -->
-  <div class="container hero-flex">
-  <h1 data-i18n="hero_title">スリランカで叶える、私だけの美しさ。</h1>
-
-  <!-- ▼ ここに移してね ▼ -->
-  <div class="lang-pill hero-lang">
-    <span class="flag" id="langFlag">🇯🇵</span>
-    <select id="langSelect" class="langSel" title="Language">
-      <option value="auto">Auto</option>
-      <option value="ja">日本語</option>
-      <option value="en">English</option>
-    </select>
-    <span class="abbr" id="langAbbr">US</span>
-    <svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="currentColor"/></svg>
-  </div>
-  <!-- ▲ ここまで ▲ -->
-
-  <img class="hero-photo" src="/assets/img/beauty-hero.png?v=1" alt="Hero visual">
-</div>
 
   <!-- テキストリンク風（IDは維持：既存JSが動く） -->
   <a class="nav-link" id="navSignup" data-i18n="auth.signup">新規登録</a>
@@ -864,6 +846,17 @@ h1,h2,h3,h4{ margin-top: var(--space-md); margin-bottom: var(--space-sm); }
     <!-- h1 と img を同じ flex コンテナに -->
     <div class="container hero-flex">
       <h1 data-i18n="hero_title">スリランカで叶える、私だけの美しさ。</h1>
+      <div class="lang-pill hero-lang">
+    <span class="flag" id="langFlag">🇯🇵</span>
+    <select id="langSelect" class="langSel" title="Language">
+      <option value="auto">Auto</option>
+      <option value="ja">日本語</option>
+      <option value="en">English</option>
+    </select>
+    <span class="abbr" id="langAbbr">US</span>
+    <svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="currentColor"/></svg>
+  </div>
+
       <img class="hero-photo" src="/assets/img/beauty-hero.png" alt="Hero visual">
     </div>
     <!-- サブコピーはその下に -->

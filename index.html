@@ -390,6 +390,19 @@ body.hero-header .header-controls{ position:absolute; left:16px; top:158px; z-in
   background:#fff; border:1px solid var(--stroke);
   box-shadow: 0 1px 3px rgba(0,0,0,.02); /* ほぼ見えない程度 */
 }
+  /* 画面が広い時は言語ピルを右上に固定（画像と被らない） */
+@media (min-width: 1200px) and (min-height: 800px){
+  /* 右上固定。ヒーローの絶対配置を打ち消すために !important で上書き */
+  .lang-pill{
+    position: fixed !important;
+    top: 16px !important;
+    right: 20px !important;
+    left: auto !important;
+    transform: none !important;
+    z-index: 1000 !important; /* ヒーロー画像より前面 */
+  }
+}
+
 .langSel{ border:0; background:transparent; font:inherit; font-weight:800; padding:0; outline:0; appearance:none; }
 .lang-pill .flag{ font-size:18px; line-height:1; }
 .lang-pill .caret{ width:16px; height:16px; opacity:.5 }

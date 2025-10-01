@@ -118,6 +118,7 @@
             We will send a short link to the customer. When the customer taps <b>Approve</b>,
             the status turns green and the Charge button unlocks.
           </div>
+          <div id="shareBox" class="row" style="margin-top:8px;display:none"></div>
         </div>
       </section>
 
@@ -152,6 +153,21 @@
     const $ = (q) => document.querySelector(q);
     const fmt = n => `Rs ${Number(n||0).toLocaleString('en-US')}`;
     const qs = new URLSearchParams(location.search);
+    function normalizePhone(raw){
+  // +94xxxxxxxxx を想定。先頭+がなければ付与、空白/ハイフン除去
+  let p = String(raw||'').replace(/[\s-]/g,'');
+  if (!p) return '';
+  if (!p.startsWith('+')) {
+    // 例：スリランカなら +94 を付与（必要に応じて運用国に合わせて調整）
+    if (p.startsWith('0')) p = '+94' + p.slice(1);
+    else p = '+94' + p;
+  }
+  return p;
+}
+function encodeMsg(s){ return encodeURIComponent(s).replace(/%20/g,'+'); }
+async function copyToClipboard(text){
+  try{ await navigator.clipboard.writeText(text); return true; }catch(e){ return false; }
+}
 
     function readCtx(){
       S.token = qs.get('token') || '';
@@ -352,6 +368,29 @@ async function startApproval(){
 
   // 共有（開いて確認 or コピーして送る）
   window.open(url, '_blank');
+  // --- 共有UIを表示 ---
+const phone = normalizePhone($('#custPhone').value.trim());
+const msg = [
+  'Please approve your bill:',
+  url
+].join('\n');
+
+const waHref  = phone ? `https://wa.me/${phone.replace('+','')}/?text=${encodeURIComponent(msg)}` : '';
+const smsHref = phone ? `sms:${encodeURIComponent(phone)}?&body=${encodeURIComponent(msg)}` : '';
+
+const box = document.getElementById('shareBox');
+box.style.display = 'flex';
+box.innerHTML = `
+  <button class="btn" id="btnCopy">Copy link</button>
+  ${waHref ? `<a class="btn" id="btnWA" href="${waHref}" target="_blank">Open WhatsApp</a>` : ''}
+  ${smsHref ? `<a class="btn" id="btnSMS" href="${smsHref}" target="_blank">Open SMS</a>` : ''}
+`;
+
+document.getElementById('btnCopy').onclick = async ()=>{
+  const ok = await copyToClipboard(url);
+  setApStatus(ok ? 'Link copied' : 'Copy failed');
+};
+
 
   // 承認ポーリング開始
   pollApproval();
@@ -426,6 +465,7 @@ async function doCharge(){
   </script>
 </body>
 </html>
+
 
 
 

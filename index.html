@@ -807,6 +807,46 @@ h1,h2,h3,h4{ margin-top: var(--space-md); margin-bottom: var(--space-sm); }
 @media (max-width: 960px){
   .searchrow2 .searchbtn{ padding-left:12px; padding-right:12px; }
 }
+/* ===== Hero画像：右にズラして少し大きく ===== */
+.hero-head .hero-photo{
+  right: -48px;                 /* 右に少しハミ出させる */
+  max-width: min(420px, 40vw);  /* 少し大きめに */
+}
+
+@media (min-width: 1200px){
+  .hero-head .hero-photo{
+    right: -80px;               /* さらに右へ */
+    max-width: 460px;           /* さらに大きく */
+  }
+}
+
+/* タイトルが画像に被りにくいように、右側に余白を足す（PCだけ） */
+@media (min-width: 980px){
+  .hero-head .container{
+    padding-right: 420px;       /* 画像ぶんの余白を確保 */
+  }
+}
+
+/* ===== 言語ピル：もっと右上に固定 ===== */
+/* いま hero-flex 内で中央寄せされてるのを“右上固定”に切り替える */
+.hero-head .lang-pill.hero-lang{
+  position: absolute !important;
+  top: 16px !important;
+  right: 20px !important;
+  left: auto !important;
+  transform: none !important;   /* 以前の translateX(-50%) を打ち消し */
+  z-index: 5;
+}
+@media (max-width: 820px){
+  .hero-head .lang-pill.hero-lang{
+    top: 12px !important;
+    right: 12px !important;
+  }
+}
+
+/* （競合対策）昔の “左上に置く” ルールを確実に無効化 */
+body.hero-header .lang-pill{ left:auto !important; }
+body.hero-header #langSelect{ inset:0; }  /* ピル内で全域クリックできるまま */
 
 </style>
   <script src="lang.js" defer></script>

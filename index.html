@@ -780,6 +780,33 @@ h1,h2,h3,h4{ margin-top: var(--space-md); margin-bottom: var(--space-sm); }
 .searchbar .pill svg{
   width: 20px; height: 20px; flex: 0 0 20px; /* 幅を固定して左右の見た目を揃える */
 }
+/* ヒーロー内に入れた言語ピルをタイトルの下あたり中央に配置 */
+.hero-lang{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  top: calc(100% - 54px);    /* 見出し行の下に出したい位置を微調整 */
+  z-index:2;
+}
+@media (max-width:820px){
+  .hero-lang{ top: calc(100% + 8px); }
+}
+/* モバイルの溢れ対策：子要素の最小幅を許可 */
+.searchbar *{ min-width:0; }
+
+/* フォーム本体は親幅に収まるように */
+.searchbar form{ width:100%; }
+
+/* 検索ボタンは常に枠内で100%に */
+.searchrow2 .searchbtn{
+  width:100%;
+  box-sizing:border-box;
+}
+
+/* もし右にピッタリ付かない場合はボタンに左右パディングを上書き */
+@media (max-width: 960px){
+  .searchrow2 .searchbtn{ padding-left:12px; padding-right:12px; }
+}
 
 </style>
   <script src="lang.js" defer></script>
@@ -794,16 +821,24 @@ h1,h2,h3,h4{ margin-top: var(--space-md); margin-bottom: var(--space-sm); }
     </a>
     <nav class="nav-right">
   <!-- 旗付きの言語ピル -->
-  <div class="lang-pill">
+  <div class="container hero-flex">
+  <h1 data-i18n="hero_title">スリランカで叶える、私だけの美しさ。</h1>
+
+  <!-- ▼ ここに移してね ▼ -->
+  <div class="lang-pill hero-lang">
     <span class="flag" id="langFlag">🇯🇵</span>
     <select id="langSelect" class="langSel" title="Language">
       <option value="auto">Auto</option>
       <option value="ja">日本語</option>
       <option value="en">English</option>
     </select>
-     <span class="abbr" id="langAbbr">US</span>
+    <span class="abbr" id="langAbbr">US</span>
     <svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="currentColor"/></svg>
   </div>
+  <!-- ▲ ここまで ▲ -->
+
+  <img class="hero-photo" src="/assets/img/beauty-hero.png?v=1" alt="Hero visual">
+</div>
 
   <!-- テキストリンク風（IDは維持：既存JSが動く） -->
   <a class="nav-link" id="navSignup" data-i18n="auth.signup">新規登録</a>
@@ -829,7 +864,7 @@ h1,h2,h3,h4{ margin-top: var(--space-md); margin-bottom: var(--space-sm); }
     <!-- h1 と img を同じ flex コンテナに -->
     <div class="container hero-flex">
       <h1 data-i18n="hero_title">スリランカで叶える、私だけの美しさ。</h1>
-      <img class="hero-photo" src="/assets/img/hero-beauty.png" alt="Hero visual">
+      <img class="hero-photo" src="/assets/img/beauty-hero.png" alt="Hero visual">
     </div>
     <!-- サブコピーはその下に -->
     <p class="hero-sub" data-i18n="hero_sub">ヘア・ネイル・まつ毛・アーユルヴェーダ・マッサージ/スパ。口コミと予約。</p>
@@ -952,16 +987,10 @@ function enPoints(s){
 function enTag(t){const map={'マツエク':'Lashes','スパ':'Spa','ハーブ':'Herbs','日本語対応':'Japanese support'};return map[t]||t;}
 // ---------- i18n ----------
 function getLang(){
-  const htmlLang = (document.documentElement.getAttribute('lang') || '').toLowerCase();
-  // JP/EN 版サイトはここで固定
-  if (htmlLang === 'ja' || htmlLang === 'en') return htmlLang;
-
-  // 以降は予備（多言語単一サイトで使うなら残す）
   const pref = localStorage.getItem('bl_lang') || 'auto';
-  if (pref !== 'auto') return pref;
-
-  const ja = (navigator.language || 'en').toLowerCase().startsWith('ja');
-  return ja ? 'ja' : 'en';
+  if (pref === 'ja' || pref === 'en') return pref;     // ← ユーザー選択を最優先
+  // auto のときだけブラウザ言語で決定
+  return (navigator.language || 'en').toLowerCase().startsWith('ja') ? 'ja' : 'en';
 }
 
 // ---------- Currency helpers (JPY -> target) ----------
@@ -1049,8 +1078,14 @@ document.addEventListener('DOMContentLoaded', updateLangFlag);
   const sel = document.getElementById('langSelect');
   const pref = localStorage.getItem('bl_lang') || 'auto';
   sel.value = pref;
-  sel.onchange = ()=>{ localStorage.setItem('bl_lang', sel.value); location.reload(); };
-  applyI18N();
+  sel.onchange = ()=>{
+  localStorage.setItem('bl_lang', sel.value);
+  // html の lang も同期（SEO/音声読み上げ対策）
+  document.documentElement.setAttribute('lang', sel.value === 'auto' ? '' : sel.value);
+  location.reload();
+};
+
+    applyI18N();
 })();
 
 </script>

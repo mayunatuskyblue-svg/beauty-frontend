@@ -895,6 +895,44 @@ header #langPill,
 .hero-head #langPill{
   left: auto !important;
 }
+/* === Force one-line nav: Signup / Login / MyPage / Language === */
+body.hero-header .nav-right,
+header .nav-right{
+  position: static !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  flex-wrap: nowrap !important;   /* 1行死守 */
+}
+
+/* 4要素をフレックスの子として素直に並べる */
+header .nav-right > .nav-link,
+header .nav-right > .icon-btn,
+header .nav-right > .lang-pill{
+  flex: 0 0 auto;
+}
+
+/* 言語ピルの絶対配置を完全無効化して“横並びの一員”にする */
+header .lang-pill,
+body.hero-header .lang-pill,
+.hero-head .lang-pill.hero-lang{
+  position: static !important;
+  inset: auto !important;
+  margin: 0 !important;
+  transform: none !important;
+  z-index: auto !important;
+}
+
+/* 念のため：以前の右上固定などを打ち消す */
+header .nav-right > .lang-pill{
+  right: auto !important;
+  top: auto !important;
+}
+
+/* 幅が極端に狭い端末だけは折り返す（不要なら消してOK） */
+@media (max-width: 420px){
+  header .nav-right{ flex-wrap: wrap !important; row-gap: 8px; }
+}
 
 </style>
   <script src="lang.js" defer></script>

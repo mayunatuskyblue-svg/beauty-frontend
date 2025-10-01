@@ -32,7 +32,8 @@ T.en.smartpay = {
     confirm:{ title:'予約内容の確認', uf_desc:'連絡が取れるメールアドレスと電話番号をご入力ください。', time_prefix:'時間 :', pay_prefix:'支払い : SmartPay(後払い)', staff_default:'指名なし', toast_missing:'未入力があります。', close:'閉じる', field_name:'お名前', field_email:'メール', field_phone:'電話番号', toast_prompt:'お支払いに進むには、{fields} を入力してください。' },
     card:{ card_no:'カード番号', save_btn:'カードを保存する', go_input:'カード情報の入力へ', title:'カード情報の保存（SmartPay : 後払い）', shop:'サロン', menu:'メニュー', staff:'施術者', when:'日時', price:'目安金額', i_agree:'利用規約に同意します', email:'メール', name:'お名前', check_then_go:'チェックしてから「カード情報の入力へ」を押してください。' },
     thanks:{ title:'ご予約ありがとうございます', msg:'この店舗の口コミ投稿ができるようになりました。', back_to_shop:'店舗ページへ戻る' },
-});
+        }
+        });
   T.ja.legal = Object.assign({}, T.ja.legal, {
   terms_full_html: `
     <div class="container">

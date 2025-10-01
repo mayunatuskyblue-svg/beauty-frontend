@@ -847,6 +847,27 @@ h1,h2,h3,h4{ margin-top: var(--space-md); margin-bottom: var(--space-sm); }
 /* （競合対策）昔の “左上に置く” ルールを確実に無効化 */
 body.hero-header .lang-pill{ left:auto !important; }
 body.hero-header #langSelect{ inset:0; }  /* ピル内で全域クリックできるまま */
+/* === FIX: 言語ピルをログイン/マイページの真下に固定（文字と被らない高さ） === */
+header .nav-right .lang-pill {
+  position: absolute !important;   /* 親 .nav-right を基準に絶対配置 */
+  right: 0 !important;             /* 右端に揃える */
+  top: calc(100% + 56px) !important;/* ← ここが“下げ量”。被るなら 64px/72px に */
+  left: auto !important;
+  transform: none !important;
+  z-index: 50;                      /* ヒーローより前面 */
+}
+
+/* モバイルは少し浅めに（必要なら調整） */
+@media (max-width: 820px){
+  header .nav-right .lang-pill{
+    top: calc(100% + 24px) !important;
+    right: 12px !important;
+  }
+}
+
+/* 競合している古い配置指定を無効化（保険） */
+body.hero-header .lang-pill{ left:auto !important; top:auto !important; }
+.hero-head .lang-pill.hero-lang{ top:auto !important; right:auto !important; left:auto !important; }
 
 </style>
   <script src="lang.js" defer></script>

@@ -850,12 +850,20 @@ h1,h2,h3,h4{ margin-top: var(--space-md); margin-bottom: var(--space-sm); }
   transform: none !important;   /* 以前の translateX(-50%) を打ち消し */
   z-index: 20;
 }
+/* PCは変更なし */
+
+/* スマホだけ下にずらす */
 @media (max-width: 820px){
-  .hero-head .lang-pill.hero-lang{
-    top: 60px !important;
-    right: 12px !important;
+  body.hero-header .lang-pill {
+    position: absolute !important;
+    right: 12px !important;     /* 右に寄せる */
+    top: calc(100% + 24px) !important;  /* ナビゲーションの下に落とす */
+    margin-top: 8px !important; /* 余白（必要なら調整） */
+    transform: none !important;
+    z-index: 50 !important;     /* ヒーロー画像より前面 */
   }
 }
+
 
 /* （競合対策）昔の “左上に置く” ルールを確実に無効化 */
 body.hero-header .lang-pill{ left:auto !important; }

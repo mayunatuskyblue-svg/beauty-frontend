@@ -163,9 +163,13 @@
     msg.textContent = '';
     if(!salonId || !password){ msg.textContent = 'Salon ID / Password を入力してください'; return; }
     try{
-      const r = await fetch("/api/auth/login", {
+      const r = await fetch("https://script.google.com/macros/s/AKfycbwWRpfcZMsGxNqGJ5aNjRT1Y1PChDTqtQE3e0S7sUDAMei8s1wOr6lpKMnOaI1Z-6o/exec", {
   method:"POST", headers:{"Content-Type":"application/json"},
-  body: JSON.stringify({ salonId, password })
+  body: JSON.stringify({ 
+    key: GAS_KEY,               // すでに code.gs がチェックしているキー
+     kind: "auth.login",
+     data: { salonId, password } // ログイン情報
+   })
 });
 
  let j = null;

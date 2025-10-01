@@ -166,7 +166,7 @@ body.hero-header header{ position:absolute; top:8px; left:0; right:0; background
 body.hero-header .hwrap{ padding:0 0 }
 body.hero-header .logo-img{ width:120px; border-radius:12px; box-shadow:none }
 body.hero-header .nav-right .btn.primary{ background:var(--teal)!important; border-color:var(--teal)!important; color:#fff!important }
-body.hero-header .nav-right{ position:absolute; right:140px; top:16px; z-index:9 }
+body.hero-header .nav-right{ position:absolute; right:16px; top:16px; z-index:9 }
 body.hero-header .logo-img{ position:absolute; top:16px; left:16px; width:120px; height:auto; z-index:10 }
 body.hero-header #langSelect{ position:absolute; left:16px; top:108px; z-index:9 }
 body.hero-header .header-controls{ position:absolute; left:16px; top:158px; z-index:8 }
@@ -831,15 +831,15 @@ h1,h2,h3,h4{ margin-top: var(--space-md); margin-bottom: var(--space-sm); }
 /* いま hero-flex 内で中央寄せされてるのを“右上固定”に切り替える */
 .hero-head .lang-pill.hero-lang{
   position: absolute !important;
-  top: calc(100% + 24px) !important; /*上からの距離*/
-  right: 0 !important; /*右からの距離*/
+  top: 70px !important; /*上からの距離*/
+  right: 20px !important; /*右からの距離*/
   left: auto !important;
   transform: none !important;   /* 以前の translateX(-50%) を打ち消し */
-  z-index: 999;
+  z-index: 20;
 }
 @media (max-width: 820px){
   .hero-head .lang-pill.hero-lang{
-    top: calc(100% + 20px) !important;
+    top: 60px !important;
     right: 12px !important;
   }
 }
@@ -847,136 +847,6 @@ h1,h2,h3,h4{ margin-top: var(--space-md); margin-bottom: var(--space-sm); }
 /* （競合対策）昔の “左上に置く” ルールを確実に無効化 */
 body.hero-header .lang-pill{ left:auto !important; }
 body.hero-header #langSelect{ inset:0; }  /* ピル内で全域クリックできるまま */
-/* === FIX: 言語ピルをログイン/マイページの真下に固定（文字と被らない高さ） === */
-header .nav-right > .lang-pill {
-  position: absolute !important;   /* 親 .nav-right を基準に絶対配置 */
-  right: 0 !important;             /* 右端に揃える */
-  top: 100% !important;/* ← ここが“下げ量”。被るなら 64px/72px に */
-  margin-top: 16px !important;
-  transform: none !important;
-  z-index: 50;                      /* ヒーローより前面 */
-}
-
-/* モバイルは少し浅めに（必要なら調整） */
-@media (max-width: 820px){
-  header .nav-right .lang-pill{
-    top: calc(100% + 24px) !important;
-    right: 12px !important;
-  }
-}
-
-/* 競合している古い配置指定を無効化（保険） */
-body.hero-header .lang-pill{ left:auto !important; top:auto !important; }
-.hero-head .lang-pill.hero-lang{ top:auto !important; right:auto !important; left:auto !important; }
-/* nav-rightの直下にスペースを確保（被り防止の決め手） */
-header .nav-right{
-  position: relative !important;
-  padding-bottom: 88px !important; /* 72〜96で微調整OK */
-}
-
-/* 言語ピルを nav-right の“真下”に固定（この2行で勝たせる） */
-#langPill{
-  position: absolute !important;
-  right: 0 !important;
-  top: 100% !important;
-  margin-top: 16px !important;
-  transform: none !important;
-  z-index: 50 !important;
-}
-
-/* モバイルの位置（任意） */
-@media (max-width:820px){
-  #langPill{ right:12px !important; top: calc(100% + 24px) !important; }
-}
-
-/* 競合している古い配置指定を“無効化”（このIDに対してだけ） */
-body.hero-header #langPill,
-header #langPill,
-.hero-head #langPill{
-  left: auto !important;
-}
-/* === Force one-line nav: Signup / Login / MyPage / Language === */
-body.hero-header .nav-right,
-header .nav-right{
-  position: static !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 16px !important;
-  flex-wrap: nowrap !important;   /* 1行死守 */
-}
-.nav-right > * {
-  margin: 0 !important;  /* 余計な margin を打ち消す */
-  position: static !important; /* 言語ピルやアイコンが絶対配置されないように */
-}
-/* 4要素をフレックスの子として素直に並べる */
-header .nav-right > .nav-link,
-header .nav-right > .icon-btn,
-header .nav-right > .lang-pill{
-  flex: 0 0 auto;
-}
-
-/* 言語ピルの絶対配置を完全無効化して“横並びの一員”にする */
-header .lang-pill,
-body.hero-header .lang-pill,
-.hero-head .lang-pill.hero-lang{
-  position: static !important;
-  inset: auto !important;
-  margin: 0 !important;
-  transform: none !important;
-  z-index: auto !important;
-}
-
-/* 念のため：以前の右上固定などを打ち消す */
-header .nav-right > .lang-pill{
-  right: auto !important;
-  top: auto !important;
-}
-
-/* 幅が極端に狭い端末だけは折り返す（不要なら消してOK） */
-@media (max-width: 420px){
-  header .nav-right{ flex-wrap: wrap !important; row-gap: 8px; }
-}
-/* === FINAL: header を1行に固定（Signup / Login / MyPage / Language） === */
-header .nav-right{
-  position: static !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: flex-end !important;
-  gap: 14px !important;
-  flex-wrap: nowrap !important;
-  padding-bottom: 0 !important;      /* 余計な下マージン殺す */
-}
-header .nav-right > *{
-  position: static !important;        /* 全員 flow に戻す */
-  margin: 0 !important;
-}
-
-/* 言語ピルの絶対配置を完全に解除（IDが最強なのでこれで確実に勝つ） */
-header .nav-right #langPill{
-  position: static !important;
-  top: auto !important;
-  right: auto !important;
-  left: auto !important;
-  bottom: auto !important;
-  transform: none !important;
-  margin: 0 !important;
-  z-index: auto !important;
-}
-/* === Header: 右に少し寄せる（コンテナの右パディングだけ増やす） === */
-header .container.hwrap{ padding-right: 28px; }          /* 16 → 28px くらいがちょうど */
-@media (min-width: 1280px){
-  header .container.hwrap{ padding-right: 36px; }        /* ワイド時はもう少しだけ */
-}
-
-/* === MyPage丸ボタン：画像を“中にフィット”＋アイコンはフォールバック化 === */
-.icon-btn{ position: relative; overflow: hidden; }       /* はみ出し防止 */
-.icon-btn img.avatar{
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  object-fit: cover; border-radius: 999px; display: block;
-}
-/* 画像があるときはSVGの人型は非表示（フォールバックとして残すならopacity:0でも可） */
-.icon-btn svg{ display: none; }
 
 </style>
   <script src="lang.js" defer></script>
@@ -1004,16 +874,6 @@ header .container.hwrap{ padding-right: 28px; }          /* 16 → 28px くら�
       <path d="M4 20c1.5-4 6.5-5 8-5s6.5 1 8 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
     </svg>
   </button>
-      <div class="lang-pill" id="langPill">
-    <span class="flag" id="langFlag">🇯🇵</span>
-    <select id="langSelect" class="langSel" title="Language">
-      <option value="auto">Auto</option>
-      <option value="ja">日本語</option>
-      <option value="en">English</option>
-    </select>
-    <span class="abbr" id="langAbbr">US</span>
-    <svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="currentColor"/></svg>
-  </div>
 </nav>
 
   </div>
@@ -1026,6 +886,16 @@ header .container.hwrap{ padding-right: 28px; }          /* 16 → 28px くら�
     <!-- h1 と img を同じ flex コンテナに -->
     <div class="container hero-flex">
       <h1 data-i18n="hero_title">スリランカで叶える、私だけの美しさ。</h1>
+      <div class="lang-pill hero-lang">
+    <span class="flag" id="langFlag">🇯🇵</span>
+    <select id="langSelect" class="langSel" title="Language">
+      <option value="auto">Auto</option>
+      <option value="ja">日本語</option>
+      <option value="en">English</option>
+    </select>
+    <span class="abbr" id="langAbbr">US</span>
+    <svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="currentColor"/></svg>
+  </div>
 
       <img class="hero-photo" src="/assets/img/beauty-hero.png" alt="Hero visual">
     </div>

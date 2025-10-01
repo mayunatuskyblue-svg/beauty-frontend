@@ -874,6 +874,16 @@ body.hero-header #langSelect{ inset:0; }  /* ピル内で全域クリックで�
       <path d="M4 20c1.5-4 6.5-5 8-5s6.5 1 8 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
     </svg>
   </button>
+      <div class="lang-pill hero-lang">
+    <span class="flag" id="langFlag">🇯🇵</span>
+    <select id="langSelect" class="langSel" title="Language">
+      <option value="auto">Auto</option>
+      <option value="ja">日本語</option>
+      <option value="en">English</option>
+    </select>
+    <span class="abbr" id="langAbbr">US</span>
+    <svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="currentColor"/></svg>
+  </div>
 </nav>
 
   </div>
@@ -886,16 +896,6 @@ body.hero-header #langSelect{ inset:0; }  /* ピル内で全域クリックで�
     <!-- h1 と img を同じ flex コンテナに -->
     <div class="container hero-flex">
       <h1 data-i18n="hero_title">スリランカで叶える、私だけの美しさ。</h1>
-      <div class="lang-pill hero-lang">
-    <span class="flag" id="langFlag">🇯🇵</span>
-    <select id="langSelect" class="langSel" title="Language">
-      <option value="auto">Auto</option>
-      <option value="ja">日本語</option>
-      <option value="en">English</option>
-    </select>
-    <span class="abbr" id="langAbbr">US</span>
-    <svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="currentColor"/></svg>
-  </div>
 
       <img class="hero-photo" src="/assets/img/beauty-hero.png" alt="Hero visual">
     </div>

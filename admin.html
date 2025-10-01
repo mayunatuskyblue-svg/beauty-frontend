@@ -154,6 +154,7 @@
     const qs = new URLSearchParams(location.search);
 
     function readCtx(){
+      S.token = qs.get('token') || '';
       S.salonId = qs.get('salonId')||'';
       S.bookingId = qs.get('bookingId')||'';
       S.customerId = qs.get('customerId')||'';
@@ -182,7 +183,7 @@ async function fetchCatalog(){
     };
   }else{
     // 1) メニュー取得
-    const q1 = new URLSearchParams({ kind:'menus.list', key:GAS_KEY, salonId:S.salonId });
+    const q1 = new URLSearchParams({ kind:'menus.list', key:GAS_KEY, salonId:S.salonId, token:S.token });
     const m = await fetch(`${API_BASE}?${q1}`).then(r=>r.json());
     const menus = (m.ok ? (m.items||[]) : []).map(x => ({
       id: (x.menu_id || x.name_en || x.name_ja || '').trim() || 'MENU',
@@ -191,7 +192,7 @@ async function fetchCatalog(){
     }));
 
     // 2) クーポン（＝Discount）取得
-    const q2 = new URLSearchParams({ kind:'coupons.list', key:GAS_KEY, salonId:S.salonId });
+    const q2 = new URLSearchParams({ kind:'coupons.list', key:GAS_KEY, salonId:S.salonId, token:S.token });
     const c = await fetch(`${API_BASE}?${q2}`).then(r=>r.json());
     const discounts = (c.ok ? (c.items||[]) : []).map(x => {
       // シートの持ち方に合わせて type/value を決める（ここでは簡易に flat を想定）
@@ -325,12 +326,13 @@ async function startApproval(){
       key: GAS_KEY,
       kind: 'approval.start',
       data: {
-        bookingId: S.bookingId,
-        salonId: S.salonId,
-        items: { menuId: S.sel.menuId, addonIds: [...S.sel.addonIds], discountId: S.sel.discountId, manual: S.sel.manual||0, reason: S.sel.reason||'' },
-        amountJPY: grand,   // ← JPY で統一
-        ttlMin: 60
-      }
+  bookingId: S.bookingId,
+  salonId: S.salonId,
+  token: S.token, // ← 追加
+  items: { menuId: S.sel.menuId, addonIds: [...S.sel.addonIds], discountId: S.sel.discountId, manual: S.sel.manual||0, reason: S.sel.reason||'' },
+  amountJPY: grand,
+  ttlMin: 60
+}
     })
   }).then(r=>r.json());
 
@@ -363,7 +365,7 @@ async function pollApproval(){
   let tries = 0;
   const tick = async ()=>{
     tries++; if(tries>600 || S.approval.ok) return; // 最大 ~50分
-    const q = new URLSearchParams({ kind:'approval.status', key:GAS_KEY, approvalId:S.approval.id });
+    const q = new URLSearchParams({ kind:'approval.status', key:GAS_KEY, approvalId:S.approval.id, salonId:S.salonId, token:S.token });
     const j = await fetch(`${API_BASE}?${q}`).then(r=>r.json());
     if (j.ok && j.status === 'approved') {
       S.approval.ok = true; setApStatus('Approved ✔', true); calc(); return;
@@ -389,10 +391,11 @@ async function doCharge(){
         key: GAS_KEY,
         kind: "charge",
         data: {
-          amountJPY: grand,
-          customerId: S.customerId || ''
-          // paymentMethodId: 省略（code.gs 側で補完する or admin に追加実装する）
-        }
+  amountJPY: grand,
+  customerId: S.customerId || '',
+  salonId: S.salonId,
+  token: S.token
+}
       })
     });
     const j = await r.json();
@@ -423,5 +426,6 @@ async function doCharge(){
   </script>
 </body>
 </html>
+
 
 

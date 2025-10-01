@@ -1,14 +1,17 @@
 <!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Terms | BeautyLanka</title>
 <style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#F7F1E1;color:#2E1A16;margin:0}.container{max-width:900px;margin:40px auto;padding:0 16px}h1{font-size:28px;margin:0 0 12px}p{line-height:1.7}a{color:#06c}</style><script src="/lang.js" defer></script>
-<script>document.addEventListener('DOMContentLoaded',()=>BL_I18N.i18nApply());</script>
-</head>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    window.BL_I18N?.i18nApply?.();
+  });
+</script></head>
 <body><div class="container"><!-- container 内の <script src="lang.js" defer> は削除 -->
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     const L = (k)=>k.split('.').reduce((o,p)=>o&&o[p], (window.BL_I18N?.T||{})[window.BL_I18N?.getLang?.()||'ja']) || k;
     const cont = document.querySelector('.container');
-    const pageKey = 'contact'; // ← contact/terms/privacy/cancel で各ページに合わせて
+    const pageKey = 'terms'; // ← contact/terms/privacy/cancel で各ページに合わせて
     cont.innerHTML = L(`legal.${pageKey}_full_html`);
 
     // ガード付き

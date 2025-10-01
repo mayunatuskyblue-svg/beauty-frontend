@@ -150,6 +150,12 @@
     passPw.type = (passPw.type === 'password') ? 'text' : 'password';
   });
 </script>
+  <script>
+// ==== API設定（同一オリジンでWorkerへ → WorkerがGASに中継）====
+const API_LOGIN = '/api/auth/login';   // ルートを貼ったので相対パスでOK
+const GAS_KEY   = 'bl_gas_key_bR6ZXWwu6kM_nrK25geP97Cs5qCX3auxugX_IUGlg90'; // GAS側のキー
+</script>
+
 <script>
 // SmartPay 簡易ログイン(A案) → /api/auth/login へ
 (() => {
@@ -163,14 +169,15 @@
     msg.textContent = '';
     if(!salonId || !password){ msg.textContent = 'Salon ID / Password を入力してください'; return; }
     try{
-      const r = await fetch("https://script.google.com/macros/s/AKfycbwWRpfcZMsGxNqGJ5aNjRT1Y1PChDTqtQE3e0S7sUDAMei8s1wOr6lpKMnOaI1Z-6o/exec", {
-  method:"POST", headers:{"Content-Type":"application/json"},
-  body: JSON.stringify({ 
-    key: GAS_KEY,               // すでに code.gs がチェックしているキー
-     kind: "auth.login",
-     data: { salonId, password } // ログイン情報
+      const r = await fetch(API_LOGIN, {
+   method: 'POST',
+   headers: { 'Content-Type': 'application/json' },
+   body: JSON.stringify({
+     key: GAS_KEY,
+     kind: 'auth.login',
+     data: { salonId, password }
    })
-});
+ });
 
  let j = null;
  try {

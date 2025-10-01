@@ -848,11 +848,11 @@ h1,h2,h3,h4{ margin-top: var(--space-md); margin-bottom: var(--space-sm); }
 body.hero-header .lang-pill{ left:auto !important; }
 body.hero-header #langSelect{ inset:0; }  /* ピル内で全域クリックできるまま */
 /* === FIX: 言語ピルをログイン/マイページの真下に固定（文字と被らない高さ） === */
-header .nav-right .lang-pill {
+header .nav-right > .lang-pill {
   position: absolute !important;   /* 親 .nav-right を基準に絶対配置 */
   right: 0 !important;             /* 右端に揃える */
-  top: calc(100% + 80px) !important;/* ← ここが“下げ量”。被るなら 64px/72px に */
-  left: auto !important;
+  top: 100% !important;/* ← ここが“下げ量”。被るなら 64px/72px に */
+  margin-top: 16px !important;
   transform: none !important;
   z-index: 50;                      /* ヒーローより前面 */
 }

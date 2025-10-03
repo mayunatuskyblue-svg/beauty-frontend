@@ -129,6 +129,91 @@
           <div id="chargeMsg" class="muted" style="margin-top:8px"></div>
         </div>
       </section>
+            <!-- ▼▼▼ ここから追加：Availability（営業時間・リードタイム） ▼▼▼ -->
+      <section class="card">
+        <div class="hd">Availability</div>
+        <div class="bd">
+          <div class="row">
+            <div style="flex:1">
+              <label>Open start (HH:mm)</label>
+              <input id="availOpenStart" placeholder="09:00" />
+            </div>
+            <div style="flex:1">
+              <label>Open end (HH:mm)</label>
+              <input id="availOpenEnd" placeholder="18:00" />
+            </div>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <div style="flex:1">
+              <label>Lead time (minutes)</label>
+              <input id="availLeadMin" type="number" step="5" min="0" placeholder="0" />
+            </div>
+            <div style="flex:1">
+              <label>Capacity</label>
+              <input id="availCapacity" readOnly placeholder="(salons シートで管理)" />
+            </div>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <button id="btnAvailSave" class="btn">Save availability</button>
+            <span id="availMsg" class="muted"></span>
+          </div>
+        </div>
+      </section>
+      <!-- ▲▲▲ ここまで Availability ▲▲▲ -->
+
+      <!-- ▼▼▼ ここから追加：Blackouts（臨時休止/満枠） ▼▼▼ -->
+      <section class="card">
+        <div class="hd">Blackouts</div>
+        <div class="bd">
+          <div class="row">
+            <div style="flex:1">
+              <label>Date</label>
+              <input id="blackDate" type="date" />
+            </div>
+            <div style="width:110px">
+              <label>Start</label>
+              <input id="blackStart" placeholder="09:00" />
+            </div>
+            <div style="width:110px">
+              <label>End</label>
+              <input id="blackEnd" placeholder="18:00" />
+            </div>
+          </div>
+          <div>
+            <label>Reason</label>
+            <input id="blackReason" placeholder="Maintenance, Staff meeting, etc." />
+          </div>
+          <div class="row" style="margin-top:8px">
+            <button id="btnBlackAdd" class="btn">Add blackout</button>
+            <span id="blackMsg" class="muted"></span>
+          </div>
+          <div class="hr"></div>
+          <div class="muted" style="margin-bottom:6px">Existing blackouts</div>
+          <div id="blackList"></div>
+        </div>
+      </section>
+      <!-- ▲▲▲ ここまで Blackouts ▲▲▲ -->
+
+      <!-- ▼▼▼ ここから追加：Taken（当日の満枠） ▼▼▼ -->
+      <section class="card">
+        <div class="hd">Taken slots</div>
+        <div class="bd">
+          <div class="row">
+            <div style="flex:1">
+              <label>Date</label>
+              <input id="dayYMD" type="date" />
+            </div>
+            <div style="align-self:flex-end">
+              <button id="btnLoadTaken" class="btn">Load</button>
+            </div>
+          </div>
+          <div class="hr"></div>
+          <div id="takenMeta" class="muted" style="margin-bottom:8px"></div>
+          <div id="takenGrid" class="row" style="flex-wrap:wrap;gap:8px"></div>
+        </div>
+      </section>
+      <!-- ▲▲▲ ここまで Taken ▲▲▲ -->
+
     </aside>
   </main>
 
@@ -140,6 +225,9 @@
   const DELTA_WARN_RATE = 0.2;
   const MOCK = false;
   const APPROVE_FILE = 'https://beautylk.com/approve.html'; // 公開中のapprove.html URL
+  // 為替レート（1 JPY = 2.15 LKR など固定値）
+// あとで salons シートから取れるようにするのも可
+const FX_RATE = 2.15;
 
     // ====== STATE ======
     const S = {
@@ -151,7 +239,13 @@
 
     // ====== HELPERS ======
     const $ = (q) => document.querySelector(q);
-    const fmt = n => `Rs ${Number(n||0).toLocaleString('en-US')}`;
+        function toLKR(jpy){
+  return Math.round(Number(jpy||0) * FX_RATE);
+}
+function fmtLKR(jpy){
+  return `Rs ${Number(toLKR(jpy)).toLocaleString('en-US')}`;
+}
+
     const qs = new URLSearchParams(location.search);
     function normalizePhone(raw){
   // +94xxxxxxxxx を想定。先頭+がなければ付与、空白/ハイフン除去
@@ -179,8 +273,8 @@ async function copyToClipboard(text){
       $('#ctx').innerHTML = `Salon <b>${S.tenantName||S.salonId}</b> · Booking <b>${S.bookingId||'-'}</b>`;
       $('#bkId').textContent = S.bookingId||'-';
       $('#salonName').textContent = S.tenantName||S.salonId||'-';
-      $('#scheduled').textContent = fmt(S.scheduledPrice);
-      $('#adjLimit').textContent = `±${MAX_MANUAL}`;
+      $('#scheduled').textContent = fmtLKR(S.scheduledPrice); // JPY→LKR表示に
+$('#adjLimit').textContent = `±${toLKR(MAX_MANUAL)}`;   // 上限表示もLKRに
     }
 
 async function fetchCatalog(){
@@ -236,7 +330,7 @@ function renderComposer(){
       <input type="radio" name="menu" value="${m.id}" ${S.sel.menuId===m.id?'checked':''} />
       <div style="margin-left:8px">
         <div><b>${m.name}</b></div>
-        <div class="muted">${fmt(m.price)}</div>
+        <div class="muted">${fmtLKR(m.price)}</div>
       </div>
     </label>
   `).join('') || '<div class="muted">No menus</div>';
@@ -250,7 +344,7 @@ function renderComposer(){
   const abox = $('#addonBox');
   abox.innerHTML = (S.catalog.addons||[]).map(a => {
     const on = S.sel.addonIds.has(a.id);
-    return `<label class="tag"><input type="checkbox" value="${a.id}" ${on?'checked':''}/> ${a.name} (+${fmt(a.price)})</label>`;
+    return `<label class="tag"><input type="checkbox" value="${a.id}" ${on?'checked':''}/> ${a.name} (+${fmtLKR(a.price)})</label>`;
   }).join('') || '<div class="muted">No add-ons</div>';
 
   // Add-on トグル
@@ -267,8 +361,8 @@ function renderComposer(){
   const dsel = $('#discountSel');
   dsel.innerHTML = `<option value="">None</option>` + (S.catalog.discounts||[]).map(d=>{
     const label = d.type==='percent'
-      ? `${d.name} (-${d.value}% )`
-      : `${d.name} (-${fmt(d.value)})`;
+  ? `${d.name} (-${d.value}% )`
+  : `${d.name} (-${fmtLKR(d.value)})`;
     return `<option value="${d.id}">${label}</option>`;
   }).join('');
   dsel.value = S.sel.discountId||'';
@@ -276,8 +370,13 @@ function renderComposer(){
 
   // Manual adjust
   const man = $('#manualAdj');
-  man.value = S.sel.manual||0;
-  man.oninput = ()=>{ S.sel.manual = Number(man.value||0); calc(); };
+// 表示はLKR（内部はJPYで保持）
+man.value = toLKR(S.sel.manual||0);
+man.oninput = ()=>{
+  const lkr = Number(man.value||0);
+  S.sel.manual = Math.round(lkr / FX_RATE); // 内部JPYへ換算
+  calc();
+};
 
   const rea = $('#manualReason');
   rea.value = S.sel.reason||'';
@@ -300,40 +399,48 @@ function renderComposer(){
     }
 
     function calc(){
-      const { base, add, disc, man } = currentAmounts();
-      // guard
-      const limit = MAX_MANUAL; const warnAdj = Math.abs(man) > limit; const needReason = man!==0 && !S.sel.reason;
-      $('#sumBase').textContent = fmt(base);
-      $('#sumAdd').textContent  = fmt(add);
-      $('#sumDis').textContent  = fmt(disc);
-      $('#sumMan').textContent  = fmt(man) + (warnAdj? '  ⚠ over limit':'') + (needReason?' ⚠ reason required':'');
+  const { base, add, disc, man } = currentAmounts();
+  const limit = MAX_MANUAL; 
+  const warnAdj = Math.abs(man) > limit; 
+  const needReason = man!==0 && !S.sel.reason;
 
-      const sub = base + add + disc + man;
-      const svc = Math.round(sub * (Number(S.catalog.serviceRate||0)/100));
-      const tax = Math.round((sub+svc) * (Number(S.catalog.taxRate||0)/100));
-      const grand = Math.max(0, sub + svc + tax);
+  // JPY計算（Stripe用）
+  const subJPY = base + add + disc + man;
+  const svcJPY = Math.round(subJPY * (Number(S.catalog.serviceRate||0)/100));
+  const taxJPY = Math.round((subJPY+svcJPY) * (Number(S.catalog.taxRate||0)/100));
+  const grandJPY = Math.max(0, subJPY + svcJPY + taxJPY);
 
-      $('#sumSvc').textContent = fmt(svc); $('#sumTax').textContent = fmt(tax); $('#grand').textContent = fmt(grand);
+  // LKR 表示用
+  $('#sumBase').textContent = fmtLKR(base);
+  $('#sumAdd').textContent  = fmtLKR(add);
+  $('#sumDis').textContent  = fmtLKR(disc);
+  $('#sumMan').textContent  = fmtLKR(man) + (warnAdj? ' ⚠ over limit':'' ) + (needReason? ' ⚠ reason required':'');
 
-      // delta from scheduled
-      const diff = grand - Number(S.scheduledPrice||0);
-      const rate = (S.scheduledPrice? diff/ S.scheduledPrice : 0);
-      const di = $('#deltaInfo');
-      di.textContent = `Δ from scheduled: ${fmt(diff)} (${(rate*100).toFixed(1)}%)`;
-      di.className = 'muted ' + (Math.abs(rate) > DELTA_WARN_RATE ? 'warn':'');
+  $('#sumSvc').textContent = fmtLKR(svcJPY);
+  $('#sumTax').textContent = fmtLKR(taxJPY);
+  $('#grand').textContent  = fmtLKR(grandJPY);
 
-      // charge button lock conditions
-      const allow = !warnAdj && !needReason && S.approval.ok && grand>0;
-      $('#btnCharge').disabled = !allow;
-      return { grand };
-    }
+  // Δ比較もLKR表記に揃える
+  const diffJPY = grandJPY - Number(S.scheduledPrice||0);
+  const rate = (S.scheduledPrice? diffJPY/ S.scheduledPrice : 0);
+  const di = $('#deltaInfo');
+  di.textContent = `Δ from scheduled: ${fmtLKR(diffJPY)} (${(rate*100).toFixed(1)}%)`;
+  di.className = 'muted ' + (Math.abs(rate) > DELTA_WARN_RATE ? 'warn':'');
+
+  const allow = !warnAdj && !needReason && S.approval.ok && grandJPY>0;
+  $('#btnCharge').disabled = !allow;
+
+  // ★ JPYとLKR両方返す
+  return { grandJPY, grandLKR: toLKR(grandJPY) };
+}
+
 
     // ====== Approval ======
 function rid(){ return (Date.now().toString(36)+Math.random().toString(36).slice(2,8)).toUpperCase(); }
 
 async function startApproval(){
   const phone = $('#custPhone').value.trim(); // いまはUIに保持だけ（送信は任意）
-  const { grand } = calc();
+  const { grandJPY, grandLKR } = calc();
 
   // GAS: approval.start
   const res = await fetch(API_BASE, {
@@ -346,7 +453,7 @@ async function startApproval(){
   salonId: S.salonId,
   token: S.token, // ← 追加
   items: { menuId: S.sel.menuId, addonIds: [...S.sel.addonIds], discountId: S.sel.discountId, manual: S.sel.manual||0, reason: S.sel.reason||'' },
-  amountJPY: grand,
+  amountJPY: grandJPY,
   ttlMin: 60
 }
     })
@@ -366,14 +473,11 @@ async function startApproval(){
   setApStatus('Link created');
   S.approval.id = res.approvalId;
 
-  // 共有（開いて確認 or コピーして送る）
+   // 共有（開いて確認 or コピーして送る）
   window.open(url, '_blank');
   // --- 共有UIを表示 ---
-const phone = normalizePhone($('#custPhone').value.trim());
-const msg = [
-  'Please approve your bill:',
-  url
-].join('\n');
+  const phoneNorm = normalizePhone($('#custPhone').value.trim());
+  const msg = ['Please approve your bill:', url].join('\n');
 
 const waHref  = phone ? `https://wa.me/${phone.replace('+','')}/?text=${encodeURIComponent(msg)}` : '';
 const smsHref = phone ? `sms:${encodeURIComponent(phone)}?&body=${encodeURIComponent(msg)}` : '';
@@ -417,7 +521,7 @@ async function pollApproval(){
 
     // ====== Charge ======
 async function doCharge(){
-  const { grand } = calc();
+  const { grandJPY, grandLKR } = calc();
   const btn = document.getElementById('btnCharge');
   const msg = document.getElementById('chargeMsg');
   btn.disabled = true; msg.textContent = 'Charging…';
@@ -430,7 +534,7 @@ async function doCharge(){
         key: GAS_KEY,
         kind: "charge",
         data: {
-  amountJPY: grand,
+  amountJPY: grandJPY,
   customerId: S.customerId || '',
   salonId: S.salonId,
   token: S.token
@@ -450,7 +554,156 @@ async function doCharge(){
   }
 }
 
-    // ====== INIT ======
+    /* ～～（既存スクリプト）～～ */
+
+    // ====== Availability / Blackouts / Taken ======
+    async function fetchAvailabilityMeta(){
+      // GET availability.get
+      const q = new URLSearchParams({
+        kind: 'availability.get',
+        key: GAS_KEY,
+        salonId: S.salonId,
+        token: S.token
+      });
+      const j = await fetch(`${API_BASE}?${q}`).then(r=>r.json());
+      if (!j.ok) throw new Error(j.error || 'availability.get failed');
+      const meta = j.meta || { openStart:'09:00', openEnd:'18:00', leadMin:0 };
+      // capacity は taken 呼び出しの meta から拾う（ここではいったん空）
+      document.getElementById('availOpenStart').value = meta.openStart || '09:00';
+      document.getElementById('availOpenEnd').value   = meta.openEnd   || '18:00';
+      document.getElementById('availLeadMin').value   = Number(meta.leadMin||0);
+    }
+
+    async function saveAvailability(){
+      const openStart = document.getElementById('availOpenStart').value.trim() || '09:00';
+      const openEnd   = document.getElementById('availOpenEnd').value.trim()   || '18:00';
+      const leadMin   = Number(document.getElementById('availLeadMin').value||0);
+      const msg = document.getElementById('availMsg');
+      msg.textContent = 'Saving…';
+
+      const j = await fetch(API_BASE, {
+        method: 'POST',
+        body: JSON.stringify({
+          key: GAS_KEY,
+          kind: 'availability.setMeta',
+          data: { salonId: S.salonId, token: S.token, openStart, openEnd, leadMin }
+        })
+      }).then(r=>r.json());
+
+      msg.textContent = j.ok ? 'Saved' : ('Error: ' + (j.error||'failed'));
+    }
+
+    // ---- Blackouts ----
+    function renderBlackouts(items){
+      const box = document.getElementById('blackList');
+      if (!items || !items.length){
+        box.innerHTML = '<div class="muted">No blackouts</div>'; return;
+      }
+      box.innerHTML = items.map(b => {
+        const id = String(b.id||'');
+        const ymd = String(b.date||'').slice(0,10);
+        const st  = String(b.start||'');
+        const en  = String(b.end||'');
+        const rsn = String(b.reason||'');
+        return `
+          <div class="row" style="align-items:center;justify-content:space-between;border:1px solid var(--brd);border-radius:10px;padding:6px 10px">
+            <div>
+              <div><b>${ymd}</b> ${st} - ${en}</div>
+              <div class="muted" style="font-size:12px">${rsn||'-'}</div>
+            </div>
+            <button class="btn" data-id="${id}">Remove</button>
+          </div>`;
+      }).join('');
+      box.querySelectorAll('button[data-id]').forEach(btn=>{
+        btn.onclick = ()=> removeBlackout(btn.getAttribute('data-id'));
+      });
+    }
+
+    async function loadBlackouts(){
+      const msg = document.getElementById('blackMsg');
+      msg.textContent = 'Loading…';
+      const q = new URLSearchParams({
+        kind: 'blackouts.list',
+        key: GAS_KEY,
+        salonId: S.salonId,
+        token: S.token
+      });
+      const j = await fetch(`${API_BASE}?${q}`).then(r=>r.json());
+      if (!j.ok){ msg.textContent = 'Error: ' + (j.error||'failed'); return; }
+      renderBlackouts(j.items||[]);
+      msg.textContent = '';
+    }
+
+    async function addBlackout(){
+      const date = document.getElementById('blackDate').value;
+      const start= document.getElementById('blackStart').value || '';
+      const end  = document.getElementById('blackEnd').value   || '';
+      const reason = document.getElementById('blackReason').value || '';
+      const msg = document.getElementById('blackMsg');
+      if (!date){ msg.textContent='Select date'; return; }
+      msg.textContent = 'Saving…';
+      const j = await fetch(API_BASE, {
+        method:'POST',
+        body: JSON.stringify({
+          key: GAS_KEY,
+          kind: 'blackouts.add',
+          data: { salonId: S.salonId, token: S.token, date, start, end, reason }
+        })
+      }).then(r=>r.json());
+      if (!j.ok){ msg.textContent = 'Error: ' + (j.error||'failed'); return; }
+      msg.textContent = 'Added';
+      await loadBlackouts();
+    }
+
+    async function removeBlackout(id){
+      const msg = document.getElementById('blackMsg');
+      msg.textContent = 'Removing…';
+      const j = await fetch(API_BASE, {
+        method:'POST',
+        body: JSON.stringify({
+          key: GAS_KEY,
+          kind: 'blackouts.remove',
+          data: { salonId: S.salonId, token: S.token, id }
+        })
+      }).then(r=>r.json());
+      msg.textContent = j.ok ? 'Removed' : ('Error: ' + (j.error||'failed'));
+      await loadBlackouts();
+    }
+
+    // ---- Taken（当日の満枠スロット）----
+    function expandSlots(startHM, endHM, stepMin){
+      const toMin = hm => { const [h,m]=hm.split(':').map(Number); return h*60+(m||0); };
+      const toHM  = min => String(Math.floor(min/60)).padStart(2,'0')+':'+String(min%60).padStart(2,'0');
+      const out=[]; for(let t=toMin(startHM); t<toMin(endHM); t+=stepMin) out.push(toHM(t)); return out;
+    }
+
+    function renderTaken(meta, takenArray){
+      const grid = document.getElementById('takenGrid');
+      const all = expandSlots(meta.openStart, meta.openEnd, 30);
+      const setTaken = new Set(takenArray||[]);
+      grid.innerHTML = all.map(hm=>{
+        const full = setTaken.has(hm);
+        return `<span class="tag" style="${full?'background:#ffecec;border-color:#ffb3b3':''}">${hm}${full?' ×':''}</span>`;
+      }).join('');
+      document.getElementById('takenMeta').textContent =
+        `Open: ${meta.openStart}–${meta.openEnd} · Lead: ${meta.leadMin}m · Capacity: ${meta.capacity||1}`;
+      // Availabilityカード側にも capacity 反映（read-only）
+      const capEl = document.getElementById('availCapacity');
+      if (capEl && meta.capacity) capEl.value = String(meta.capacity);
+    }
+
+    async function loadTaken(){
+      const ymd = document.getElementById('dayYMD').value;
+      if (!ymd){ alert('Pick a date'); return; }
+      const q = new URLSearchParams({
+        kind: 'taken', key: GAS_KEY, ymd, salonId: S.salonId, token: S.token
+      });
+      const j = await fetch(`${API_BASE}?${q}`).then(r=>r.json());
+      if (!j.ok){ alert(j.error || 'load failed'); return; }
+      renderTaken(j.meta||{openStart:'09:00',openEnd:'18:00',leadMin:0,capacity:1}, j.items||[]);
+    }
+
+        // ====== INIT ======
     (async function init(){
       try{
         readCtx();
@@ -458,6 +711,26 @@ async function doCharge(){
         $('#custName').textContent = qs.get('customerName') || '-';
         $('#sendLink').onclick = startApproval;
         $('#btnCharge').onclick = doCharge;
+
+        // ▼▼▼ ここから追記 ▼▼▼
+        // Availability 初期値をロード
+        await fetchAvailabilityMeta();
+        // Blackouts 一覧をロード
+        await loadBlackouts();
+        // イベント
+        document.getElementById('btnAvailSave').onclick = saveAvailability;
+        document.getElementById('btnBlackAdd').onclick  = addBlackout;
+        document.getElementById('btnLoadTaken').onclick = loadTaken;
+
+        // 便利：本日の日付を既定セット
+        const d = new Date(), mm=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0');
+        const today = `${d.getFullYear()}-${mm}-${dd}`;
+        const dayInput = document.getElementById('dayYMD');
+        if (dayInput && !dayInput.value) dayInput.value = today;
+        const blackDate = document.getElementById('blackDate');
+        if (blackDate && !blackDate.value) blackDate.value = today;
+        // ▲▲▲ 追記ここまで ▲▲▲
+
       }catch(e){
         document.body.innerHTML = `<div style="padding:30px">Init failed: ${e?.message||e}</div>`;
       }
@@ -465,7 +738,3 @@ async function doCharge(){
   </script>
 </body>
 </html>
-
-
-
-

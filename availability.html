@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Salon Availability</title>
+  <!-- 既存と同じ GAS WebApp を meta でも受け取れるように -->
+  <meta name="bl-sheet-hook" content="">
+  <style>
+    :root{--brd:#eadfca;--ink:#1d1b1a;--teal:#246A73;--muted:#6b5e55}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans JP',sans-serif;margin:0;background:#fff;color:var(--ink)}
+    .wrap{max-width:920px;margin:0 auto;padding:16px}
+    h1{font-size:20px;margin:6px 0 12px}
+    .card{border:1px solid var(--brd);border-radius:12px;box-shadow:0 8px 22px rgba(0,0,0,.06);background:#fff;margin:10px 0}
+    .hd{padding:10px 14px;border-bottom:1px solid var(--brd);font-weight:800}
+    .bd{padding:12px 14px}
+    label{display:block;font-weight:700;margin:8px 0 4px}
+    input,select{width:100%;padding:10px 12px;border:1px solid var(--brd);border-radius:10px;background:#fff;font:inherit}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .col{flex:1 min(240px,100%)}
+    .btn{height:42px;padding:0 16px;border-radius:12px;border:1px solid var(--brd);background:#fff;font-weight:800;cursor:pointer}
+    .btn.primary{background:var(--teal);border-color:var(--teal);color:#fff}
+    table{width:100%;border-collapse:collapse}
+    th,td{border-bottom:1px solid var(--brd);padding:8px 6px;text-align:left}
+    .muted{color:var(--muted)}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Salon Availability</h1>
+  <div id="ctx" class="muted">Loading…</div>
+
+  <section class="card">
+    <div class="hd">基本設定</div>
+    <div class="bd">
+      <div class="row">
+        <div class="col">
+          <label>営業時間 開始</label>
+          <input id="openStart" type="time" value="09:00">
+        </div>
+        <div class="col">
+          <label>営業時間 終了</label>
+          <input id="openEnd" type="time" value="18:00">
+        </div>
+        <div class="col">
+          <label>最短リードタイム（分）</label>
+          <input id="leadMin" type="number" value="120" min="0" step="15">
+        </div>
+        <div class="col">
+          <label>予約可能 週数（maxWeeks）</label>
+          <input id="maxWeeks" type="number" value="8" min="1" max="52">
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <button id="saveMeta" class="btn primary">保存</button>
+        <span id="metaMsg" class="muted"></span>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="hd">ブラックアウト（臨時休止）</div>
+    <div class="bd">
+      <div class="row">
+        <div class="col"><label>日付</label><input id="boDate" type="date"></div>
+        <div class="col"><label>開始</label><input id="boStart" type="time" value="00:00"></div>
+        <div class="col"><label>終了</label><input id="boEnd" type="time" value="23:59"></div>
+        <div class="col"><label>理由</label><input id="boReason" placeholder="Private / Equipment / etc."></div>
+      </div>
+      <div style="margin-top:10px">
+        <button id="addBo" class="btn">追加</button>
+        <span class="muted">※ 時間帯を空欄にすると終日休止として扱います。</span>
+      </div>
+
+      <table style="margin-top:12px">
+        <thead><tr><th>日付</th><th>開始</th><th>終了</th><th>理由</th><th></th></tr></thead>
+        <tbody id="boTbody"><tr><td colspan="5" class="muted">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script>
+const qs = new URLSearchParams(location.search);
+const SALON_ID = qs.get('salonId') || '';
+const TOKEN    = qs.get('token') || '';
+const GAS_URL  = document.querySelector('meta[name=bl-sheet-hook]')?.content || qs.get('gas') || '';
+const GAS_KEY  = qs.get('key') || localStorage.getItem('bl_gas_key') || '';
+
+document.getElementById('ctx').textContent =
+  `salonId=${SALON_ID || '-'} / token=${TOKEN? '***' : '-'}`;
+
+// 取得
+async function loadAll(){
+  const url = new URL(GAS_URL);
+  url.searchParams.set('key', GAS_KEY);
+  url.searchParams.set('kind','availability.get');
+  url.searchParams.set('salonId', SALON_ID);
+  url.searchParams.set('token', TOKEN);
+  const j = await fetch(url).then(r=>r.json()).catch(()=>({ok:false}));
+  if(!j.ok){ alert(j.error || 'load failed'); return; }
+
+  // meta
+  document.getElementById('openStart').value = j.meta?.openStart || '09:00';
+  document.getElementById('openEnd').value   = j.meta?.openEnd   || '18:00';
+  document.getElementById('leadMin').value   = j.meta?.leadMin ?? 120;
+  document.getElementById('maxWeeks').value  = j.meta?.maxWeeks ?? 8;
+
+  // blackouts
+  renderBO(j.blackouts||[]);
+}
+
+function renderBO(list){
+  const tb = document.getElementById('boTbody');
+  tb.innerHTML = '';
+  if(!list.length){
+    tb.innerHTML = '<tr><td colspan="5" class="muted">なし</td></tr>';
+    return;
+  }
+  list.forEach(row=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${row.date||''}</td>
+      <td>${row.start||''}</td>
+      <td>${row.end||''}</td>
+      <td>${row.reason||''}</td>
+      <td><button class="btn" data-id="${row.id}">削除</button></td>`;
+    tr.querySelector('button')?.addEventListener('click', ()=>removeBO(row.id));
+    tb.appendChild(tr);
+  });
+}
+
+async function saveMeta(){
+  const body = {
+    key: GAS_KEY, kind:'availability.setMeta',
+    data:{
+      salonId: SALON_ID, token: TOKEN,
+      openStart: document.getElementById('openStart').value || '09:00',
+      openEnd:   document.getElementById('openEnd').value   || '18:00',
+      leadMin:   Number(document.getElementById('leadMin').value || 0),
+      maxWeeks:  Number(document.getElementById('maxWeeks').value || 8)
+    }
+  };
+  const j = await fetch(GAS_URL,{method:'POST',body:JSON.stringify(body)}).then(r=>r.json()).catch(()=>({ok:false}));
+  document.getElementById('metaMsg').textContent = j.ok ? '保存しました' : (j.error||'保存失敗');
+}
+
+async function addBO(){
+  const date = document.getElementById('boDate').value;
+  if(!date){ alert('日付を入れてください'); return; }
+  const body = {
+    key:GAS_KEY, kind:'blackouts.add',
+    data:{ salonId:SALON_ID, token:TOKEN,
+           date, start:document.getElementById('boStart').value||'',
+           end:document.getElementById('boEnd').value||'',
+           reason:document.getElementById('boReason').value||'' }
+  };
+  const j = await fetch(GAS_URL,{method:'POST',body:JSON.stringify(body)}).then(r=>r.json()).catch(()=>({ok:false}));
+  if(!j.ok){ alert(j.error||'追加失敗'); return; }
+  await loadAll();
+}
+
+async function removeBO(id){
+  if(!confirm('削除しますか？')) return;
+  const body = { key:GAS_KEY, kind:'blackouts.remove', data:{ salonId:SALON_ID, token:TOKEN, id }};
+  const j = await fetch(GAS_URL,{method:'POST',body:JSON.stringify(body)}).then(r=>r.json()).catch(()=>({ok:false}));
+  if(!j.ok){ alert(j.error||'削除失敗'); return; }
+  await loadAll();
+}
+
+document.getElementById('saveMeta').addEventListener('click', saveMeta);
+document.getElementById('addBo').addEventListener('click', addBO);
+loadAll();
+</script>
+</body>
+</html>

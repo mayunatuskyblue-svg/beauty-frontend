@@ -224,6 +224,13 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
         <input id="uf_phone" class="input" data-i18n-ph="ui.phone" placeholder="電話番号 / Phone" autocomplete="tel" inputmode="tel"/>
         <textarea id="uf_note" class="input" data-i18n-ph="ui.notes" placeholder="要望・メモ（任意）"></textarea>
       </div>
+      <div class="sec-title">クーポン</div>
+<div class="form-row" style="grid-template-columns: 2fr 1fr; align-items:center">
+  <input id="cp_code" class="input" placeholder="クーポンコードを入力"/>
+  <button id="cp_apply" type="button" class="btn btn-outline">適用</button>
+</div>
+<p id="cp_msg" style="margin:6px 0 0; color:#6f5a54; font-size:14px"></p>
+
     </div>
 
     <div class="row" style="gap:18px;flex-wrap:wrap;margin-top:24px">
@@ -520,15 +527,22 @@ async function postBookingToSheet({
   try { customerId = JSON.parse(localStorage.getItem('bl_saved_card')||'null')?.customerId || ''; } catch {}
   if(!GAS_URL || !GAS_KEY) { console.warn('GAS_URL/GAS_KEY missing'); return false; }
 
+const qs2 = new URLSearchParams(location.search);
+const couponCode = qs2.get('coupon') || '';
+const discountedJPY = Number(qs2.get('price_jpy') || 0) || 0; // URL 上はすでに割引後を反映
+
 const payload = {
   key: GAS_KEY,
   kind: 'booking',
   data: {
     bookingId, date, time, minutes,
     salonId, shopName, menu, menuName,
-    amountJPY, email, name, customerId,
+    amountJPY,             // 元の基準価格（保持）
+    email, name, customerId,
     whatsappToCustomer, whatsappToSalon,
-    status
+    status,
+    couponCode,            // ← 追加
+    discountedJPY          // ← 追加（サーバ側で再計算＆上書きもされる）
   }
 };
 
@@ -606,6 +620,95 @@ function readBookingFromPage() {
   }else{
     mountForm();
   }
+
+// ===== Coupon apply (confirm page) =====
+(function(){
+  const $ = s => document.querySelector(s);
+  const btn = $('#cp_apply');
+  const msg = $('#cp_msg');
+  const input = $('#cp_code');
+  const elPrice = document.getElementById('s_price'); // data-jpy / data-lkr を持たせる
+
+  if(!btn || !input || !elPrice) return;
+
+  // 初期: s_price に data-jpy / data-lkr が無ければ URL から付与
+  try{
+    const qs = new URLSearchParams(location.search);
+    if(!elPrice.getAttribute('data-jpy') && qs.get('price_jpy'))
+      elPrice.setAttribute('data-jpy', String(qs.get('price_jpy')));
+    if(!elPrice.getAttribute('data-lkr') && qs.get('price_lkr'))
+      elPrice.setAttribute('data-lkr', String(qs.get('price_lkr')));
+  }catch(_){}
+
+  async function applyCoupon(){
+    msg.textContent = '';
+    const code = (input.value||'').trim();
+    if(!code){ msg.textContent = 'クーポンコードを入力してください'; return; }
+
+    // 予約者メールが未入力だと「初回限定」の判定ができない
+    const email = (document.getElementById('uf_email')?.value||'').trim();
+    if(!email){ msg.textContent = '初回限定判定のためメールを先に入力してください'; return; }
+
+    // salonId は URL から
+    const qs = new URLSearchParams(location.search);
+    const salonId = qs.get('salonId') || qs.get('salon') || '';
+    if(!salonId){ msg.textContent = 'サロン情報が見つかりません'; return; }
+
+    // GAS へ検証依頼
+    if(!GAS_URL || !GAS_KEY){
+      msg.textContent = 'サーバ設定が未完了のため、適用できません';
+      return;
+    }
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        key: GAS_KEY,
+        kind: 'coupon.validate',
+        data: { salonId, code, email }
+      })
+    });
+    const j = await res.json().catch(()=>({ok:false,error:'bad_json'}));
+    if(!j.ok){
+      const reason = String(j.error||'invalid');
+      if(reason==='not_first_time') msg.textContent = 'このクーポンは“初回限定”です（過去ご利用があるため適用できません）';
+      else if(reason==='email_required_for_first_time') msg.textContent = '初回限定判定のためメール入力が必要です';
+      else if(reason==='not_found') msg.textContent = '無効なクーポンです';
+      else msg.textContent = 'クーポンの適用に失敗しました';
+      return;
+    }
+
+    // 割引後金額を計算（安全のためサーバ側でも再計算済みだが、UI用にここでも計算）
+    const pct = Number(j.coupon?.pct||0);
+    const off = Number(j.coupon?.offJPY||0);
+    const baseJPY = Number(elPrice.getAttribute('data-jpy')||0);
+    let discounted = baseJPY;
+    if(pct>0) discounted = Math.round(discounted * (100 - pct) / 100);
+    if(off>0) discounted = Math.max(0, discounted - off);
+
+    // UI表示更新（LKRは元の換算ロジック通りにしてOK）
+    elPrice.setAttribute('data-jpy', String(discounted));
+    // 表示テキストは “支払い : Rs ...” の形なので置換
+    const lkrNow = document.getElementById('s_price').getAttribute('data-lkr') || '';
+    // LKRの再計算はここでは省略（表示をJPYベースにしたい場合は計算式を持ってくる）
+    document.getElementById('s_price').textContent =
+      ( (document.getElementById('s_price').textContent.split(':')[0] || '支払い') + ' : ' +
+        'Rs ' + (document.getElementById('s_price').getAttribute('data-lkr') || '0') );
+
+    // URL にも `coupon` と `price_jpy` を反映（postBookingToSheet は URL から読むため）
+    try{
+      const u = new URL(location.href);
+      u.searchParams.set('coupon', code);
+      u.searchParams.set('price_jpy', String(discounted));
+      history.replaceState(null, '', u.toString());
+    }catch(_){}
+
+    msg.style.color = '#0B7F5F';
+    msg.textContent = 'クーポンを適用しました';
+  }
+
+  btn.addEventListener('click', applyCoupon);
+})();
 
   function mountForm(){
     const base = (window.BL_PAY?.base||'').replace(/\/$/,'');

@@ -6,6 +6,22 @@
 <title>カード情報の保存（後払い用）</title>
 <link rel="preconnect" href="https://js.stripe.com" crossorigin>
 <script src="https://js.stripe.com/v3/"></script>
+<script>
+// --- Force English & disable JA temporarily ---
+window.BL_I18N = window.BL_I18N || {};
+BL_I18N.getLang = () => 'en';                      // 常に英語を返す
+try{ document.documentElement.setAttribute('lang','en'); }catch(e){}
+// /ja/ で開かれたら / に戻す（念のためブクマ対策）
+(function(){
+  var p = location.pathname || '';
+  if (p.startsWith('/ja/')) location.replace('/');
+})();
+</script>
+<style>
+/* 言語セレクタがある場合は一律非表示 */
+#langSelect { display: none !important; }
+</style>
+
 <!-- Google Apps Script WebApp URL（customers シート upsert 用） -->
 <meta name="bl-sheet-hook" content="https://script.google.com/macros/s/AKfycbwWRpfcZMsGxNqGJ5aNjRT1Y1PChDTqtQE3e0S7sUDAMei8s1wOr6lpKMnOaI1Z-6o/exec">
 <style>

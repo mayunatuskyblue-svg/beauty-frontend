@@ -123,6 +123,21 @@ BL_I18N.pick = BL_I18N.pick || function (obj, key) {
 /* ダミー（存在すれば何もしない） */
 BL_I18N.i18nApply = BL_I18N.i18nApply || function(){};
 </script>
+<script>
+// --- Force English & disable JA temporarily ---
+window.BL_I18N = window.BL_I18N || {};
+BL_I18N.getLang = () => 'en';                      // 常に英語を返す
+try{ document.documentElement.setAttribute('lang','en'); }catch(e){}
+// /ja/ で開かれたら / に戻す（念のためブクマ対策）
+(function(){
+  var p = location.pathname || '';
+  if (p.startsWith('/ja/')) location.replace('/');
+})();
+</script>
+<style>
+/* 言語セレクタがある場合は一律非表示 */
+#langSelect { display: none !important; }
+</style>
 
 <!-- i18n が無くても落ちない保険 -->
 <script>

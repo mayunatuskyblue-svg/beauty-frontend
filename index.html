@@ -888,6 +888,17 @@ try{ document.documentElement.setAttribute('lang','en'); }catch(e){}
 </style>
 
 <script>document.addEventListener('DOMContentLoaded',()=>BL_I18N.i18nApply());</script>
+<style>
+/* ▼ 一時的に言語タブを非表示にする ▼ */
+.lang-pill,
+.langSel,
+#langSelect {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+</style>
+
 </head>
 <body class="hero-header bg-radials">
 

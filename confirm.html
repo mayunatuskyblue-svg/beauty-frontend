@@ -133,6 +133,22 @@ body.confirm-page h1 {
 body{ padding-bottom:60px; } /* avoid overlap */
 </style>
   <script src="lang.js" defer></script>
+  <script>
+// --- Force English & disable JA temporarily ---
+window.BL_I18N = window.BL_I18N || {};
+BL_I18N.getLang = () => 'en';                      // 常に英語を返す
+try{ document.documentElement.setAttribute('lang','en'); }catch(e){}
+// /ja/ で開かれたら / に戻す（念のためブクマ対策）
+(function(){
+  var p = location.pathname || '';
+  if (p.startsWith('/ja/')) location.replace('/');
+})();
+</script>
+<style>
+/* 言語セレクタがある場合は一律非表示 */
+#langSelect { display: none !important; }
+</style>
+
 <script>document.addEventListener('DOMContentLoaded',()=>BL_I18N.i18nApply());</script>
   <style>
 /* --- BeautyLanka UI Booster (non-breaking) --- */

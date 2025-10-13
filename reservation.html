@@ -67,6 +67,23 @@ footer{margin:12px 0 30px;color:var(--muted);font-size:12px}
 
 </style>
   <script src="lang.js" defer></script>
+  <script>
+// --- Force English site-wide & hide any language UI ---
+window.BL_I18N = window.BL_I18N || {};
+BL_I18N.getLang = () => 'en';
+try{ document.documentElement.setAttribute('lang','en'); }catch(e){}
+
+// If the user visits /ja/*, send them to the root (bookmark safety)
+(function(){ try{
+  var p = location.pathname || '';
+  if (p.startsWith('/ja/')) location.replace('/');
+}catch(e){} })();
+</script>
+<style>
+/* Hide any language selectors, including native selects or custom pills */
+#langSelect, .langSel, .lang-pill { display:none !important; visibility:hidden !important; pointer-events:none !important; }
+</style>
+
 <script>document.addEventListener('DOMContentLoaded',()=>BL_I18N.i18nApply());</script>
   <style>
 /* --- BeautyLanka UI Booster (non-breaking) --- */

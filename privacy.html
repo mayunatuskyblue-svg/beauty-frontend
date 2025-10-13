@@ -1,5 +1,22 @@
 <!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Privacy | BeautyLanka</title>
 <style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#F7F1E1;color:#2E1A16;margin:0}.container{max-width:900px;margin:40px auto;padding:0 16px}h1{font-size:28px;margin:0 0 12px}p{line-height:1.7}a{color:#06c}</style><script src="/lang.js" defer></script>
+  <script>
+// --- Force English site-wide & hide any language UI ---
+window.BL_I18N = window.BL_I18N || {};
+BL_I18N.getLang = () => 'en';
+try{ document.documentElement.setAttribute('lang','en'); }catch(e){}
+
+// If the user visits /ja/*, send them to the root (bookmark safety)
+(function(){ try{
+  var p = location.pathname || '';
+  if (p.startsWith('/ja/')) location.replace('/');
+}catch(e){} })();
+</script>
+<style>
+/* Hide any language selectors, including native selects or custom pills */
+#langSelect, .langSel, .lang-pill { display:none !important; visibility:hidden !important; pointer-events:none !important; }
+</style>
+
 </head>
 <body><div class="container"></div>
   

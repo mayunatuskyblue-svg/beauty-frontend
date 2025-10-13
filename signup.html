@@ -48,6 +48,23 @@
 
   </style>
  <script src="lang.js" defer></script>
+  <script>
+// --- Force English site-wide & hide any language UI ---
+window.BL_I18N = window.BL_I18N || {};
+BL_I18N.getLang = () => 'en';
+try{ document.documentElement.setAttribute('lang','en'); }catch(e){}
+
+// If the user visits /ja/*, send them to the root (bookmark safety)
+(function(){ try{
+  var p = location.pathname || '';
+  if (p.startsWith('/ja/')) location.replace('/');
+}catch(e){} })();
+</script>
+<style>
+/* Hide any language selectors, including native selects or custom pills */
+#langSelect, .langSel, .lang-pill { display:none !important; visibility:hidden !important; pointer-events:none !important; }
+</style>
+
 <script>document.addEventListener('DOMContentLoaded',()=>BL_I18N.i18nApply());</script>
   <style>
 /* --- BeautyLanka UI Booster (non-breaking) --- */
@@ -117,9 +134,14 @@ select.btn { color: var(--ink); } /* 言語セレクトの見え方安定化 */
 <div class="container">
   <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
     <a class="link" href="javascript:history.back()" data-i18n="ui.back">← 戻る</a>
-    <select id="langSelect" class="btn" style="height:34px;width:auto">
-      <option value="auto">Auto</option><option value="ja">日本語</option><option value="en">English</option>
-    </select>
+    <!--
+<select id="langSelect" class="btn" style="height:34px;width:auto">
+  <option value="auto">Auto</option>
+  <option value="ja">日本語</option>
+  <option value="en">English</option>
+</select>
+-->
+
   </div>
 
   <h1 data-i18n="auth.signup">新規登録</h1>

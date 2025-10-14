@@ -887,7 +887,17 @@ try{ document.documentElement.setAttribute('lang','en'); }catch(e){}
 #langSelect { display: none !important; }
 </style>
 
-<script>document.addEventListener('DOMContentLoaded',()=>BL_I18N.i18nApply());</script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    try {
+      if (window.BL_I18N && typeof BL_I18N.i18nApply === 'function') {
+        BL_I18N.i18nApply();
+      }
+    } catch (e) {
+      console.warn('i18nApply skipped:', e);
+    }
+  });
+</script>
 <style>
 /* ▼ 一時的に言語タブを非表示にする ▼ */
 .lang-pill,
@@ -1274,6 +1284,12 @@ try{
   }
 }catch(e){}
 
+function updateCardCurrencies(){
+  document.querySelectorAll('b[data-jpy]').forEach(el=>{
+    const j = Number(el.getAttribute('data-jpy')||'0');
+    el.textContent = fmtCurrencyFromJPY(j, getCurrency());
+  });
+}
 function updateCardCurrencies(){
   document.querySelectorAll('b[data-jpy]').forEach(el=>{
     const j = Number(el.getAttribute('data-jpy')||'0');

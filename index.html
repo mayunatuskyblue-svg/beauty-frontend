@@ -1061,6 +1061,11 @@ function requireAuth(redirectUrl){
   }
   return false;
 }
+// 日本語のポイント文を英語UI用にフォールバックする簡易関数
+function enPoints(txt){
+  // まずは何もしないフォールバックでOK（必要に応じて置換ルールを足す）
+  return String(txt || '');
+}
 
 function enTag(t){const map={'マツエク':'Lashes','スパ':'Spa','ハーブ':'Herbs','日本語対応':'Japanese support'};return map[t]||t;}
 // ---------- i18n ----------

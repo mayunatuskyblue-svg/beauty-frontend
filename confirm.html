@@ -206,44 +206,49 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
 <body>
   <div class="wrap">
     <div class="hrow">
-      <a class="back" href="./reservation.html" data-i18n="ui.back">← 戻る</a>
-      <h1 class="h1" data-i18n="confirm.title">予約内容の確認</h1>
+      <a class="back" href="./reservation.html" data-i18n="ui.back">← Back</a>
+      <h1 class="h1" data-i18n="confirm.title">Reservation details</h1>
     </div>
 
     <div class="card" id="sum">
       <div class="title" id="s_item">Menu</div>
       <div class="meta" id="s_salon">#1 / Salon</div>
-      <div class="meta" id="s_time" data-i18n="confirm.time_prefix">時間 : 2025/01/01 10:00</div>
-      <div class="meta" id="s_price" data-i18n="confirm.pay_prefix">支払い : Rs 0</div>
-      <div class="meta" id="s_staff">施術者 : <span id="s_staff_name" data-i18n="confirm.staff_default">指名なし</span></div>
+      <div class="meta" id="s_time" data-i18n="confirm.time_prefix">Time : 2025/01/01 10:00</div>
+      <div class="meta" id="s_price" data-i18n="confirm.pay_prefix">Payment : Rs 0</div>
+      <div class="meta" id="s_staff">施術者 : <span id="s_staff_name" data-i18n="confirm.staff_default">No preference</span></div>
     </div>
 
     <div class="card" id="userForm">
       <!-- ▼ スマート支払い（カード保存のみ） ▼ -->
 <div class="card" id="paySmart">
-  <div class="sec-title">支払い方法</div>
+  <div class="sec-title">Payment method</div>
   <div class="sec-desc" style="opacity:.85">
-    本サイトは <b>スマート支払い（カード保存→施術後に確定金額を一度だけ課金）</b> のみ対応です。
-  </div>
+    We support <b>Smart payment</b>: your card is saved now, and a single charge is made after the service with the final amount.  </div>
   <!-- Stripe Elements マウント先 -->
   <div id="bl-card-box" style="margin-top:12px"></div>
   <p class="muted" id="bl-card-note" style="margin:8px 0 0">
-    ※ カードは Stripe に安全に保存され、施術後に確定金額で一度だけ課金されます。
-  </p>
+    Your card is securely saved with Stripe. You will be charged once after the service is completed.  </p>
 </div>
 <!-- ▲ /スマート支払い ▲ -->
-      <div class="sec-title" id="uf_title" data-i18n="ui.yourInfo">予約者情報</div>
-      <div class="sec-desc" id="uf_desc" data-i18n="confirm.uf_desc">連絡が取れるメールアドレスと電話番号をご入力ください。</div>
-      <div class="form-row">
-        <input id="uf_name" class="input" data-i18n-ph="ui.name" placeholder="お名前 / Name" autocomplete="name"/>
-        <input id="uf_email" class="input" data-i18n-ph="ui.email" placeholder="メール / Email" autocomplete="email" inputmode="email"/>
-        <input id="uf_phone" class="input" data-i18n-ph="ui.phone" placeholder="電話番号 / Phone" autocomplete="tel" inputmode="tel"/>
-        <textarea id="uf_note" class="input" data-i18n-ph="ui.notes" placeholder="要望・メモ（任意）"></textarea>
-      </div>
-      <div class="sec-title">クーポン</div>
-<div class="form-row" style="grid-template-columns: 2fr 1fr; align-items:center">
-  <input id="cp_code" class="input" placeholder="クーポンコードを入力"/>
-  <button id="cp_apply" type="button" class="btn btn-outline">適用</button>
+      <div class="sec-title" id="uf_title" data-i18n="ui.yourInfo">Your information</div>
+<div class="sec-desc"  id="uf_desc"  data-i18n="confirm.uf_desc">
+  Please enter an email and phone number we can reach you at.
+</div>
+
+<!-- placeholders -->
+<input id="uf_name"  class="input" data-i18n-ph="ui.name"  placeholder="Name"  ...>
+<input id="uf_email" class="input" data-i18n-ph="ui.email" placeholder="Email" ...>
+<input id="uf_phone" class="input" data-i18n-ph="ui.phone" placeholder="Phone" ...>
+<textarea id="uf_note" class="input" data-i18n-ph="ui.notes" placeholder="Notes (optional)"></textarea>
+
+<div class="sec-title">Coupon</div>
+<input id="cp_code" class="input" placeholder="Enter coupon code"/>
+<button id="cp_apply" type="button" class="btn btn-outline">Apply</button>
+
+<!-- toast -->
+<span id="toastMsg" data-i18n="confirm.toast_missing">Some required fields are missing.</span>
+<button class="close" aria-label="Close" data-i18n="confirm.close">×</button>
+
 </div>
 <p id="cp_msg" style="margin:6px 0 0; color:#6f5a54; font-size:14px"></p>
 

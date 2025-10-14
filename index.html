@@ -991,7 +991,7 @@ try{ document.documentElement.setAttribute('lang','en'); }catch(e){}
     <label class="pill" aria-label="金額">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" fill="none"/><path d="M9 9h6m-6 3h6m-6 3h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       <select id="budget">
-        <option value="">金額</option>
+        <option value="" data-i18n="budget">Price</option>
         <option value="0-5000">〜 Rs 5,000</option>
         <option value="5000-10000">Rs 5,000–10,000</option>
         <option value="10000-20000">Rs 10,000–20,000</option>
@@ -1007,11 +1007,11 @@ try{ document.documentElement.setAttribute('lang','en'); }catch(e){}
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
       </button>
-      <input id="kw" type="search" data-i18n="search.ph_kw" placeholder="サロン名・メニュー名など">
+      <input id="kw" type="search" data-i18n="search.ph_kw" placeholder="Salon or menu name">
     </label>
     <!-- キーワードピルの直後に追加 -->
-<div id="searchHistoryInline" class="history-pop" role="listbox" aria-label="検索履歴"></div>
-    <button class="btn primary searchbtn reserve-btn" type="submit" data-i18n="search_btn">検索する</button>
+<div id="searchHistoryInline" class="history-pop" role="listbox" aria-label="search history"></div>
+    <button class="btn primary searchbtn reserve-btn" type="submit" data-i18n="search_btn">search</button>
   </div>
 </form>
 
@@ -1051,20 +1051,7 @@ function requireAuth(redirectUrl){
   }
   return false;
 }
-// ---------- i18n ----------
-function enPoints(s){
-  if(!s) return '';
-  let x = String(s);
-  x = x.replace(/自然で長持ち。?丁寧なカウンセリング。?/g, 'Naturally long‑lasting with attentive consultation.');
-  x = x.replace(/本格アーユルヴェーダと静かな個室。?/g, 'Authentic Ayurveda in a tranquil private room.');
-  x = x.replace(/自社?ブレンドのハーブでリラックス。?/g, 'Relax with our original blended herbs.');
-  x = x.replace(/日本語対応/g, 'Japanese support available');
-  x = x.replace(/落ち着いた(雰囲気|空間)。?/g, 'Calm, relaxing atmosphere.');
-  x = x.replace(/丁寧(な)?施術。?/g, 'Meticulous, high‑care treatment.');
-  x = x.replace(/。/g, '. ').replace(/\s+/g,' ').trim();
-  if(x) x = x.charAt(0).toUpperCase() + x.slice(1);
-  return x;
-}
+
 function enTag(t){const map={'マツエク':'Lashes','スパ':'Spa','ハーブ':'Herbs','日本語対応':'Japanese support'};return map[t]||t;}
 // ---------- i18n ----------
 function getLang(){
@@ -1122,11 +1109,15 @@ const T = {
     ph_kw: 'Keywords (e.g., lashes, spa)',
     search_btn: 'Search',
     login:'Log in', signup:'Sign up', mypage:'My Page',
-    place: 'Area', type: 'Category',
+    place: 'Area', type: 'Category', budget: 'Price',
     price_hint: 'From', details:'Details', book:'Book', view_map:'View map', only_this_store:'(this shop only)', recommend_points:'Highlights: '
   }
 };
 function t(k){ const L=getLang(); return (T[L]&&T[L][k])||k; }
+  // force EN for the whole page
+window.getLang = () => 'en';
+document.documentElement.setAttribute('lang','en');
+localStorage.setItem('bl_lang','en'); // 将来の再読込でもEN
 function applyI18N(){
   const L = getLang();
   document.querySelectorAll('[data-i18n]').forEach(el=>{ const k=el.dataset.i18n; if(T[L][k]) el.textContent=T[L][k]; });
@@ -1137,6 +1128,7 @@ function applyI18N(){
 if (my) my.setAttribute('aria-label', T[L].mypage);
   const placeOpt=document.querySelector('#place option[value=""]'); if(placeOpt) placeOpt.textContent=T[L].place;
   const typeOpt=document.querySelector('#type option[value=""]'); if(typeOpt) typeOpt.textContent=T[L].type;
+  const budOpt =document.querySelector('#budget option[value=""]'); if(budOpt) budOpt.textContent=T[L].budget || (L==='en'?'Price':'金額');
 }
 function updateLangFlag(){
   var f  = document.getElementById('langFlag');

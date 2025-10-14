@@ -156,19 +156,14 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
 </div>
   
   <div class="card">
-    <dl class="row">
-      <dt data-i18n="reserve.salon">Salon</dt>
-<dt data-i18n="reserve.menu">Menu</dt>
-<dt data-i18n="reserve.staff">Staff</dt>
-<dt data-i18n="reserve.datetime">Date &amp; time</dt>
-<dt data-i18n="reserve.estimate">Estimated price</dt>
-      <dt>Salon</dt>      <dd id="v_salon">-</dd>
-<dt>Menu</dt>       <dd id="v_menu">-</dd>
-<dt>Staff</dt>      <dd id="v_staff">-</dd>
-<dt>Date &amp; time</dt> <dd id="v_date">-</dd>
-<dt>Estimated price</dt> <dd id="v_price">-</dd>
-    </dl>
-  </div>
+  <dl class="row">
+    <dt>Salon</dt>           <dd id="v_salon">-</dd>
+    <dt>Menu</dt>            <dd id="v_menu">-</dd>
+    <dt>Staff</dt>           <dd id="v_staff">No preference</dd>
+    <dt>Date &amp; time</dt> <dd id="v_date">-</dd>
+    <dt>Estimated price</dt> <dd id="v_price">-</dd>
+  </dl>
+</div>
 
   <div class="card">
     <label data-i18n="reserve.contactEmail">Contact email</label>
@@ -222,7 +217,7 @@ const p = new URLSearchParams(location.search);
 const salonId   = p.get('salonId') || p.get('salon') || '';
 const salonName = p.get('salonName') || p.get('salon_name') || 'Salon';
 const itemName  = p.get('item') || p.get('menu') || 'Menu';
-const staffName = p.get('staffName') || p.get('staff') || '指名なし';
+const staffName = p.get('staffName') || p.get('staff') || 'No preference';
 const dateTextParam  = p.get('date') || p.get('dt') || '';
 const priceLKR  = Number(p.get('price_lkr') || 0)
               || Math.round(Number(p.get('price_jpy')||0) * JPY_TO_LKR); // 後方互換
@@ -237,8 +232,8 @@ vprice.dataset.lkr = String(priceLKR || '');
 vprice.dataset.jpy = String(Math.round((priceLKR || 0) / JPY_TO_LKR) || '');
 
 // ===== GAS 設定（meta / localStorage / URL の順で解決） =====
-const GAS_URL = document.querySelector('meta[name=bl-sheet-hook]')?.content || urlP.get('gas') || '';
-const GAS_KEY = urlP.get('key') || localStorage.getItem('bl_gas_key') || '';
+const GAS_URL = document.querySelector('meta[name=bl-sheet-hook]')?.content || P.get('gas') || '';
+const GAS_KEY = P.get('key') || localStorage.getItem('bl_gas_key') || '';
 
 // ===== シート反映（bookings 追記） =====
 async function recordBookingToSheet({ bookingId, email }){
@@ -410,9 +405,10 @@ function hhmmOf(h,m){ return String(h).padStart(2,'0')+':'+String(m).padStart(2,
     const base = new Date(today0().getTime() + offset * 7 * 24*60*60*1000);
     const end = new Date(base.getTime() + 6 * 24*60*60*1000);
     const days = Array.from({length:7}, (_,i)=> new Date(base.getTime() + i*24*60*60*1000));
-    title.textContent = base.toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'})
-                       + ' — ' +
-                     end.toLocaleDateString(undefined,{month:'long',day:'numeric'});
+    title.textContent =
+  new Intl.DateTimeFormat('en-GB', { year:'numeric', month:'short', day:'2-digit' }).format(base)
+  + ' — ' +
+  new Intl.DateTimeFormat('en-GB', { month:'short', day:'2-digit' }).format(end);
         // 既存: const ws = getWeekStart(addDays(today, offset*7)); のすぐ下などに
        const savedIso = (localStorage.getItem('reserve_selected') || '').trim();
 const savedDt  = savedIso ? new Date(savedIso) : null;
@@ -459,7 +455,9 @@ for (const d of days) takenMap[ymdOf(d)] = await fetchTakenSlots(salonId, ymdOf(
     const corner=document.createElement('th'); corner.style.width='70px'; hr.appendChild(corner);
     days.forEach(d=>{
       const th=document.createElement('th');
-      th.style.padding='8px'; th.textContent = d.toLocaleDateString(undefined,{month:'short',day:'numeric',weekday:'short'});
+      th.textContent = new Intl.DateTimeFormat('en-GB', {
+  month:'short', day:'2-digit', weekday:'short'
+}).format(d);
       hr.appendChild(th);
     });
     thead.appendChild(hr);
@@ -515,7 +513,9 @@ times.forEach(([h,m])=>{
         dt.setHours(h, m, 0, 0);
         const iso = dt.toISOString();
         try { localStorage.setItem('reserve_selected', iso); } catch(_){}
-        document.getElementById('v_date').textContent = dt.toLocaleString();
+       document.getElementById('v_date').textContent = dt.toLocaleString('en-GB', {
+  year:'numeric', month:'short', day:'2-digit', hour:'2-digit', minute:'2-digit'
+});
 
         grid.querySelectorAll('.timebtn.selected').forEach(b=>{
           b.classList.remove('selected');

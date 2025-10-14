@@ -215,7 +215,7 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
       <div class="meta" id="s_salon">#1 / Salon</div>
       <div class="meta" id="s_time" data-i18n="confirm.time_prefix">Time : 2025/01/01 10:00</div>
       <div class="meta" id="s_price" data-i18n="confirm.pay_prefix">Payment : Rs 0</div>
-      <div class="meta" id="s_staff">施術者 : <span id="s_staff_name" data-i18n="confirm.staff_default">No preference</span></div>
+      <div class="meta" id="s_staff">Staff : <span id="s_staff_name" data-i18n="confirm.staff_default">No preference</span></div>
     </div>
 
     <div class="card" id="userForm">
@@ -633,9 +633,9 @@ function readBookingFromPage() {
   if(saved){
     holder.innerHTML = `
       <div class="notice" style="padding:10px;border:1px solid #eadfca;border-radius:10px">
-        カード情報は保存済みです ✅<br>
+        Your card has been securely saved. ✅<br>
         <small>（customerId: ${saved.customerId} / pm: ${saved.paymentMethodId}）</small><br>
-        <button id="bl-change" class="btn" style="margin-top:8px">別のカードにする</button>
+        <button id="bl-change" class="btn" style="margin-top:8px">Use a differnt card</button>
       </div>`;
     document.getElementById('bl-change').onclick = mountForm;
   }else{

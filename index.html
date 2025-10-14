@@ -1055,7 +1055,7 @@ function getAuth(){ try{ return JSON.parse(localStorage.getItem('bl_auth')||'nul
 function requireAuth(redirectUrl){
   const auth = getAuth();
   if(auth) return true;
-  if(confirm('お気に入りや予約を行うにはログインが必要です。ログインしますか？')){
+  if(confirm('You need to log in to add favorites or make a reservation. Would you like to log in now?')){
     const url = 'login.html?redirect=' + encodeURIComponent(redirectUrl||location.href);
     location.href = url;
   }

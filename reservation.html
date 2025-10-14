@@ -162,6 +162,11 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
 <dt data-i18n="reserve.staff">Staff</dt>
 <dt data-i18n="reserve.datetime">Date &amp; time</dt>
 <dt data-i18n="reserve.estimate">Estimated price</dt>
+      <dt>Salon</dt>      <dd id="v_salon">-</dd>
+<dt>Menu</dt>       <dd id="v_menu">-</dd>
+<dt>Staff</dt>      <dd id="v_staff">-</dd>
+<dt>Date &amp; time</dt> <dd id="v_date">-</dd>
+<dt>Estimated price</dt> <dd id="v_price">-</dd>
     </dl>
   </div>
 
@@ -232,8 +237,8 @@ vprice.dataset.lkr = String(priceLKR || '');
 vprice.dataset.jpy = String(Math.round((priceLKR || 0) / JPY_TO_LKR) || '');
 
 // ===== GAS 設定（meta / localStorage / URL の順で解決） =====
-const GAS_URL = document.querySelector('meta[name=bl-sheet-hook]')?.content || p.get('gas') || '';
-const GAS_KEY = p.get('key') || localStorage.getItem('bl_gas_key') || '';
+const GAS_URL = document.querySelector('meta[name=bl-sheet-hook]')?.content || urlP.get('gas') || '';
+const GAS_KEY = urlP.get('key') || localStorage.getItem('bl_gas_key') || '';
 
 // ===== シート反映（bookings 追記） =====
 async function recordBookingToSheet({ bookingId, email }){

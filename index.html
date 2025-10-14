@@ -1432,11 +1432,11 @@ function initFilters(dataSource){
     const type  = typeSel.value;
     const src = (_DATA_CURRENT && _DATA_CURRENT.length>0) ? _DATA_CURRENT : DATA_FALLBACK;
     const items = src.filter(s=>
-  (!place || s.placeJa===place) &&
-  (!type  || s.typeJa===type) &&
-  (!kw || (String(s.name).toLowerCase().includes(kw)
-        || String(s.points||'').toLowerCase().includes(kw)
-        || (s.tags||[]).join(',').toLowerCase().includes(kw)))
+  (!place || s.place === place) &&
+(!type  || s.type  === type) &&
+(!kw || (String(s.name).toLowerCase().includes(kw)
+      || String(s.points||'').toLowerCase().includes(kw)
+      || (s.tags||[]).join(',').toLowerCase().includes(kw)))
 );
 
     render(items);

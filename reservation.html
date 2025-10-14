@@ -147,29 +147,30 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
 </head>
 <body>
 <div class="container">
-  <a href="index.html" class="btn ghost" data-i18n="ui.back">← 戻る</a>
-  <h1 data-i18n="reserve.title">予約の確認</h1>
+  <a href="index.html" class="btn ghost" data-i18n="ui.back">← Back</a>
+<h1 data-i18n="reserve.title">Reservation confirmation</h1>
   <div class="bl-steps" aria-hidden="true" style="margin:6px 0 10px">
-  <span>1. 検索</span><span class="dot"></span>
-  <span class="on">2. 予約内容</span><span class="dot"></span>
-  <span>3. 支払い</span>
+  <span>1. Search</span><span class="dot"></span>
+  <span class="on">2. Details</span><span class="dot"></span>
+  <span>3. Payment</span>
 </div>
-
-
+  
   <div class="card">
     <dl class="row">
-      <dt data-i18n="reserve.salon">サロン</dt><dd id="v_salon">-</dd>
-      <dt data-i18n="reserve.menu">メニュー</dt><dd id="v_menu">-</dd>
-      <dt data-i18n="reserve.staff">施術者</dt><dd id="v_staff">-</dd>
-      <dt data-i18n="reserve.datetime">日時</dt><dd id="v_date">-</dd>
-      <dt data-i18n="reserve.estimate">目安金額</dt><dd id="v_price">-</dd>
+      <dt data-i18n="reserve.salon">Salon</dt>
+<dt data-i18n="reserve.menu">Menu</dt>
+<dt data-i18n="reserve.staff">Staff</dt>
+<dt data-i18n="reserve.datetime">Date &amp; time</dt>
+<dt data-i18n="reserve.estimate">Estimated price</dt>
     </dl>
   </div>
 
   <div class="card">
-    <label data-i18n="reserve.contactEmail">予約連絡用メール</label>
-    <input id="email" type="email" data-i18n-ph="ui.email" placeholder="you@example.com"/>
-    <p class="small" data-i18n="reserve.note">※空でも予約はできます。メールを入れると <code>bookings</code> シートに反映されます。</p>
+    <label data-i18n="reserve.contactEmail">Contact email</label>
+<input id="email" type="email" data-i18n-ph="ui.email" placeholder="you@example.com"/>
+<p class="small" data-i18n="reserve.note">
+  You can book without email. If provided, it will appear on the bookings sheet.
+</p>
   </div>
 
   <div class="card" id="hpGridWrap">
@@ -184,10 +185,9 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
   </div>
 
   <div class="toolbar">
-    <button id="btnConfirm" class="btn primary" data-i18n="reserve.submit" disabled>この内容で予約する</button>
-    <button id="btnCancel" class="btn ghost" onclick="history.back()" data-i18n="reserve.backOnce">一度戻る</button>
-    <span id="spin" style="display:none" data-i18n="reserve.process">処理中…</span>
-  </div>
+    <button id="btnConfirm" class="btn primary" data-i18n="reserve.submit" disabled>Confirm booking</button>
+<button id="btnCancel" class="btn ghost" onclick="history.back()" data-i18n="reserve.backOnce">Back</button>
+<span id="spin" style="display:none" data-i18n="reserve.process">Processing…</span>  </div>
 
   <div id="msg" aria-live="polite"></div>
 
@@ -268,7 +268,14 @@ document.getElementById('btnConfirm').addEventListener('click', ()=>{
     return;
   }
   const dt = new Date(dtIso);
-  const dateText = dt.toLocaleString();
+  // 旧:
+// const dateText = dt.toLocaleString();
+
+// 新（例：14 Oct 2025, 09:00 形式。必要なら 'en-US' に変更可）
+const dateText = dt.toLocaleString('en-GB', {
+  year:'numeric', month:'short', day:'2-digit',
+  hour:'2-digit', minute:'2-digit'
+});
 
   // すでにURLに載っている値も拾う（salon/menu/staff/price/coupon 等）
   const p = new URLSearchParams(location.search);

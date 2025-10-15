@@ -1,0 +1,13 @@
+# --- 強制的に CSS を text/css で返す ---
+AddType text/css .css
+AddType application/javascript .js
+AddType image/svg+xml .svg
+
+# 文字化け防止（任意）
+AddDefaultCharset UTF-8
+
+# 念のため古いタイプをリセット
+<FilesMatch "\.(css|js|svg)$">
+  RemoveType .css .js .svg
+  ForceType off
+</FilesMatch>

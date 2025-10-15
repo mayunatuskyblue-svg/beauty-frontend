@@ -168,8 +168,8 @@ try{ document.documentElement.setAttribute('lang','en'); }catch(e){}
 </script>
   
  <script>
-// ==== API設定（同一オリジンでWorkerへ → WorkerがGASに中継）====
-const API_BASE = '/api';                 // ★ 相対パスに統一（www/apex差異でのリダイレクト回避）
+// ==== API設定（当面の暫定：GASを直叩き）====
+const API_BASE = 'https://script.google.com/macros/s/AKfycbwWRpfcZMsGxNqGJ5aNjRT1Y1PChDTqtQE3e0S7sUDAMei8s1wOr6lpKMnOaI1Z-6o/exec'; // ← あなたのGAS WebアプリURL
 const GAS_KEY  = 'bl_gas_key_bR6ZXWwu6kM_nrK25geP97Cs5qCX3auxugX_IUGlg90';
 </script>
 
@@ -189,8 +189,8 @@ const GAS_KEY  = 'bl_gas_key_bR6ZXWwu6kM_nrK25geP97Cs5qCX3auxugX_IUGlg90';
       const r = await fetch(API_BASE, {
   method: 'POST',
   // ★ JSONを明示（CDN/Worker設定の揺れ対策）
-  headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-  body: JSON.stringify({
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify({  body: JSON.stringify({
     key: GAS_KEY,
     kind: 'auth.login',
     data: { salonId, password }

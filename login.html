@@ -166,13 +166,11 @@ try{ document.documentElement.setAttribute('lang','en'); }catch(e){}
     passPw.type = (passPw.type === 'password') ? 'text' : 'password';
   });
 </script>
-  <script>
+  
+ <script>
 // ==== API設定（同一オリジンでWorkerへ → WorkerがGASに中継）====
-- const API_BASE = 'https://www.beautylk.com/api'
-- const API_LOGIN = '/api/auth/login';   // ルートを貼ったので相対パスでOK
-- const GAS_KEY   = 'bl_gas_key_bR6ZXWwu6kM_nrK25geP97Cs5qCX3auxugX_IUGlg90'; // GAS側のキー
-+ const API_BASE = 'https://www.beautylk.com/api'; // すべて /api に集約
-+ const GAS_KEY  = 'bl_gas_key_bR6ZXWwu6kM_nrK25geP97Cs5qCX3auxugX_IUGlg90';
+const API_BASE = '/api';                 // ★ 相対パスに統一（www/apex差異でのリダイレクト回避）
+const GAS_KEY  = 'bl_gas_key_bR6ZXWwu6kM_nrK25geP97Cs5qCX3auxugX_IUGlg90';
 </script>
 
 <script>
@@ -190,13 +188,16 @@ try{ document.documentElement.setAttribute('lang','en'); }catch(e){}
     try{
       const r = await fetch(API_BASE, {
   method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+  // ★ JSONを明示（CDN/Worker設定の揺れ対策）
+  headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
   body: JSON.stringify({
     key: GAS_KEY,
-    kind: 'auth.login',         // ← GAS側のディスパッチがこのkindを見る想定
+    kind: 'auth.login',
     data: { salonId, password }
-  })
+  }),
+  redirect: 'follow' // （既定でOKだが、明示しておく）
 });
+
 
  let j = null;
 try {
@@ -205,6 +206,7 @@ try {
     j = await r.json();
   } else {
     const t = await r.text();
+    console.debug('[API]', r.status, r.url, r.headers.get('content-type'));
     console.warn('Non-JSON response:', r.status, t.slice(0,200));
     // ▲ ここを追加：ユーザー向け原因表示
     document.getElementById('salonQuickMsg').textContent =

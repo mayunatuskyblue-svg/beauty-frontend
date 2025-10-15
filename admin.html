@@ -219,8 +219,9 @@
 
   <script>
    // ====== CONFIG ======
-  const API_BASE = 'https://www.beautylk.com/api';  // ← GASのWebアプリURL
-  const GAS_KEY  = 'bl_gas_key_bR6ZXWwu6kM_nrK25geP97Cs5qCX3auxugX_IUGlg90';         // ← code.gs と同じ
+  // ====== CONFIG ======
+  const API_BASE = 'https://workers-playground-winter-field-18ec.mayunatu-skyblue.workers.dev/api';  // ← Worker経由に変更
+  const GAS_KEY  = 'bl_gas_key_bR6ZXWwu6kM_nrK25geP97Cs5qCX3auxugX_IUGlg90';
   const MAX_MANUAL = 1500;
   const DELTA_WARN_RATE = 0.2;
   const MOCK = false;
@@ -767,6 +768,7 @@ async function doCharge(){
   </script>
 </body>
 </html>
+
 
 
 

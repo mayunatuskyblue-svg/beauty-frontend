@@ -471,14 +471,16 @@ async function startApproval(){
 
   // 顧客リンク（approve 側に必要情報を付与）
   // customerEmail / customerName が取れるなら付ける（カード保存時の upsertCustomer 用）
-  const url = `${APPROVE_FILE}?aid=${encodeURIComponent(res.approvalId)}`
-    // 追加：エンコード漏れを補正（万が一サロン名や顧客名にスペースが含まれてもOKにする）
-     const safeURL = encodeURI(url);
-     `&customerId=${encodeURIComponent(S.customerId||'')}`
-     `&customerEmail=${encodeURIComponent(qs.get('customerEmail')||'')}`
-     `&customerName=${encodeURIComponent(qs.get('customerName')||'')}`
-     `&salonId=${encodeURIComponent(S.salonId||'')}`
-     `&bookingId=${encodeURIComponent(S.bookingId||'')}`;
+  // 顧客リンク生成（approve 側へ必要情報を付与）
+let url = `${APPROVE_FILE}?aid=${encodeURIComponent(res.approvalId)}`;
+url += `&customerId=${encodeURIComponent(S.customerId||'')}`;
+url += `&customerEmail=${encodeURIComponent(qs.get('customerEmail')||'')}`;
+url += `&customerName=${encodeURIComponent(qs.get('customerName')||'')}`;
+url += `&salonId=${encodeURIComponent(S.salonId||'')}`;
+url += `&bookingId=${encodeURIComponent(S.bookingId||'')}`;
+
+// URL安全化
+const safeURL = encodeURI(url);
 
   setApStatus('Link created');
   S.approval.id = res.approvalId;
@@ -510,7 +512,11 @@ document.getElementById('btnCopy').onclick = async ()=>{
   pollApproval();
 }
 
-function setApStatus(t, ok=false){ const el = $('#apStatus'); el.textContent=t; el.style.color = ok? '#0b684e':'#333'; }
+function setApStatus(t, ok=false){
+  const el = $('#apStatus');
+  el.textContent = t;
+  el.style.color = ok ? '#0b684e' : (t.includes('Error') ? '#7a2e13' : '#333');
+}
 
 // GAS からステータス取得
 async function pollApproval(){
@@ -607,6 +613,11 @@ async function doCharge(){
 } else {
   msg.style.color = '#7a2e13';
 }
+      if (j.ok) {
+  await fetchAvailabilityMeta();
+  await loadBlackouts();
+}
+
 
     }
 
@@ -756,6 +767,7 @@ async function doCharge(){
   </script>
 </body>
 </html>
+
 
 
 

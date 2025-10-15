@@ -168,9 +168,11 @@ try{ document.documentElement.setAttribute('lang','en'); }catch(e){}
 </script>
   <script>
 // ==== API設定（同一オリジンでWorkerへ → WorkerがGASに中継）====
-const API_BASE = 'https://www.beautylk.com/api'
-const API_LOGIN = '/api/auth/login';   // ルートを貼ったので相対パスでOK
-const GAS_KEY   = 'bl_gas_key_bR6ZXWwu6kM_nrK25geP97Cs5qCX3auxugX_IUGlg90'; // GAS側のキー
+- const API_BASE = 'https://www.beautylk.com/api'
+- const API_LOGIN = '/api/auth/login';   // ルートを貼ったので相対パスでOK
+- const GAS_KEY   = 'bl_gas_key_bR6ZXWwu6kM_nrK25geP97Cs5qCX3auxugX_IUGlg90'; // GAS側のキー
++ const API_BASE = 'https://www.beautylk.com/api'; // すべて /api に集約
++ const GAS_KEY  = 'bl_gas_key_bR6ZXWwu6kM_nrK25geP97Cs5qCX3auxugX_IUGlg90';
 </script>
 
 <script>
@@ -186,34 +188,36 @@ const GAS_KEY   = 'bl_gas_key_bR6ZXWwu6kM_nrK25geP97Cs5qCX3auxugX_IUGlg90'; // G
     msg.textContent = '';
     if(!salonId || !password){ msg.textContent = 'Salon ID / Password を入力してください'; return; }
     try{
-      const r = await fetch(API_LOGIN, {
-   method: 'POST',
-   headers: { 'Content-Type': 'application/json' },
-   body: JSON.stringify({
-     key: GAS_KEY,
-     kind: 'auth.login',
-     data: { salonId, password }
-   })
- });
+      const r = await fetch(API_BASE, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    key: GAS_KEY,
+    kind: 'auth.login',         // ← GAS側のディスパッチがこのkindを見る想定
+    data: { salonId, password }
+  })
+});
 
  let j = null;
- try {
-   const ct = r.headers.get('content-type') || '';
-   if (ct.includes('application/json')) {
-     j = await r.json();
-   } else {
-     const t = await r.text();             // デバッグ用
-     console.warn('Non-JSON response:', r.status, t);
-   }
- } catch (_e) {
-   // JSONパース失敗
- }
- if(!r.ok || !j || j.ok !== true){
-   msg.textContent = (j && j.error) ? j.error : `Login failed (status ${r.status})`;
-   return;
- }
-
-
+try {
+  const ct = (r.headers.get('content-type') || '').toLowerCase();
+  if (ct.includes('application/json')) {
+    j = await r.json();
+  } else {
+    const t = await r.text();
+    console.warn('Non-JSON response:', r.status, t.slice(0,200));
+    // ▲ ここを追加：ユーザー向け原因表示
+    document.getElementById('salonQuickMsg').textContent =
+      `Login failed: API returned non-JSON (${r.status}). Check that /api routes to GAS and kind="auth.login".`;
+    return;
+  }
+} catch(_e) {}
+if (!r.ok || !j || j.ok !== true) {
+  document.getElementById('salonQuickMsg').textContent =
+    (j && j.error) ? j.error : `Login failed (status ${r.status})`;
+  return;
+}
+      
       const salonName = encodeURIComponent(j.salon.name);
       // Admin に遷移（ダミーの予約文脈を付与。実運用では実データに置換）
       location.href = `admin.html?salonId=${encodeURIComponent(salonId)}&salonName=${salonName}&bookingId=BOOK_001&customerId=CUST_001&scheduled=5000&customerName=Mayu`;

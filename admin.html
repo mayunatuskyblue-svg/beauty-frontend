@@ -236,6 +236,14 @@ const FX_RATE = 2.15;
       sel: { menuId: '', addonIds: new Set(), discountId: '', manual: 0, reason: '' },
       approval: { id: '', ok: false }
     };
+  // ====== GLOBAL ERROR HANDLER ======
+window.addEventListener('unhandledrejection', e => {
+  alert('Network or script error: ' + (e.reason?.message || e.reason || 'Unknown'));
+});
+window.addEventListener('error', e => {
+  console.error(e);
+  alert('Unexpected error: ' + (e.message || e.error));
+});
 
     // ====== HELPERS ======
     const $ = (q) => document.querySelector(q);
@@ -464,17 +472,19 @@ async function startApproval(){
   // 顧客リンク（approve 側に必要情報を付与）
   // customerEmail / customerName が取れるなら付ける（カード保存時の upsertCustomer 用）
   const url = `${APPROVE_FILE}?aid=${encodeURIComponent(res.approvalId)}`
-    + `&customerId=${encodeURIComponent(S.customerId||'')}`
-    + `&customerEmail=${encodeURIComponent(qs.get('customerEmail')||'')}`
-    + `&customerName=${encodeURIComponent(qs.get('customerName')||'')}`
-    + `&salonId=${encodeURIComponent(S.salonId||'')}`
-    + `&bookingId=${encodeURIComponent(S.bookingId||'')}`;
+    // 追加：エンコード漏れを補正（万が一サロン名や顧客名にスペースが含まれてもOKにする）
+     const safeURL = encodeURI(url);
+     `&customerId=${encodeURIComponent(S.customerId||'')}`
+     `&customerEmail=${encodeURIComponent(qs.get('customerEmail')||'')}`
+     `&customerName=${encodeURIComponent(qs.get('customerName')||'')}`
+     `&salonId=${encodeURIComponent(S.salonId||'')}`
+     `&bookingId=${encodeURIComponent(S.bookingId||'')}`;
 
   setApStatus('Link created');
   S.approval.id = res.approvalId;
 
    // 共有（開いて確認 or コピーして送る）
-  window.open(url, '_blank');
+  window.open(safeURL, '_blank');
   // --- 共有UIを表示 ---
   const phoneNorm = normalizePhone($('#custPhone').value.trim());
   const msg = ['Please approve your bill:', url].join('\n');
@@ -591,6 +601,13 @@ async function doCharge(){
       }).then(r=>r.json());
 
       msg.textContent = j.ok ? 'Saved' : ('Error: ' + (j.error||'failed'));
+      if (j.ok) {
+  msg.style.color = '#0b684e';
+  setTimeout(() => { msg.textContent = ''; msg.style.color = ''; }, 2000);
+} else {
+  msg.style.color = '#7a2e13';
+}
+
     }
 
     // ---- Blackouts ----
@@ -656,6 +673,7 @@ async function doCharge(){
     }
 
     async function removeBlackout(id){
+      if (!confirm('Are you sure you want to remove this blackout?')) return;
       const msg = document.getElementById('blackMsg');
       msg.textContent = 'Removing…';
       const j = await fetch(API_BASE, {
@@ -738,5 +756,6 @@ async function doCharge(){
   </script>
 </body>
 </html>
+
 
 

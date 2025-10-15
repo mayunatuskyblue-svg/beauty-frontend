@@ -168,10 +168,11 @@ try{ document.documentElement.setAttribute('lang','en'); }catch(e){}
 </script>
   
  <script>
-// ==== API設定（当面の暫定：GASを直叩き）====
-const API_BASE = 'https://script.google.com/macros/s/AKfycbwWRpfcZMsGxNqGJ5aNjRT1Y1PChDTqtQE3e0S7sUDAMei8s1wOr6lpKMnOaI1Z-6o/exec'; // ← あなたのGAS WebアプリURL
+// ==== API設定（Cloudflare Worker 経由に変更）====
+const API_BASE = 'https://workers-playground-winter-field-18ec.mayunatu-skyblue.workers.dev/api';
 const GAS_KEY  = 'bl_gas_key_bR6ZXWwu6kM_nrK25geP97Cs5qCX3auxugX_IUGlg90';
 </script>
+
 
 <script>
 // SmartPay 簡易ログイン(A案)

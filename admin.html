@@ -801,26 +801,35 @@ async function doCharge(){
         document.body.innerHTML = `<div style="padding:30px">Init failed: ${e?.message||e}</div>`;
       }
        // ===== tabs =====
-      const panes = {
-        billing: document.getElementById('pane-billing'),
-        schedule: document.getElementById('pane-schedule'),
-      };
-      function showTab(name){
-        // ボタンの見た目
-        document.querySelectorAll('#tabs .tab').forEach(b=>{
-          b.classList.toggle('active', b.dataset.tab===name);
-        });
-        // パネルの表示/非表示
-        panes.billing.hidden   = (name!=='billing');
-        panes.schedule.hidden  = (name!=='schedule');
-      }
-      document.querySelectorAll('#tabs .tab').forEach(btn=>{
-        btn.addEventListener('click', ()=> showTab(btn.dataset.tab));
-      });
-      // デフォルトは Billing
-      showTab('billing');
-    })();
+      const tabsEl = document.getElementById('tabs');
+  const panes = {
+    billing: document.getElementById('pane-billing'),
+    schedule: document.getElementById('pane-schedule'),
+  };
+
+  // クリック1か所で拾う（ボタン増えてもOK）
+  tabsEl.addEventListener('click', (e) => {
+    const btn = e.target.closest('.tab');
+    if (!btn) return;
+    const name = btn.dataset.tab;
+
+    // ボタンの見た目
+    tabsEl.querySelectorAll('.tab').forEach(b => {
+      b.classList.toggle('active', b === btn);
+    });
+
+    // パネルの表示/非表示
+    Object.entries(panes).forEach(([key, el]) => {
+      el.hidden = (key !== name);
+    });
+  });
+
+  // 初期表示は billing
+  Object.entries(panes).forEach(([key, el]) => {
+    el.hidden = (key !== 'billing');
+  });
   </script>
 </body>
 </html>
+
 

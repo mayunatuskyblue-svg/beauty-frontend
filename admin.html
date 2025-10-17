@@ -256,6 +256,20 @@ function fmtLKR(jpy){
 }
 
     const qs = new URLSearchParams(location.search);
+    // === Token helper: URL→localStorage保存、以後は保存済みを優先 ===
+  function getToken() {
+    // 1) URLにtokenがあれば保存してURLから消す
+    const urlToken = qs.get('token');
+    if (urlToken) {
+      localStorage.setItem('bl_token', urlToken);
+      // URLをクリーンに（tokenを見せない）
+      const u = new URL(location.href);
+      u.searchParams.delete('token');
+      history.replaceState(null, '', u.toString());
+    }
+    // 2) 保存済み or 既にURLで来たtoken
+    return localStorage.getItem('bl_token') || urlToken || '';
+  }
     function normalizePhone(raw){
   // +94xxxxxxxxx を想定。先頭+がなければ付与、空白/ハイフン除去
   let p = String(raw||'').replace(/[\s-]/g,'');
@@ -273,18 +287,18 @@ async function copyToClipboard(text){
 }
 
     function readCtx(){
-      S.token = qs.get('token') || '';
-      S.salonId = qs.get('salonId')||'';
-      S.bookingId = qs.get('bookingId')||'';
-      S.customerId = qs.get('customerId')||'';
-      S.scheduledPrice = Number(qs.get('scheduled')||0);
-      S.tenantName = qs.get('salonName')||'';
-      $('#ctx').innerHTML = `Salon <b>${S.tenantName||S.salonId}</b> · Booking <b>${S.bookingId||'-'}</b>`;
-      $('#bkId').textContent = S.bookingId||'-';
-      $('#salonName').textContent = S.tenantName||S.salonId||'-';
-      $('#scheduled').textContent = fmtLKR(S.scheduledPrice); // JPY→LKR表示に
-$('#adjLimit').textContent = `±${toLKR(MAX_MANUAL)}`;   // 上限表示もLKRに
-    }
+  S.token = getToken(); // ← URL/保存済みのどちらでもOKに
+  S.salonId = qs.get('salonId')||'';
+  S.bookingId = qs.get('bookingId')||'';
+  S.customerId = qs.get('customerId')||'';
+  S.scheduledPrice = Number(qs.get('scheduled')||0);
+  S.tenantName = qs.get('salonName')||'';
+  $('#ctx').innerHTML = `Salon <b>${S.tenantName||S.salonId}</b> · Booking <b>${S.bookingId||'-'}</b>`;
+  $('#bkId').textContent = S.bookingId||'-';
+  $('#salonName').textContent = S.tenantName||S.salonId||'-';
+  $('#scheduled').textContent = fmtLKR(S.scheduledPrice);
+  $('#adjLimit').textContent = `±${toLKR(MAX_MANUAL)}`;
+}
 
 async function fetchCatalog(){
   if(MOCK){
@@ -737,6 +751,15 @@ async function doCharge(){
     (async function init(){
       try{
         readCtx();
+        // ★ 未ログインなら案内して終了
+      if (!S.token) {
+         document.body.innerHTML = `
+           <div style="padding:24px;font:14px/1.6 system-ui">
+             You need to log in to use Admin.<br>
+             <a href="/login.html">Go to login</a>
+           </div>`;
+         return;
+       }
         await fetchCatalog();
         $('#custName').textContent = qs.get('customerName') || '-';
         $('#sendLink').onclick = startApproval;
@@ -768,6 +791,7 @@ async function doCharge(){
   </script>
 </body>
 </html>
+
 
 
 

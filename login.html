@@ -191,41 +191,40 @@ const GAS_KEY  = 'bl_gas_key_bR6ZXWwu6kM_nrK25geP97Cs5qCX3auxugX_IUGlg90';
       return;
     }
 
-    // SmartPay 簡易ログインの fetch（URLは /api/auth/login へ）
-try {
-const r = await fetch(`${API_BASE}/auth/login`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-  body: JSON.stringify({
-    key: GAS_KEY,
-    // kind はURLで渡しているので body からは消してOK（残ってても動く）
-    data: { salonId, password }
-  })
-});
-
-
-      const ct = (r.headers.get('content-type') || '').toLowerCase();
-      if (!ct.includes('application/json')) {
-        const t = await r.text();
-        console.warn('[API non-JSON]', r.status, r.url, ct, t.slice(0,200));
-        msg.textContent = `Login failed: non-JSON (${r.status}).`;
-        return;
-      }
+    try {
+      // Worker経由でログインAPIを叩く
+      const r = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          key: GAS_KEY,
+          data: { salonId, password }
+        })
+      });
 
       const j = await r.json();
       if (!r.ok || !j || j.ok !== true) {
-        msg.textContent = (j && j.error) ? j.error : `Login failed (status ${r.status})`;
+        msg.textContent = j?.error || `Login failed (${r.status})`;
         return;
       }
 
+      // ✅ ここでtokenを保存
+      if (j.token) {
+        localStorage.setItem('bl_token', j.token);
+      }
+
+      // salon名もURLエンコードして渡す
       const salonName = encodeURIComponent(j.salon?.name || '');
-      location.href = `admin.html?salonId=${encodeURIComponent(salonId)}&salonName=${salonName}`;
+
+      // ✅ URLにtokenを付けて一度だけ渡す（admin.htmlが保存してくれる）
+      location.href = `admin.html?salonId=${encodeURIComponent(salonId)}&salonName=${salonName}&token=${encodeURIComponent(j.token || '')}`;
     } catch (e) {
       msg.textContent = e?.message || 'Request failed';
     }
   });
 })();
 </script>
+
 
 <!-- Firebase 認証（モジュール） -->
 <script type="module">

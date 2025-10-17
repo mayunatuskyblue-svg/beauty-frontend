@@ -192,7 +192,6 @@ const GAS_KEY  = 'bl_gas_key_bR6ZXWwu6kM_nrK25geP97Cs5qCX3auxugX_IUGlg90';
     }
 
     try {
-      // Worker経由でログインAPIを叩く
       const r = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
@@ -202,24 +201,43 @@ const GAS_KEY  = 'bl_gas_key_bR6ZXWwu6kM_nrK25geP97Cs5qCX3auxugX_IUGlg90';
         })
       });
 
-      const j = await r.json();
+      // 念のため、非JSONレスポンスも扱う
+      const ct = (r.headers.get('content-type') || '').toLowerCase();
+      const j = ct.includes('application/json') ? await r.json() : { ok:false, error:`non-JSON (${r.status})` };
+
       if (!r.ok || !j || j.ok !== true) {
         msg.textContent = j?.error || `Login failed (${r.status})`;
+        console.warn('[login error]', j);
         return;
       }
 
-      // ✅ ここでtokenを保存
-      if (j.token) {
-        localStorage.setItem('bl_token', j.token);
+      // ▼ どのフィールド名でも token を拾う（優先順）
+      const token =
+        j.token ||
+        j.session?.token ||
+        j.data?.token ||
+        j.auth?.token ||
+        j.access_token ||
+        j.id_token ||
+        '';
+
+      if (!token) {
+        msg.textContent = 'Login succeeded but no token was returned.';
+        console.warn('[login ok but token missing]', j);
+        return;
       }
 
-      // salon名もURLエンコードして渡す
+      // 保存（admin.html は bl_token を参照）
+      localStorage.setItem('bl_token', token);
+
+      // サロン名の引き渡し
       const salonName = encodeURIComponent(j.salon?.name || '');
 
-      // ✅ URLにtokenを付けて一度だけ渡す（admin.htmlが保存してくれる）
-      location.href = `admin.html?salonId=${encodeURIComponent(salonId)}&salonName=${salonName}&token=${encodeURIComponent(j.token || '')}`;
+      // URLにも一度だけ token を付与（admin.html 側が保存してURLから除去）
+      location.href = `admin.html?salonId=${encodeURIComponent(salonId)}&salonName=${salonName}&token=${encodeURIComponent(token)}`;
     } catch (e) {
       msg.textContent = e?.message || 'Request failed';
+      console.error(e);
     }
   });
 })();

@@ -191,16 +191,17 @@ const GAS_KEY  = 'bl_gas_key_bR6ZXWwu6kM_nrK25geP97Cs5qCX3auxugX_IUGlg90';
       return;
     }
 
-    try {
-      const r = await fetch(API_BASE, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({
-          key: GAS_KEY,
-          kind: 'auth.login',
-          data: { salonId, password }
-        })
-      });
+    // SmartPay 簡易ログインの fetch（URLは /api/auth/login へ）
+const r = await fetch(`${API_BASE}/auth/login`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+  body: JSON.stringify({
+    key: GAS_KEY,
+    // kind はURLで渡しているので body からは消してOK（残ってても動く）
+    data: { salonId, password }
+  })
+});
+
 
       const ct = (r.headers.get('content-type') || '').toLowerCase();
       if (!ct.includes('application/json')) {

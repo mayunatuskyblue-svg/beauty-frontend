@@ -192,6 +192,7 @@ const GAS_KEY  = 'bl_gas_key_bR6ZXWwu6kM_nrK25geP97Cs5qCX3auxugX_IUGlg90';
     }
 
     // SmartPay 簡易ログインの fetch（URLは /api/auth/login へ）
+try {
 const r = await fetch(`${API_BASE}/auth/login`, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },

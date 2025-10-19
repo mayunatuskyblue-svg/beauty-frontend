@@ -341,10 +341,14 @@ async function fetchCatalog(){
     const q2 = new URLSearchParams({ kind:'coupons.list', key:GAS_KEY, salonId:S.salonId, token:S.token });
     const c = await fetch(`${API_BASE}?${q2}`).then(r=>r.json());
     const discounts = (c.ok ? (c.items||[]) : []).map(x => {
-      // シートの持ち方に合わせて type/value を決める（ここでは簡易に flat を想定）
-      const off = Number(x.value || x.off_jpy || 0);
-      return { id: String(x.menu_id || x.code || x.name_en || x.name_ja || 'DISC'), type:'flat', value: off, name: (x.name_en||x.name_ja||'Discount') };
-    });
+    const type = (String(x.type||'').toLowerCase() === 'percent') ? 'percent' : 'flat';
+    const val  = Number(x.value || x.off_jpy || 0);
+    return {
+      id: String(x.menu_id || x.code || x.name_en || x.name_ja || 'DISC'),
+      type, value: val,
+      name: (x.name_en || x.name_ja || (type==='percent'? `${val}% OFF` : `${val} OFF`))
+    };
+  });
 
     S.catalog = {
       menus,
@@ -477,6 +481,12 @@ function rid(){ return (Date.now().toString(36)+Math.random().toString(36).slice
 async function startApproval(){
   const phone = $('#custPhone').value.trim(); // いまはUIに保持だけ（送信は任意）
   const { grandJPY, grandLKR } = calc();
+  // guard: menu未選択／金額0／手動調整超過／理由欠落
+  const { base, add, disc, man } = currentAmounts();
+  if (!S.sel.menuId) { alert('Please select a menu.'); return; }
+  if ((base + add + disc + man) <= 0) { alert('Amount must be greater than 0.'); return; }
+  if (Math.abs(man) > MAX_MANUAL) { alert('Manual adjust exceeds limit.'); return; }
+  if (man !== 0 && !S.sel.reason) { alert('Please enter a reason for manual adjust.'); return; }
 
   // GAS: approval.start
   const res = await fetch(API_BASE, {
@@ -519,8 +529,8 @@ const safeURL = encodeURI(url);
   const phoneNorm = normalizePhone($('#custPhone').value.trim());
   const msg = ['Please approve your bill:', url].join('\n');
 
-const waHref  = phone ? `https://wa.me/${phone.replace('+','')}/?text=${encodeURIComponent(msg)}` : '';
-const smsHref = phone ? `sms:${encodeURIComponent(phone)}?&body=${encodeURIComponent(msg)}` : '';
+const waHref  = phoneNorm ? `https://wa.me/${phoneNorm.replace('+','')}/?text=${encodeURIComponent(msg)}` : '';
+const smsHref = phoneNorm ? `sms:${encodeURIComponent(phoneNorm)}?&body=${encodeURIComponent(msg)}` : '';
 
 const box = document.getElementById('shareBox');
 box.style.display = 'flex';
@@ -832,3 +842,4 @@ async function doCharge(){
   </script>
 </body>
 </html>
+

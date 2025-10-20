@@ -17,6 +17,7 @@
                https://script.googleapis.com
                https://script.googleusercontent.com
                https://pay-server-uis7.onrender.com
+               https://api.pay-server-uis7.onrender.com;
   frame-src  https://js.stripe.com https://hooks.stripe.com;
   base-uri 'self';
   form-action 'self';
@@ -27,7 +28,7 @@
   <link rel="preconnect" href="https://js.stripe.com">
   <link rel="preconnect" href="https://api.stripe.com">
   <link rel="preconnect" href="https://m.stripe.com">
-  
+  <link rel="preconnect" href="https://pay-server-uis7.onrender.com">
   <meta name="bl-sheet-hook" content="https://script.google.com/macros/s/AKfycbwlpW6ZQ-sOMfWCr_DWbNf27ezZb1ul6Cia9M7kMX4CSL-rRecpIWvh1qCbkVjA2xk/exec">
 <!-- head内に置く（おすすめ） -->
 <script>
@@ -801,8 +802,9 @@ if (!siRes.ok || !si?.ok) {
 }
 
 // ← 重要：変数名のtypo修正。serverが返すキー名が "clientSecret" の場合はそのまま取得
-const { clientSecret, customerId, livemode } = si; // livemode が返るならここで受け取れる
-
+ const clientSecret = si.clientSecret || si.client_secret;
+ const customerId = si.customerId;
+ const livemode = si.livemode;
 // （任意）console に livemode を安全に出す（デバッグ用）
 if (typeof livemode !== 'undefined') console.log('setup-intent livemode:', livemode);
 

@@ -236,9 +236,9 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
 </div>
 
 <!-- placeholders -->
-<input id="uf_name"  class="input" data-i18n-ph="ui.name"  placeholder="Name"  ...>
-<input id="uf_email" class="input" data-i18n-ph="ui.email" placeholder="Email" ...>
-<input id="uf_phone" class="input" data-i18n-ph="ui.phone" placeholder="Phone" ...>
+<input id="uf_name"  class="input" data-i18n-ph="ui.name"  placeholder="Name">
+<input id="uf_email" class="input" data-i18n-ph="ui.email" placeholder="Email">
+<input id="uf_phone" class="input" data-i18n-ph="ui.phone" placeholder="Phone">
 <textarea id="uf_note" class="input" data-i18n-ph="ui.notes" placeholder="Notes (optional)"></textarea>
 
 <div class="sec-title">Coupon</div>
@@ -246,7 +246,7 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
 <button id="cp_apply" type="button" class="btn btn-outline">Apply</button>
 
 <!-- toast -->
-<span id="toastMsg" data-i18n="confirm.toast_missing">Some required fields are missing.</span>
+<span id="toastMsgInline" data-i18n="confirm.toast_missing">Some required fields are missing.</span>
 <button class="close" aria-label="Close" data-i18n="confirm.close">×</button>
 
 </div>
@@ -261,7 +261,7 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
 
   <div id="toast" class="toast warn" role="status" aria-live="polite" style="display:none">
     <span class="badge">⚠️</span>
-    <span id="toastMsg" data-i18n="confirm.toast_missing">未入力があります。</span>
+    <span id="toastMsg" data-i18n="confirm.toast_missing">Some required fields are missing.</span>
     <button class="close" aria-label="閉じる" onclick="hideToast()" data-i18n="confirm.close">×</button>
   </div>
 
@@ -563,7 +563,7 @@ const payload = {
     whatsappToCustomer, whatsappToSalon,
     status,
     couponCode,            // ← 追加
-    discountJY: discountedJPY          // ← 追加（サーバ側で再計算＆上書きもされる）
+    discountJPY: discountedJPY          // ← 追加（サーバ側で再計算＆上書きもされる）
   }
 };
 

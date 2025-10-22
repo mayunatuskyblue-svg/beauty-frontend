@@ -413,19 +413,20 @@ async function fetchCatalog(){
     const q1 = new URLSearchParams({ kind:'menus.list', key:GAS_KEY, salonId:S.salonId, token:S.token });
     const m = await fetch(`${API_BASE}?${q1}`).then(r=>r.json());
     const menus = (m.ok ? (m.items||[]) : []).map(x => ({
-      id: (x.menu_id || x.name_en || x.name_ja || '').trim() || 'MENU',
-      name: x.name_en || x.name_ja || x.desc || 'Menu',
-      price: Number(x.price_jpy || 0) // 課金はJPYで統一
-    }));
+    // まず x.id を優先。なければ既存互換の候補にフォールバック
+    id: String(x.id || x.menu_id || x.name_en || x.name_ja || 'MENU'),
+    name: x.name_en || x.name_ja || x.desc || 'Menu',
+    price: Number(x.price_jpy || 0)   // 内部はJPYで管理
+  }));
 
     // 2) クーポン（＝Discount）取得
     const q2 = new URLSearchParams({ kind:'coupons.list', key:GAS_KEY, salonId:S.salonId, token:S.token });
     const c = await fetch(`${API_BASE}?${q2}`).then(r=>r.json());
-    const discounts = (c.ok ? (c.items||[]) : []).map(x => {
-    const type = (String(x.type||'').toLowerCase() === 'percent') ? 'percent' : 'flat';
+    const discounts = (c.ok ? (c.items||[]) : []).map(x => {    const type = (String(x.type||'').toLowerCase() === 'percent') ? 'percent' : 'flat';
     const val  = Number(x.value || x.off_jpy || 0);
     return {
-      id: String(x.menu_id || x.code || x.name_en || x.name_ja || 'DISC'),
+      // こちらも id を最優先。旧データとの互換も残す
+      id: String(x.id || x.menu_id || x.code || x.name_en || x.name_ja || 'DISC'),
       type, value: val,
       name: (x.name_en || x.name_ja || (type==='percent'? `${val}% OFF` : `${val} OFF`))
     };
@@ -550,6 +551,16 @@ man.oninput = ()=>{
 
   const allow = !warnAdj && !needReason && S.approval.ok && grandJPY>0;
   $('#btnCharge').disabled = !allow;
+　// Send approval ボタンの有効/無効も同期
+const sendBtn = document.getElementById('sendLink');
+if (sendBtn) {
+  const validToApprove =
+    (base + add + disc + man) > 0 &&
+    !!S.sel.menuId &&
+    Math.abs(man) <= MAX_MANUAL &&
+    (man === 0 || !!S.sel.reason);
+  sendBtn.disabled = !validToApprove;
+}
 
   // ★ JPYとLKR両方返す
   return { grandJPY, grandLKR: toLKR(grandJPY) };
@@ -1153,6 +1164,7 @@ activateTab('billing');
   </script>
 </body>
 </html>
+
 
 
 

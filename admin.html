@@ -1087,7 +1087,9 @@ const btnMenuAdd = document.getElementById('btnMenuAdd');
 if (btnMenuAdd) btnMenuAdd.onclick = addMenu;
 const btnCpnAdd  = document.getElementById('btnCpnAdd');
 if (btnCpnAdd) btnCpnAdd.onclick = addCoupon;
-
+// ★ Profile: Upload button
+const btnPhotoUpload = document.getElementById('btnPhotoUpload');
+if (btnPhotoUpload) btnPhotoUpload.onclick = handlePhotoUpload;
 // 初回レンダリング
 renderMenuList();
 renderCouponList();
@@ -1115,39 +1117,43 @@ renderCouponList();
         document.body.innerHTML = `<div style="padding:30px">Init failed: ${e?.message||e}</div>`;
       }
        // ===== tabs =====
-      const tabsEl = document.getElementById('tabs');
-  const panes = {
-    billing: document.getElementById('pane-billing'),
-    schedule: document.getElementById('pane-schedule'),
-    catalog: document.getElementById('pane-catalog'),
-    profile:  document.getElementById('pane-profile'),
-  };
+const tabsEl = document.getElementById('tabs');
+const panes = {
+  billing:  document.getElementById('pane-billing'),
+  schedule: document.getElementById('pane-schedule'),
+  catalog:  document.getElementById('pane-catalog'),
+  profile:  document.getElementById('pane-profile'),
+};
 
-  // クリック1か所で拾う（ボタン増えてもOK）
-  tabsEl.addEventListener('click', (e) => {
-    const btn = e.target.closest('.tab');
-    if (!btn) return;
-    const name = btn.dataset.tab;
-
-    // ボタンの見た目
-    tabsEl.querySelectorAll('.tab').forEach(b => {
-      b.classList.toggle('active', b === btn);
-    });
-
-    // パネルの表示/非表示
-    Object.entries(panes).forEach(([key, el]) => {
-      el.hidden = (key !== name);
-    });
+function activateTab(name){
+  // タブ見た目
+  tabsEl.querySelectorAll('.tab').forEach(b=>{
+    b.classList.toggle('active', b.dataset.tab === name);
   });
-    if (name === 'profile') loadPhotos();
-  // 初期表示は billing
-  Object.entries(panes).forEach(([key, el]) => {
-    el.hidden = (key !== 'billing');
+  // パネル切替
+  Object.entries(panes).forEach(([key, el])=>{
+    el.hidden = (key !== name);
   });
-  })();
+  // タブ固有の初期化
+  if (name === 'profile') loadPhotos();        // ← ここで初ロード
+  if (name === 'catalog') {                    // ← 既存カタログの再描画も安全に
+    renderMenuList();
+    renderCouponList();
+  }
+}
+
+tabsEl.addEventListener('click', (e)=>{
+  const btn = e.target.closest('.tab');
+  if (!btn) return;
+  activateTab(btn.dataset.tab);
+});
+
+// 初期表示
+activateTab('billing');
   </script>
 </body>
 </html>
+
 
 
 

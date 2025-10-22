@@ -394,6 +394,7 @@ async function copyToClipboard(text){
 }
 
 async function fetchCatalog(){
+  if (!S.token) S.token = getToken();
   if(MOCK){
     S.catalog = {
       menus: [
@@ -1013,7 +1014,7 @@ async function fileToDataURLResized(file, maxW=1600, quality=0.85){
     const fr = new FileReader();
     fr.onload = () => r(fr.result); // dataURL
     fr.readAsDataURL(b);
-  }, 'image/jpeg', quality));
+  }, file.type || 'image/jpeg', quality));
 }
 
 async function handlePhotoUpload(){
@@ -1138,7 +1139,7 @@ renderCouponList();
       el.hidden = (key !== name);
     });
   });
-
+    if (name === 'profile') loadPhotos();
   // 初期表示は billing
   Object.entries(panes).forEach(([key, el]) => {
     el.hidden = (key !== 'billing');
@@ -1147,6 +1148,7 @@ renderCouponList();
   </script>
 </body>
 </html>
+
 
 
 

@@ -92,6 +92,7 @@
         <div class="tabs" id="tabs">
          <button class="tab active" data-tab="billing">Billing</button>
          <button class="tab" data-tab="schedule">Schedule</button>
+         <button class="tab" data-tab="catalog">Catalog</button>
         </div>
           
         <div class="tab-pane" id="pane-billing">
@@ -226,6 +227,62 @@
         </div>
       </section>
       <!-- ▲▲▲ ここまで Taken ▲▲▲ -->
+        <!-- ▼▼▼ Catalog（Menu & Coupons 管理） ▼▼▼ -->
+<div class="tab-pane" id="pane-catalog" hidden>
+  <section class="card">
+    <div class="hd">Menus</div>
+    <div class="bd">
+      <div class="row">
+        <div style="flex:2">
+          <label>Menu name</label>
+          <input id="menuName" placeholder="ex: Premium Facial"/>
+        </div>
+        <div style="flex:1">
+          <label>Price (JPY)</label>
+          <input id="menuPrice" type="number" step="1" min="0" placeholder="9000"/>
+        </div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button id="btnMenuAdd" class="btn">Add menu</button>
+        <span id="menuMsg" class="muted"></span>
+      </div>
+      <div class="hr"></div>
+      <div class="muted" style="margin-bottom:6px">Existing menus</div>
+      <div id="menuList"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="hd">Coupons / Discounts</div>
+    <div class="bd">
+      <div class="row">
+        <div style="flex:2">
+          <label>Coupon name (optional)</label>
+          <input id="cpnName" placeholder="ex: New Customer"/>
+        </div>
+        <div style="flex:1">
+          <label>Type</label>
+          <select id="cpnType">
+            <option value="flat">Flat (JPY)</option>
+            <option value="percent">Percent (%)</option>
+          </select>
+        </div>
+        <div style="flex:1">
+          <label>Value</label>
+          <input id="cpnValue" type="number" step="1" min="0" placeholder="1000 or 10"/>
+        </div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button id="btnCpnAdd" class="btn">Add coupon</button>
+        <span id="cpnMsg" class="muted"></span>
+      </div>
+      <div class="hr"></div>
+      <div class="muted" style="margin-bottom:6px">Existing coupons</div>
+      <div id="cpnList"></div>
+    </div>
+  </section>
+</div>
+<!-- ▲▲▲ Catalog 終了 ▲▲▲ -->
       </div>
     </aside>
   </main>
@@ -747,6 +804,115 @@ async function doCharge(){
       msg.textContent = j.ok ? 'Removed' : ('Error: ' + (j.error||'failed'));
       await loadBlackouts();
     }
+   // ====== Catalog (Menus/Coupons) ======
+
+// Menus
+function renderMenuList() {
+  const box = document.getElementById('menuList');
+  const items = S.catalog.menus || [];
+  if (!box) return;
+  if (!items.length) { box.innerHTML = '<div class="muted">No menus</div>'; return; }
+  box.innerHTML = items.map(m => `
+    <div class="row" style="align-items:center;justify-content:space-between;border:1px solid var(--brd);border-radius:10px;padding:6px 10px">
+      <div><b>${m.name}</b> · ${fmtLKR(m.price)}</div>
+      <button class="btn" data-id="${m.id}">Remove</button>
+    </div>
+  `).join('');
+  box.querySelectorAll('button[data-id]').forEach(b => {
+    b.onclick = () => removeMenu(b.getAttribute('data-id'));
+  });
+}
+
+async function addMenu(){
+  const name = document.getElementById('menuName').value.trim();
+  const price = Number(document.getElementById('menuPrice').value||0);
+  const msg = document.getElementById('menuMsg');
+  if (!name || price<=0){ msg.textContent = 'Enter name and price'; return; }
+  msg.textContent = 'Saving…';
+  const j = await fetch(API_BASE, {
+    method:'POST',
+    body: JSON.stringify({
+      key: GAS_KEY,
+      kind: 'menus.add',
+      data: { salonId: S.salonId, token: S.token, name_en: name, price_jpy: price }
+    })
+  }).then(r=>r.json());
+  msg.textContent = j.ok ? 'Added' : ('Error: ' + (j.error||'failed'));
+  if (j.ok){
+    document.getElementById('menuName').value = '';
+    document.getElementById('menuPrice').value = '';
+    await fetchCatalog();          // 最新を取得して
+    renderMenuList();              // 再描画
+  }
+}
+
+async function removeMenu(id){
+  if (!confirm('Remove this menu?')) return;
+  const msg = document.getElementById('menuMsg');
+  msg.textContent = 'Removing…';
+  const j = await fetch(API_BASE, {
+    method:'POST',
+    body: JSON.stringify({
+      key: GAS_KEY,
+      kind: 'menus.remove',
+      data: { salonId: S.salonId, token: S.token, id }
+    })
+  }).then(r=>r.json());
+  msg.textContent = j.ok ? 'Removed' : ('Error: ' + (j.error||'failed'));
+  if (j.ok){ await fetchCatalog(); renderMenuList(); }
+}
+
+// Coupons
+function renderCouponList(){
+  const box = document.getElementById('cpnList');
+  const items = S.catalog.discounts || [];
+  if (!box) return;
+  if (!items.length) { box.innerHTML = '<div class="muted">No coupons</div>'; return; }
+  box.innerHTML = items.map(d => {
+    const label = d.type==='percent' ? `${d.value}% OFF` : `${fmtLKR(d.value)} OFF`;
+    return `
+    <div class="row" style="align-items:center;justify-content:space-between;border:1px solid var(--brd);border-radius:10px;padding:6px 10px">
+      <div><b>${d.name||'Coupon'}</b> · ${label}</div>
+      <button class="btn" data-id="${d.id}">Remove</button>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('button[data-id]').forEach(b => {
+    b.onclick = () => removeCoupon(b.getAttribute('data-id'));
+  });
+}
+
+async function addCoupon(){
+  const name = document.getElementById('cpnName').value.trim();
+  const type = document.getElementById('cpnType').value;
+  const value= Number(document.getElementById('cpnValue').value||0);
+  const msg = document.getElementById('cpnMsg');
+  if (value<=0){ msg.textContent='Enter value'; return; }
+  msg.textContent = 'Saving…';
+  const payload = { salonId: S.salonId, token: S.token, type, value };
+  if (name) payload.name_en = name;
+  const j = await fetch(API_BASE, {
+    method:'POST',
+    body: JSON.stringify({ key: GAS_KEY, kind:'coupons.add', data: payload })
+  }).then(r=>r.json());
+  msg.textContent = j.ok ? 'Added' : ('Error: ' + (j.error||'failed'));
+  if (j.ok){
+    document.getElementById('cpnName').value='';
+    document.getElementById('cpnValue').value='';
+    await fetchCatalog(); renderCouponList();
+  }
+}
+
+async function removeCoupon(id){
+  if (!confirm('Remove this coupon?')) return;
+  const msg = document.getElementById('cpnMsg');
+  msg.textContent = 'Removing…';
+  const j = await fetch(API_BASE, {
+    method:'POST',
+    body: JSON.stringify({ key: GAS_KEY, kind:'coupons.remove', data:{ salonId:S.salonId, token:S.token, id } })
+  }).then(r=>r.json());
+  msg.textContent = j.ok ? 'Removed' : ('Error: ' + (j.error||'failed'));
+  if (j.ok){ await fetchCatalog(); renderCouponList(); }
+}
 
     // ---- Taken（当日の満枠スロット）----
     function expandSlots(startHM, endHM, stepMin){
@@ -798,6 +964,15 @@ async function doCharge(){
         $('#custName').textContent = qs.get('customerName') || '-';
         $('#sendLink').onclick = startApproval;
         $('#btnCharge').onclick = doCharge;
+        // Catalog handlers
+const btnMenuAdd = document.getElementById('btnMenuAdd');
+if (btnMenuAdd) btnMenuAdd.onclick = addMenu;
+const btnCpnAdd  = document.getElementById('btnCpnAdd');
+if (btnCpnAdd) btnCpnAdd.onclick = addCoupon;
+
+// 初回レンダリング
+renderMenuList();
+renderCouponList();
 
         // ▼▼▼ ここから追記 ▼▼▼
         // Availability 初期値をロード
@@ -826,6 +1001,7 @@ async function doCharge(){
   const panes = {
     billing: document.getElementById('pane-billing'),
     schedule: document.getElementById('pane-schedule'),
+    catalog: document.getElementById('pane-catalog'), 
   };
 
   // クリック1か所で拾う（ボタン増えてもOK）
@@ -853,5 +1029,6 @@ async function doCharge(){
   </script>
 </body>
 </html>
+
 
 

@@ -93,6 +93,7 @@
          <button class="tab active" data-tab="billing">Billing</button>
          <button class="tab" data-tab="schedule">Schedule</button>
          <button class="tab" data-tab="catalog">Catalog</button>
+         <button class="tab" data-tab="profile">Profile</button>
         </div>
           
         <div class="tab-pane" id="pane-billing">
@@ -598,7 +599,7 @@ box.innerHTML = `
 `;
 
 document.getElementById('btnCopy').onclick = async ()=>{
-  const ok = await copyToClipboard(url);
+  const ok = await copyToClipboard(safeURL);
   setApStatus(ok ? 'Link copied' : 'Copy failed');
 };
 
@@ -1029,6 +1030,7 @@ renderCouponList();
   </script>
 </body>
 </html>
+
 
 
 

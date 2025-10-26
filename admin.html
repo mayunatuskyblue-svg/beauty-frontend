@@ -1126,10 +1126,19 @@ renderCouponList();
         // ▲▲▲ 追記ここまで ▲▲▲
 
       }catch(e){
-        document.body.innerHTML = `<div style="padding:30px">Init failed: ${e?.message||e}</div>`;
+        const msg = String(e?.message || e || '');
+    if (msg.toLowerCase().includes('unauthorized')) {
+      // トークン壊れてる/期限切れ → 破棄してログインへ
+      try { localStorage.removeItem('bl_token'); } catch(_){}
+      location.href = '/login.html?redirect=' + encodeURIComponent(location.pathname + location.search);
+      return;
+    }
+    document.body.innerHTML = `<div style="padding:30px">Init failed: ${msg}</div>`;
+    return; // ← ここで終了（下のタブ初期化を走らせない）
       }
        // ===== tabs =====
 const tabsEl = document.getElementById('tabs');
+      if (!tabsEl) return; // 画面が差し替わっている場合は何もしない
 const panes = {
   billing:  document.getElementById('pane-billing'),
   schedule: document.getElementById('pane-schedule'),
@@ -1166,6 +1175,7 @@ activateTab('billing');
 </script>
 </body>
 </html>
+
 
 
 

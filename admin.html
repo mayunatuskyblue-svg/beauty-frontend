@@ -1172,17 +1172,104 @@ tabsEl.addEventListener('click', (e)=>{
 // 初期表示
 activateTab('billing');
 })(); 
+/* ====== Photos: list / upload / remove ====== */
+
+// 画像一覧
+async function loadPhotos(){
+  if (!S.salonId) return;
+  const q = new URLSearchParams({
+    kind: 'photos.list',
+    key:  GAS_KEY,
+    salonId: S.salonId,
+    token: (S.token || getToken() || '')
+  });
+  const j = await fetch(`${API_BASE}?${q}`).then(r=>r.json());
+  renderPhotoGrid((j.ok && j.items) ? j.items : []);
+}
+
+// 一覧の描画
+function renderPhotoGrid(items){
+  const box = document.getElementById('photoGrid');
+  if (!box) return;
+  if (!items.length){
+    box.innerHTML = '<div class="muted">No photos yet</div>';
+    return;
+  }
+  box.innerHTML = items.map(p => `
+    <div style="width:240px;border:1px solid #eadfca;border-radius:10px;overflow:hidden">
+      <div style="width:100%;height:180px;background:#f5f5f5">
+        <img src="${p.url}" alt="${p.filename||''}"
+             style="width:100%;height:100%;object-fit:cover;display:block">
+      </div>
+      <div style="padding:6px 8px;display:flex;justify-content:space-between;align-items:center">
+        <div class="muted" style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px">${p.filename||''}</div>
+        <button class="btn" data-id="${p.id}">Remove</button>
+      </div>
+    </div>
+  `).join('');
+
+  // 削除ボタン
+  box.querySelectorAll('button[data-id]').forEach(btn=>{
+    btn.onclick = async () => { await removePhoto(btn.dataset.id); };
+  });
+}
+
+// dataURL化
+function fileToDataURL(file){
+  return new Promise((res, rej)=>{
+    const fr = new FileReader();
+    fr.onerror = rej;
+    fr.onload = () => res(fr.result);
+    fr.readAsDataURL(file);
+  });
+}
+
+// アップロード
+async function uploadPhotos(){
+  const inp = document.getElementById('photoFiles');
+  const msg = document.getElementById('photoMsg');
+  const files = [...(inp?.files || [])];
+  if (!files.length){ msg.textContent = 'Select files first'; return; }
+
+  msg.textContent = 'Uploading…';
+  for (const f of files){
+    const dataURL = await fileToDataURL(f);
+    const r = await fetch(API_BASE, {
+      method: 'POST',
+      body: JSON.stringify({
+        key:  GAS_KEY,
+        kind: 'photos.upload',
+        data: {
+          salonId: S.salonId,
+          token: (S.token || getToken() || ''),
+          filename: f.name,
+          dataURL
+        }
+      })
+    }).then(r=>r.json());
+    if (!r.ok){ msg.textContent = 'Error: ' + (r.error || 'upload failed'); return; }
+  }
+  msg.textContent = 'Uploaded';
+  await loadPhotos();
+  inp.value = '';
+}
+
+// 削除
+async function removePhoto(id){
+  const msg = document.getElementById('photoMsg');
+  msg.textContent = 'Removing…';
+  const r = await fetch(API_BASE, {
+    method:'POST',
+    body: JSON.stringify({
+      key: GAS_KEY,
+      kind: 'photos.remove',
+      data: { id, salonId: S.salonId, token: (S.token || getToken() || '') }
+    })
+  }).then(r=>r.json());
+  if (!r.ok){ msg.textContent = 'Error: ' + (r.error || 'remove failed'); return; }
+  msg.textContent = 'Removed';
+  await loadPhotos();
+}
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-

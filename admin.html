@@ -1213,63 +1213,7 @@ function renderPhotoGrid(items){
     btn.onclick = async () => { await removePhoto(btn.dataset.id); };
   });
 }
-
-// dataURL化
-function fileToDataURL(file){
-  return new Promise((res, rej)=>{
-    const fr = new FileReader();
-    fr.onerror = rej;
-    fr.onload = () => res(fr.result);
-    fr.readAsDataURL(file);
-  });
-}
-
-// アップロード
-async function uploadPhotos(){
-  const inp = document.getElementById('photoFiles');
-  const msg = document.getElementById('photoMsg');
-  const files = [...(inp?.files || [])];
-  if (!files.length){ msg.textContent = 'Select files first'; return; }
-
-  msg.textContent = 'Uploading…';
-  for (const f of files){
-    const dataURL = await fileToDataURL(f);
-    const r = await fetch(API_BASE, {
-      method: 'POST',
-      body: JSON.stringify({
-        key:  GAS_KEY,
-        kind: 'photos.upload',
-        data: {
-          salonId: S.salonId,
-          token: (S.token || getToken() || ''),
-          filename: f.name,
-          dataURL
-        }
-      })
-    }).then(r=>r.json());
-    if (!r.ok){ msg.textContent = 'Error: ' + (r.error || 'upload failed'); return; }
-  }
-  msg.textContent = 'Uploaded';
-  await loadPhotos();
-  inp.value = '';
-}
-
-// 削除
-async function removePhoto(id){
-  const msg = document.getElementById('photoMsg');
-  msg.textContent = 'Removing…';
-  const r = await fetch(API_BASE, {
-    method:'POST',
-    body: JSON.stringify({
-      key: GAS_KEY,
-      kind: 'photos.remove',
-      data: { id, salonId: S.salonId, token: (S.token || getToken() || '') }
-    })
-  }).then(r=>r.json());
-  if (!r.ok){ msg.textContent = 'Error: ' + (r.error || 'remove failed'); return; }
-  msg.textContent = 'Removed';
-  await loadPhotos();
-}
 </script>
 </body>
 </html>
+

@@ -1040,6 +1040,50 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
 });
 </script>
+<script>
+(async function(){
+  const qs = new URLSearchParams(location.search);
+  const salonId = qs.get('salonId') || 'S1';             // 既定は S1 等、必要に合わせて
+  const token   = localStorage.getItem('bl_token') || qs.get('token') || '';
+
+  const gMain   = document.getElementById('gMain');
+  const gThumbs = document.getElementById('gThumbs');
+
+  function showEmpty(){
+    gMain.innerHTML = '<div class="muted" style="padding:16px">No photos yet</div>';
+    gThumbs.innerHTML = '';
+  }
+
+  try{
+    const q = new URLSearchParams({
+      kind: 'photos.list',
+      key:  window.__GAS_KEY,
+      salonId,
+      token
+    });
+    const j = await fetch(`${window.__GAS_URL}?${q}`).then(r=>r.json());
+    const items = (j.ok && j.items) ? j.items : [];
+    if (!items.length){ showEmpty(); return; }
+
+    // メイン
+    const first = items[0];
+    gMain.innerHTML = `<img src="${first.url}" alt="${first.filename||''}">`;
+
+    // サムネイル
+    gThumbs.innerHTML = items.map(p => `
+      <img src="${p.url}" alt="${p.filename||''}" data-url="${p.url}">
+    `).join('');
+
+    // クリックでメインを差し替え
+    gThumbs.querySelectorAll('img[data-url]').forEach(img=>{
+      img.onclick = () => { gMain.innerHTML = `<img src="${img.dataset.url}" alt="">`; };
+    });
+  }catch(e){
+    console.error(e);
+    showEmpty();
+  }
+})();
+</script>
 
 </body>
 </html>

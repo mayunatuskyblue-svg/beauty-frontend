@@ -1041,9 +1041,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
 });
 </script>
 <script>
-(async function(){
+document.addEventListener('DOMContentLoaded', async ()=>{
   const qs = new URLSearchParams(location.search);
-  const salonId = qs.get('salonId') || 'S1';             // 既定は S1 等、必要に合わせて
+  const salonId = qs.get('salonId') || 'S1';
   const token   = localStorage.getItem('bl_token') || qs.get('token') || '';
 
   const gMain   = document.getElementById('gMain');
@@ -1061,28 +1061,36 @@ document.addEventListener('DOMContentLoaded', ()=>{
       salonId,
       token
     });
-    const j = await fetch(`${window.__GAS_URL}?${q}`).then(r=>r.json());
-    const items = (j.ok && j.items) ? j.items : [];
-    if (!items.length){ showEmpty(); return; }
+    const res = await fetch(`${window.__GAS_URL}?${q}`).then(r=>r.json());
+    if (!res.ok || !Array.isArray(res.items) || !res.items.length) {
+      showEmpty();
+      return;
+    }
 
-    // メイン
+    const items = res.items.filter(p => p.url); // URLがあるものだけ
+    if (!items.length) { showEmpty(); return; }
+
+    // メイン画像
     const first = items[0];
-    gMain.innerHTML = `<img src="${first.url}" alt="${first.filename||''}">`;
+    gMain.innerHTML = `<img src="${first.url}" alt="${first.filename||''}" style="width:100%;border-radius:12px;object-fit:cover;">`;
 
-    // サムネイル
+    // サムネイル表示
     gThumbs.innerHTML = items.map(p => `
-      <img src="${p.url}" alt="${p.filename||''}" data-url="${p.url}">
+      <img src="${p.url}" alt="${p.filename||''}" data-url="${p.url}" style="border-radius:8px;">
     `).join('');
 
-    // クリックでメインを差し替え
+    // クリック切替
     gThumbs.querySelectorAll('img[data-url]').forEach(img=>{
-      img.onclick = () => { gMain.innerHTML = `<img src="${img.dataset.url}" alt="">`; };
+      img.onclick = () => {
+        gMain.innerHTML = `<img src="${img.dataset.url}" alt="${img.alt}" style="width:100%;border-radius:12px;object-fit:cover;">`;
+      };
     });
-  }catch(e){
-    console.error(e);
+
+  }catch(err){
+    console.error('[Photo Load Error]', err);
     showEmpty();
   }
-})();
+});
 </script>
 
 </body>

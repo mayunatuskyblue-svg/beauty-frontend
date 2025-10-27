@@ -742,7 +742,7 @@ function readBookingFromPage() {
         <label>Mail address<input id="sp_email" placeholder="you@example.com" style="width:100%"></label>
         <label>Name<input id="sp_name"  placeholder="Taro Yamada" style="width:100%"></label>
         <div id="sp_card" style="border:1px solid #eadfca;border-radius:10px;padding:12px;margin:10px 0"></div>
-        <button id="sp_save" class="btn primary">カードを保存する</button>
+        <button id="sp_save" class="btn primary">Save card</button>
         <div id="sp_msg" class="notice" style="margin-top:8px"></div>
       </div>`;
 
@@ -834,12 +834,12 @@ try {
 // 画面へ「カード保存できた」イベント（bookings 再上書き用）
 document.dispatchEvent(new CustomEvent('bl:card-saved', { detail: payload }));
 
-        msg('カードを保存しました。', true);
+        msg('YOur card has been saved.', true);
         holder.innerHTML = `
           <div class="notice" style="padding:10px;border:1px solid #eadfca;border-radius:10px">
-            カード情報は保存済みです ✅<br>
+            YOur card information is already saved.<br>
             <small>（customerId: ${payload.customerId} / pm: ${payload.paymentMethodId}）</small><br>
-            <button id="bl-change" class="btn" style="margin-top:8px">別のカードにする</button>
+            <button id="bl-change" class="btn" style="margin-top:8px">Use a different card</button>
           </div>`;
         document.getElementById('bl-change').onclick = mountForm;
 
@@ -849,7 +849,7 @@ document.dispatchEvent(new CustomEvent('bl:card-saved', { detail: payload }));
         }
       }catch(e){
         console.error(e);
-        msg('保存に失敗しました：' + (e.message||e));
+        msg('Failed to save.：' + (e.message||e));
       }
     });
   }

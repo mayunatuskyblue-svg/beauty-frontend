@@ -991,16 +991,14 @@ try{ document.documentElement.setAttribute('lang','en'); }catch(e){}
     </label>
     <!-- ▼▼▼ 既存の検索ピルの並びに追加 ▼▼▼ -->
 <label class="pill big" title="Area">
-  <select id="searchArea">
+  <select id="place">
     <option value="">Area</option>
-    <!-- JSで自動挿入 -->
   </select>
 </label>
 
 <label class="pill big" title="Category">
-  <select id="searchCategory">
+  <select id="type">
     <option value="">Category</option>
-    <!-- JSで自動挿入 -->
   </select>
 </label>
 <!-- ▲▲▲ 追加ここまで ▲▲▲ -->
@@ -1666,9 +1664,6 @@ function showSkeletons(n=6){
   document.getElementById('list').innerHTML = nodes;
 }
 
-// Init filters & initial UI then fetch data
-initFilters(DATA_FALLBACK);
-
 // Back to top button
 (function(){
   const btn = document.getElementById('toTop');
@@ -1928,7 +1923,8 @@ document.addEventListener('click', (e)=>{
     // 例: 再検索 or キャッシュされたレコードを使って再レンダ（あなたの関数名に置換）
     if (window.renderCatalog) renderCatalog();
   };
-  // --- 検索候補（Area / Category）を構築 ---
+  
+// --- 検索候補（Area / Category）を salons.list から構築 ---
 async function buildSearchMeta(){
   try{
     const qs = new URLSearchParams({ kind:'salons.list', key: GAS_KEY });
@@ -1946,27 +1942,52 @@ async function buildSearchMeta(){
       arr.forEach(c=>cats.add(c));
     });
 
-    const areaSel = document.getElementById('searchArea');
-    const catSel  = document.getElementById('searchCategory');
+    const areaSel = document.getElementById('place');   // ← ここが肝
+    const catSel  = document.getElementById('type');    // ← ここが肝
 
     if(areaSel){
+      // 既存の option を置き換え（重複防止）
+      areaSel.innerHTML = '';
+      const opt0 = document.createElement('option');
+      opt0.value = ''; opt0.textContent = (getLang()==='en' ? 'Area' : '場所');
+      areaSel.appendChild(opt0);
+
       [...areas].sort().forEach(a=>{
         const opt = document.createElement('option');
-        opt.value = opt.textContent = a;
+        opt.value = opt.textContent = a;   // 値=表示 同一でOK（英語UIならそのまま英語登録を想定）
         areaSel.appendChild(opt);
       });
     }
+
     if(catSel){
+      catSel.innerHTML = '';
+      const opt0 = document.createElement('option');
+      opt0.value = ''; opt0.textContent = (getLang()==='en' ? 'Category' : '種類');
+      catSel.appendChild(opt0);
+
       [...cats].sort().forEach(c=>{
         const opt = document.createElement('option');
         opt.value = opt.textContent = c;
         catSel.appendChild(opt);
       });
     }
+
+    // 選択を変えたら即再検索（UX向上）
+    ['place','type'].forEach(id=>{
+      document.getElementById(id)?.addEventListener('change', ()=>{
+        const form = document.getElementById('searchForm');
+        if(form?.requestSubmit) form.requestSubmit();
+        else form?.dispatchEvent(new Event('submit',{cancelable:true}));
+      }, { once:true }); // 既にハンドラがある環境での多重登録を避ける
+    });
+
   }catch(e){
     console.warn('buildSearchMeta error', e);
   }
 }
+
+// 初期化で一度だけ生成
+buildSearchMeta();
 
 // 初期化で一度だけ生成
 buildSearchMeta();

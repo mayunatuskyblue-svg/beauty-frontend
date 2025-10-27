@@ -1211,29 +1211,32 @@ const list = $('#list');
 function cardTemplate(s, favOn){
   const L = getLang();
 
-  // 言語別データを優先して利用（なければ従来配列にフォールバック）
+  // 言語別タグ・本文（英語優先 → 無ければ既存）
   const tags =
     (L === 'en')
       ? ((s.tagsEn && s.tagsEn.length) ? s.tagsEn : s.tags)
       : ((s.tagsJa && s.tagsJa.length) ? s.tagsJa : s.tags);
 
-  // 英語側の本文が空なら簡易変換にフォールバック
   let pts =
     (L === 'en')
       ? (s.pointsEn || enPoints(s.points || ''))
       : (s.pointsJa || s.points || '');
 
-  // 画像の重複候補をまとめてユニーク化
-  const photos = (s.photos || []).concat(
+  // 価格表示
+  const priceStr = fmtCurrencyFromJPY(s.price, getCurrency());
+
+  // 画像：まずは public API のキャッシュを優先、無ければ静的assets
+  const salonId = String(s.id || s.salonId || '');
+  const cached = salonId ? (PHOTO_CACHE.get(salonId) || []) : [];
+  const staticPhotos = (s.photos || []).concat(
     (s.photos || []).map(src => src.replace('/assets/img/', '/assets/images/'))
   );
+  const photos = (cached.length ? cached : staticPhotos);
   const uniqPhotos = [...new Set(photos)];
-
-  const priceStr = fmtCurrencyFromJPY(s.price, getCurrency());
 
   return `<article class="card" data-id="${s.id}" data-lat="${s.lat}" data-lng="${s.lng}">
     <div class="media">
-      <div class="carousel">${uniqPhotos.map((src,i)=>`<img src="${src}" alt="${s.name} photo ${i+1}">`).join('')}</div>
+      <div class="carousel">${uniqPhotos.map((src,i)=>`<img src="${src}" alt="${s.name} photo ${i+1}" loading="lazy">`).join('')}</div>
       <div class="nav"><button class="prev">‹</button><button class="next">›</button></div>
     </div>
     <div class="body">
@@ -1268,6 +1271,8 @@ function render(items){
   list.innerHTML = items.map(s => cardTemplate(s, favset.has(s.id))).join('');
   attachHandlers();
   updateCardCurrencies();
+  // 写真の後差し替えは非同期待ち不要でOK
+  hydratePhotos(items);
 }
 /* --- Force LKR display globally (keep old code intact) --- */
 try{
@@ -1348,7 +1353,6 @@ function attachHandlers(){
 
 // ==== GAS catalog + review summary ====
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwWRpfcZMsGxNqGJ5aNjRT1Y1PChDTqtQE3e0S7sUDAMei8s1wOr6lpKMnOaI1Z-6o/exec';
-const GAS_KEY = 'bl_gas_key_bR6ZXWwu6kM_nrK25geP97Cs5qCX3auxugX_IUGlg90';
 
 async function loadCatalog(){
   const url = GAS_URL + '?kind=catalog&key=' + encodeURIComponent(GAS_KEY);

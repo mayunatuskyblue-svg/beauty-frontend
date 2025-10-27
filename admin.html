@@ -330,7 +330,8 @@
 </div>
 <!-- ▲▲▲ Catalog 終了 ▲▲▲ -->
         <!-- ▼▼▼ Profile（Salon Photos 管理） ▼▼▼ -->
-      <!-- ▼▼▼ Salon Meta（Area & Categories） ▼▼▼ -->
+<div class="tab-pane" id="pane-profile" hidden>
+  <!-- ▼▼▼ Salon Meta（Area & Categories） ▼▼▼ -->
 <section class="card">
   <div class="hd">Salon Meta</div>
   <div class="bd">
@@ -364,7 +365,6 @@
 </section>
 <!-- ▲▲▲ Salon Meta 終了 ▲▲▲ -->
 
-<div class="tab-pane" id="pane-profile" hidden>
   <section class="card">
     <div class="hd">Salon Photos</div>
     <div class="bd">
@@ -406,6 +406,7 @@
       sel: { menuId: '', addonIds: new Set(), discountId: '', manual: 0, reason: '' },
       approval: { id: '', ok: false },
       coupon: { code: '', discountType: '', discountValue: 0 }
+      meta:{ area:'', categories:[] }
     };
   // ====== GLOBAL ERROR HANDLER ======
 window.addEventListener('unhandledrejection', e => {
@@ -504,9 +505,6 @@ async function validateCouponAndApply(code){
     S.sel.discountId = tempId;
 
     // 状態も保持
-    // 既存 S に追記
-    S.meta = { area: '', categories: [] };
-
     S.coupon.code = code;
     S.coupon.discountType = type;
     S.coupon.discountValue = value;
@@ -570,6 +568,8 @@ function clearCoupon(){
   // 手動調整の上限は JPY を基準に設定 → 表示はLKR
   $('#adjLimit').textContent = `${toLKR(MAX_MANUAL_JPY).toLocaleString('en-US')}`;
 }
+await loadSalonMeta();
+document.getElementById('btnMetaSave')?.addEventListener('click', saveSalonMeta);
 
 async function fetchCatalog(){
   if (!S.token) S.token = getToken();
@@ -1534,8 +1534,62 @@ async function saveSalonMeta(){
     msg.textContent = 'Save error';
   }
 }
+// --- Salon Meta: load & save ---
+async function loadSalonMeta(){
+  try{
+    const qs = new URLSearchParams({ kind:'salon.meta.get', key:GAS_KEY, salonId:S.salonId, token:S.token });
+    const resp = await fetch(`${API_BASE}?${qs}`).then(r=>r.json());
+    if(resp && resp.ok){
+      S.meta.area = resp.area || '';
+      S.meta.categories = Array.isArray(resp.categories)
+        ? resp.categories
+        : String(resp.categories||'').split(',').map(s=>s.trim()).filter(Boolean);
+    }
+    // UI 反映
+    const areaSel = document.getElementById('metaArea');
+    const catInp  = document.getElementById('metaCategories');
+    if(areaSel) areaSel.value = S.meta.area || '';
+    if(catInp)  catInp.value  = (S.meta.categories||[]).join(', ');
+  }catch(e){
+    console.warn('loadSalonMeta error', e);
+  }
+}
+
+async function saveSalonMeta(){
+  const areaSel = document.getElementById('metaArea');
+  const catInp  = document.getElementById('metaCategories');
+  const msg     = document.getElementById('metaMsg');
+
+  const area = String(areaSel?.value||'').trim();
+  const categories = String(catInp?.value||'')
+    .split(',').map(s=>s.trim()).filter(Boolean);
+
+  msg.textContent = 'Saving…';
+  try{
+    const resp = await fetch(API_BASE, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        key: GAS_KEY,
+        kind: 'salon.meta.save',
+        data: { salonId:S.salonId, token:S.token, area, categories }
+      })
+    }).then(r=>r.json());
+
+    if(resp && resp.ok){
+      S.meta.area = area;
+      S.meta.categories = categories;
+      msg.textContent = 'Saved ✔';
+    }else{
+      msg.textContent = 'Save failed';
+    }
+  }catch(e){
+    msg.textContent = 'Save error';
+  }
+}
 </script>
 </body>
 </html>
+
 
 

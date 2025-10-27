@@ -1414,50 +1414,65 @@ async function initCatalog(){
     updateCardCurrencies();
   }
 }
-/* === A: photos シートから全サロン画像を事前取得 === */
-const PHOTO_CACHE = new Map();  // salonId → [photoURL1, photoURL2,...]
-const API_BASE = 'https://script.google.com/macros/s/AKfycbwWRpfcZMsGxNqGJ5aNjRT1Y1PChDTqtQE3e0S7sUDAMei8s1wOr6lpKMnOaI1Z-6o/exec';
+/* === A: photos シート（GAS: photos.public）からサロンごと取得 === */
+const PHOTO_CACHE = new Map();  // salonId → [url, url, ...]
+const API_BASE = GAS_URL;       // すでに上で使っている GAS エンドポイントを流用
 
-async function loadAllPhotos(){
+async function fetchSalonPhotos(salonId){
+  if (!salonId) return [];
+  if (PHOTO_CACHE.has(salonId)) return PHOTO_CACHE.get(salonId);
+
   try{
-    const q = new URLSearchParams({ kind:'photos.listAll', key:GAS_KEY });
-    const j = await fetch(`${API_BASE}?${q}`).then(r=>r.json());
-    if(!j.ok) throw new Error(j.error||'failed');
-    (j.items||[]).forEach(p=>{
-      if(!p.salonId || !p.url) return;
-      if(!PHOTO_CACHE.has(p.salonId)) PHOTO_CACHE.set(p.salonId, []);
-      PHOTO_CACHE.get(p.salonId).push(p.url);
+    const q = new URLSearchParams({
+      kind: 'photos.public',
+      key:  GAS_KEY,
+      salonId
     });
-    console.log('PHOTO_CACHE loaded', PHOTO_CACHE);
+    const j = await fetch(`${API_BASE}?${q}`).then(r=>r.json());
+    const items = (j && j.ok && Array.isArray(j.items)) ? j.items : [];
+    const urls  = items.map(x => String(x.url||'')).filter(Boolean);
+    PHOTO_CACHE.set(salonId, urls);
+    return urls;
   }catch(e){
-    console.warn('loadAllPhotos failed', e);
+    console.warn('fetchSalonPhotos failed:', salonId, e);
+    PHOTO_CACHE.set(salonId, []);
+    return [];
   }
 }
 
-/* === B: カード描画を強化 === */
+/* === B: 画面上のカード写真を後差し替え === */
 async function hydratePhotos(items){
-  for(const s of items){
-    const el = document.querySelector(`.card[data-id="${s.id}"]`);
-    if(!el) continue;
-    const wrap = el.querySelector('.carousel');
-    if(!wrap) continue;
-    const cached = PHOTO_CACHE.get(s.id);
-    if(cached && cached.length){
-      wrap.innerHTML = cached.map((u,i)=>
-        `<img src="${u}" alt="${s.name} photo ${i+1}" loading="lazy">`
-      ).join('');
+  for (const s of (items||[])){
+    const salonId = String(s.id || s.salonId || '');
+    if (!salonId) continue;
+
+    // 1) まだキャッシュが無ければ取りに行く
+    if (!PHOTO_CACHE.has(salonId)){
+      await fetchSalonPhotos(salonId);
     }
+    const photos = PHOTO_CACHE.get(salonId) || [];
+    if (!photos.length) continue;
+
+    // 2) カードの carousel を差し替え
+    const el   = document.querySelector(`.card[data-id="${s.id}"]`);
+    const wrap = el && el.querySelector('.carousel');
+    if (!wrap) continue;
+
+    wrap.innerHTML = photos.map((u,i)=>
+      `<img src="${u}" alt="${s.name} photo ${i+1}" loading="lazy">`
+    ).join('');
   }
 }
-    
-// 最初にスケルトンを出す
-showSkeletons(6);
 
-/* === C: 初期化時に呼び出す === */
+/* === C: 初期化順を変更 ===
+   先にカタログ→カードを描画し、その後に各サロンの写真を取得して差し替える */
 (async()=>{
-  await loadAllPhotos();  // 先に全画像キャッシュ
-  initCatalog();          // その後カード生成
+  await initCatalog();           // 1) サロン一覧を描画
+  try{
+    await hydratePhotos(_DATA_CURRENT); // 2) 写真を注入（photos.public）
+  }catch(e){ console.warn('hydrate after init failed', e); }
 })();
+
 // ==== Fallback DATA ====
 const DATA_FALLBACK=[
   {id:"S1", name:"Silky Lashes Colombo", type:"マツエク", place:"コロンボ", lat:6.933, lng:79.85, price:4250, rating:4.6, tags:["マツエク","日本語対応"], points:"自然で長持ち。丁寧なカウンセリング。", photos:["/assets/img/lashes_a.webp","/assets/img/lashes_b.webp","/assets/img/lashes_c.webp"]},

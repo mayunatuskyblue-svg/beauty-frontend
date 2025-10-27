@@ -778,7 +778,7 @@ async function startApproval(){
          token:     S.token,
          items: {
           menuId:    S.sel.menuId,
-          addonIds:  [...S.sel.addonIds],
+          addonIds:  Array.from(S.sel.addonIds || []),
           discountId: S.sel.discountId || '',
           manual:    toJPY(Number(S.sel.manualLKR||0)) // JPYで保持
         },
@@ -1519,3 +1519,4 @@ async function saveSalonMeta(){
 </script>
 </body>
 </html>
+

@@ -1408,9 +1408,10 @@ renderCouponList();
     document.body.innerHTML = `<div style="padding:30px">Init failed: ${msg}</div>`;
     return; // ← ここで終了（下のタブ初期化を走らせない）
       }
-       // ===== tabs =====
+   <!-- tabs 修正版 -->
 const tabsEl = document.getElementById('tabs');
-      if (!tabsEl) return; // 画面が差し替わっている場合は何もしない
+if (!tabsEl) return;
+
 const panes = {
   billing:  document.getElementById('pane-billing'),
   schedule: document.getElementById('pane-schedule'),
@@ -1418,8 +1419,8 @@ const panes = {
   profile:  document.getElementById('pane-profile'),
 };
 
-function activateTab(name){
-  // タブ見た目
+async function activateTab(name){
+  // 見た目
   tabsEl.querySelectorAll('.tab').forEach(b=>{
     b.classList.toggle('active', b.dataset.tab === name);
   });
@@ -1427,13 +1428,20 @@ function activateTab(name){
   Object.entries(panes).forEach(([key, el])=>{
     el.hidden = (key !== name);
   });
+
   // タブ固有の初期化
-  if (name === 'profile') loadPhotos(); // ← ここで初ロード
-  await loadSalonMeta?.();                    // 追加：エリア/カテゴリの現在値を反映
-  const btn = document.getElementById('btnMetaSave');
-  if (btn && !btn._wired) { btn.onclick = saveSalonMeta; btn._wired = true; }
-}
-  if (name === 'catalog') {                    // ← 既存カタログの再描画も安全に
+  if (name === 'profile') {
+    // 画像一覧の初回ロード
+    try { await loadPhotos(); } catch(_){}
+    // エリア/カテゴリの反映
+    if (typeof loadSalonMeta === 'function') {
+      try { await loadSalonMeta(); } catch(_){}
+    }
+    const btn = document.getElementById('btnMetaSave');
+    if (btn && !btn._wired) { btn.onclick = saveSalonMeta; btn._wired = true; }
+  }
+
+  if (name === 'catalog') {
     renderMenuList();
     renderCouponList();
     renderCouponCodeList();
@@ -1445,7 +1453,7 @@ tabsEl.addEventListener('click', (e)=>{
   if (!btn) return;
   activateTab(btn.dataset.tab);
 });
-
+    
 // 初期表示
 activateTab('billing');
 })(); 
@@ -1519,4 +1527,5 @@ async function saveSalonMeta(){
 </script>
 </body>
 </html>
+
 

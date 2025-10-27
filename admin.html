@@ -240,7 +240,7 @@
           <input id="menuName" placeholder="ex: Premium Facial"/>
         </div>
         <div style="flex:1">
-          <label>Price (JPY)</label>
+          <label>Price (LKR)</label>
           <input id="menuPrice" type="number" step="1" min="0" placeholder="9000"/>
         </div>
       </div>
@@ -265,7 +265,7 @@
         <div style="flex:1">
           <label>Type</label>
           <select id="cpnType">
-            <option value="flat">Flat (JPY)</option>
+            <option value="flat">Flat (LKR)</option>
             <option value="percent">Percent (%)</option>
           </select>
         </div>
@@ -316,13 +316,10 @@
   // ====== CONFIG ======
   const API_BASE = 'https://workers-playground-winter-field-18ec.mayunatu-skyblue.workers.dev/api';  // ← Worker経由に変更
   const GAS_KEY  = 'bl_gas_key_bR6ZXWwu6kM_nrK25geP97Cs5qCX3auxugX_IUGlg90';
-  const MAX_MANUAL = 1500;
+  const MAX_MANUAL_JPY = 1500;
   const DELTA_WARN_RATE = 0.2;
   const MOCK = false;
   const APPROVE_FILE = 'https://beautylk.com/approve.html'; // 公開中のapprove.html URL
-  // 為替レート（1 JPY = 2.15 LKR など固定値）
-// あとで salons シートから取れるようにするのも可
-const FX_RATE = 2.15;
 
     // ====== STATE ======
     const S = {
@@ -339,15 +336,14 @@ window.addEventListener('error', e => {
   console.error(e);
   alert('Unexpected error: ' + (e.message || e.error));
 });
-
+    const FX_RATE = 2.15;
+    function toJPY(lkr){ return Math.round((Number(lkr)||0 / FX_RATE) }
+    function toLKR(jpy){ return Math.round((Number(jpy)||0) * FX_RATE); }
     // ====== HELPERS ======
     const $ = (q) => document.querySelector(q);
-        function toLKR(jpy){
-  return Math.round(Number(jpy||0) * FX_RATE);
-}
-function fmtLKR(jpy){
-  return `Rs ${Number(toLKR(jpy)).toLocaleString('en-US')}`;
-}
+    function fmtLKR(lkr){
+    return `Rs ${Number(lkr||0).toLocaleString('en-US')}`;
+   }   
 
     const qs = new URLSearchParams(location.search);
     // === Token helper: URL→localStorage保存、以後は保存済みを優先 ===
@@ -385,13 +381,15 @@ async function copyToClipboard(text){
   S.salonId = qs.get('salonId')||'';
   S.bookingId = qs.get('bookingId')||'';
   S.customerId = qs.get('customerId')||'';
-  S.scheduledPrice = Number(qs.get('scheduled')||0);
+  S.scheduledJPY = Number(qs.get('scheduled')||0);
++ S.scheduledLKR = toLKR(S.scheduledJPY);
   S.tenantName = qs.get('salonName')||'';
   $('#ctx').innerHTML = `Salon <b>${S.tenantName||S.salonId}</b> · Booking <b>${S.bookingId||'-'}</b>`;
   $('#bkId').textContent = S.bookingId||'-';
   $('#salonName').textContent = S.tenantName||S.salonId||'-';
-  $('#scheduled').textContent = fmtLKR(S.scheduledPrice);
-  $('#adjLimit').textContent = `±${toLKR(MAX_MANUAL)}`;
+  $('#scheduled').textContent = fmtLKR(S.scheduledLKR);
+  // 手動調整の上限は JPY を基準に設定 → 表示はLKR
+  $('#adjLimit').textContent = `±${fmtLKR(toLKR(MAX_MANUAL_JPY))}`;
 }
 
 async function fetchCatalog(){
@@ -417,14 +415,14 @@ async function fetchCatalog(){
     // まず x.id を優先。なければ既存互換の候補にフォールバック
     id: String(x.id || x.menu_id || x.name_en || x.name_ja || 'MENU'),
     name: x.name_en || x.name_ja || x.desc || 'Menu',
-    price: Number(x.price_jpy || 0)   // 内部はJPYで管理
+    price: Number(x.price_lkr || 0)   // 内部をLKRで管理
   }));
 
     // 2) クーポン（＝Discount）取得
     const q2 = new URLSearchParams({ kind:'coupons.list', key:GAS_KEY, salonId:S.salonId, token:S.token });
     const c = await fetch(`${API_BASE}?${q2}`).then(r=>r.json());
     const discounts = (c.ok ? (c.items||[]) : []).map(x => {    const type = (String(x.type||'').toLowerCase() === 'percent') ? 'percent' : 'flat';
-    const val  = Number(x.value || x.off_jpy || 0);
+    const val  = Number(x.value_lkr || x.value || 0);
     return {
       // こちらも id を最優先。旧データとの互換も残す
       id: String(x.id || x.menu_id || x.code || x.name_en || x.name_ja || 'DISC'),
@@ -493,13 +491,12 @@ function renderComposer(){
 
   // Manual adjust
   const man = $('#manualAdj');
-// 表示はLKR（内部はJPYで保持）
-man.value = toLKR(S.sel.manual||0);
-man.oninput = ()=>{
-  const lkr = Number(man.value||0);
-  S.sel.manual = Math.round(lkr / FX_RATE); // 内部JPYへ換算
-  calc();
-};
+  // 表示はLKR（内部はJPYで保持）
+  man.value = String(S.sel.manualLKR || 0);
+  man.oninput = ()=>{
+    S.sel.manualLKR = Math.round(Number(man.value||0));
+    calc();
+  };
 
   const rea = $('#manualReason');
   rea.value = S.sel.reason||'';
@@ -517,37 +514,36 @@ man.oninput = ()=>{
         if(!d) return 0; if(d.type==='percent') return - Math.round((base+add) * (d.value/100));
         return - Number(d.value||0);
       })();
-      const man = Number(S.sel.manual||0);
+      const man = Number(S.sel.manualLKR||0);
       return { base, add, disc, man };
     }
 
     function calc(){
   const { base, add, disc, man } = currentAmounts();
-  const limit = MAX_MANUAL; 
-  const warnAdj = Math.abs(man) > limit; 
+  const warnAdj = toJPY(Math.abs(man)) > MAX_MANUAL_JPY; 
   const needReason = man!==0 && !S.sel.reason;
 
-  // JPY計算（Stripe用）
-  const subJPY = base + add + disc + man;
-  const svcJPY = Math.round(subJPY * (Number(S.catalog.serviceRate||0)/100));
-  const taxJPY = Math.round((subJPY+svcJPY) * (Number(S.catalog.taxRate||0)/100));
-  const grandJPY = Math.max(0, subJPY + svcJPY + taxJPY);
-
-  // LKR 表示用
+  const subLKR = base + add + disc + man;
+  const svcLKR = Math.round(subLKR * (Number(S.catalog.serviceRate||0)/100));
+  const taxLKR = Math.round((subLKR+svcLKR) * (Number(S.catalog.taxRate||0)/100));
+  const grandLKR = Math.max(0, subLKR + svcLKR + taxLKR);
+  const grandJPY = toJPY(grandLKR);
+      
   $('#sumBase').textContent = fmtLKR(base);
   $('#sumAdd').textContent  = fmtLKR(add);
   $('#sumDis').textContent  = fmtLKR(disc);
   $('#sumMan').textContent  = fmtLKR(man) + (warnAdj? ' ⚠ over limit':'' ) + (needReason? ' ⚠ reason required':'');
 
-  $('#sumSvc').textContent = fmtLKR(svcJPY);
-  $('#sumTax').textContent = fmtLKR(taxJPY);
-  $('#grand').textContent  = fmtLKR(grandJPY);
-
+  $('#sumSvc').textContent = fmtLKR(svcLKR);
+  $('#sumTax').textContent = fmtLKR(taxLKR);
+  $('#grand').textContent  = fmtLKR(grandLKR);
+      
   // Δ比較もLKR表記に揃える
-  const diffJPY = grandJPY - Number(S.scheduledPrice||0);
-  const rate = (S.scheduledPrice? diffJPY/ S.scheduledPrice : 0);
-  const di = $('#deltaInfo');
-  di.textContent = `Δ from scheduled: ${fmtLKR(diffJPY)} (${(rate*100).toFixed(1)}%)`;
+      
+  const diffJPY = grandJPY - Number(S.scheduledJPY||0);
+  const diffLKR = toLKR(diffJPY);
+  const rate = (S.scheduledJPY? diffJPY/ S.scheduledJPY : 0);
+  di.textContent = `Δ from scheduled: ${fmtLKR(diffLKR)} (${(rate*100).toFixed(1)}%)`;
   di.className = 'muted ' + (Math.abs(rate) > DELTA_WARN_RATE ? 'warn':'');
 
   const allow = !warnAdj && !needReason && S.approval.ok && grandJPY>0;
@@ -564,7 +560,7 @@ if (sendBtn) {
 }
 
   // ★ JPYとLKR両方返す
-  return { grandJPY, grandLKR: toLKR(grandJPY) };
+  return { grandJPY, grandLKR };
 }
 
 
@@ -592,7 +588,7 @@ async function startApproval(){
   salonId: S.salonId,
   token: S.token, // ← 追加
   items: { menuId: S.sel.menuId, addonIds: [...S.sel.addonIds], discountId: S.sel.discountId, manual: S.sel.manual||0, reason: S.sel.reason||'' },
-  amountJPY: grandJPY,
+  amountLKR: grandLKR,
   ttlMin: 60
 }
     })
@@ -679,7 +675,7 @@ async function pollApproval(){
 
     // ====== Charge ======
 async function doCharge(){
-  const { grandJPY, grandLKR } = calc();
+  const { grandJPY } = calc();
   const btn = document.getElementById('btnCharge');
   const msg = document.getElementById('chargeMsg');
   btn.disabled = true; msg.textContent = 'Charging…';
@@ -692,7 +688,7 @@ async function doCharge(){
         key: GAS_KEY,
         kind: "charge",
         data: {
-  amountJPY: grandJPY,
+  amountLKR: grandLKR,
   customerId: S.customerId || '',
   salonId: S.salonId,
   token: S.token
@@ -870,7 +866,7 @@ async function addMenu(){
     body: JSON.stringify({
       key: GAS_KEY,
       kind: 'menus.add',
-      data: { salonId: S.salonId, token: S.token, name_en: name, price_jpy: price }
+      data: { salonId: S.salonId, token: S.token, name_en: name, price_lkr: price }
     })
   }).then(r=>r.json());
   msg.textContent = j.ok ? 'Added' : ('Error: ' + (j.error||'failed'));
@@ -925,6 +921,7 @@ async function addCoupon(){
   if (value<=0){ msg.textContent='Enter value'; return; }
   msg.textContent = 'Saving…';
   const payload = { salonId: S.salonId, token: S.token, type, value };
+  if (type === 'flat') payload.value_lkr = value;
   if (name) payload.name_en = name;
   const j = await fetch(API_BASE, {
     method:'POST',
@@ -1216,4 +1213,5 @@ function renderPhotoGrid(items){
 </script>
 </body>
 </html>
+
 

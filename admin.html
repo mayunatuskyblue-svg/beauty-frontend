@@ -531,7 +531,7 @@ function clearCoupon(){
   $('#salonName').textContent = S.tenantName||S.salonId||'-';
   $('#scheduled').textContent = fmtLKR(S.scheduledLKR);
   // 手動調整の上限は JPY を基準に設定 → 表示はLKR
-  $('#adjLimit').textContent = `±${fmtLKR(toLKR(MAX_MANUAL_JPY))}`;
+  $('#adjLimit').textContent = `${toLKR(MAX_MANUAL_JPY).toLocaleString('en-US')}`;
 }
 
 async function fetchCatalog(){
@@ -557,7 +557,7 @@ async function fetchCatalog(){
     // まず x.id を優先。なければ既存互換の候補にフォールバック
     id: String(x.id || x.menu_id || x.name_en || x.name_ja || 'MENU'),
     name: x.name_en || x.name_ja || x.desc || 'Menu',
-    price: Number(x.price_lkr || 0)   // 内部をLKRで管理
+    price: toLKR(Number(x.price_jpy || x.price || 0)) 
   }));
 
     // 2) クーポン（＝Discount）取得
@@ -650,8 +650,9 @@ function renderComposer(){
     function currentAmounts(){
       const menu = (S.catalog.menus||[]).find(m=>m.id===S.sel.menuId);
       const base = menu? Number(menu.price||0):0;
-      const add = [...S.sel.addonIds].map(id => (S.catalog.addons||[]).find(a=>a.id===id)?.price||0).reduce((a,b)=>a+b,0);
-      const disc = (()=>{
+      const add = [...S.sel.addonIds]
+     .map(id => (S.catalog.addons||[]).find(a=>a.id===id)?.price || 0)
+     .reduce((a,b)=>a+b,0);      const disc = (()=>{
         const d = (S.catalog.discounts||[]).find(x=>x.id===S.sel.discountId);
         if(!d) return 0; if(d.type==='percent') return - Math.round((base+add) * (d.value/100));
         return - Number(d.value||0);
@@ -661,6 +662,7 @@ function renderComposer(){
     }
 
     function calc(){
+  const di = document.getElementById('deltaInfo');
   const { base, add, disc, man } = currentAmounts();
   const warnAdj = toJPY(Math.abs(man)) > MAX_MANUAL_JPY; 
   const needReason = man!==0 && !S.sel.reason;
@@ -696,7 +698,7 @@ if (sendBtn) {
   const validToApprove =
     (base + add + disc + man) > 0 &&
     !!S.sel.menuId &&
-    Math.abs(man) <= MAX_MANUAL &&
+    Math.abs(man) <= MAX_MANUAL_JPY &&
     (man === 0 || !!S.sel.reason);
   sendBtn.disabled = !validToApprove;
 }
@@ -716,8 +718,7 @@ async function startApproval(){
   const { base, add, disc, man } = currentAmounts();
   if (!S.sel.menuId) { alert('Please select a menu.'); return; }
   if ((base + add + disc + man) <= 0) { alert('Amount must be greater than 0.'); return; }
-  if (Math.abs(man) > MAX_MANUAL) { alert('Manual adjust exceeds limit.'); return; }
-  if (man !== 0 && !S.sel.reason) { alert('Please enter a reason for manual adjust.'); return; }
+  if (toJPY(Math.abs(man)) > MAX_MANUAL_JPY) { alert('Manual adjust exceeds limit.'); return; }  if (man !== 0 && !S.sel.reason) { alert('Please enter a reason for manual adjust.'); return; }
 
   // GAS: approval.start
   const res = await fetch(API_BASE, {
@@ -726,24 +727,29 @@ async function startApproval(){
       key: GAS_KEY,
       kind: 'approval.start',
       data: {
-  bookingId: S.bookingId,
-  salonId: S.salonId,
-  token: S.token, // ← 追加
-  items: { menuId: S.sel.menuId, addonIds: [...S.sel.addonIds], discountId: S.sel.discountId, manual: S.sel.manual||0, reason: S.sel.reason||'' },
-  couponCode: (S.coupon?.code || ''),
-discountJPY: (()=>{
-  // 「適用前の小計」からの値引き幅をJで置く（なくてもOK）
-  const prevDiscountId = S.sel.discountId;
-  S.sel.discountId = '';
-  const subBefore = currentAmounts(); // base+add+man
-  S.sel.discountId = prevDiscountId;
-  const subAfter  = currentAmounts();
-  // discount は負（-）値なので差分は subAfter.disc - 0
-  return Math.abs(subAfter.disc||0);
-})()
-  amountLKR: grandLKR,
-  ttlMin: 60
-}
+   bookingId: S.bookingId,
+         salonId:   S.salonId,
+         token:     S.token,
+         items: {
+          menuId:    S.sel.menuId,
+          addonIds:  [...S.sel.addonIds],
+          discountId: S.sel.discountId || '',
+          manual:    toJPY(Number(S.sel.manualLKR||0)) // JPYで保持
+        },
+        amountJPY:  grandJPY,
+        amountLKR:  grandLKR,
+        phone:      phone || '',
+        couponCode: (S.coupon?.code || ''),
+        discountJPY: (()=>{
+          const prev = S.sel.discountId;
+          S.sel.discountId = '';
+          const before = currentAmounts(); // base+add+man
+          S.sel.discountId = prev;
+          const after  = currentAmounts();
+          return Math.abs(after.disc||0); // disc は負値なので絶対値
+        })(),
+        ttlMin: 60
+      }
     })
   }).then(r=>r.json());
 
@@ -828,7 +834,7 @@ async function pollApproval(){
 
     // ====== Charge ======
 async function doCharge(){
-  const { grandJPY } = calc();
+  const { grandJPY, grandLKR } = calc();
   const btn = document.getElementById('btnCharge');
   const msg = document.getElementById('chargeMsg');
   btn.disabled = true; msg.textContent = 'Charging…';
@@ -837,6 +843,7 @@ async function doCharge(){
     // ここでは paymentMethodId を送らず、code.gs 側で customerId から補完する運用
     const r = await fetch(API_BASE, {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         key: GAS_KEY,
         kind: "charge",
@@ -1440,3 +1447,4 @@ function renderPhotoGrid(items){
 </script>
 </body>
 </html>
+

@@ -1292,12 +1292,6 @@ function updateCardCurrencies(){
     el.textContent = fmtCurrencyFromJPY(j, getCurrency());
   });
 }
-function updateCardCurrencies(){
-  document.querySelectorAll('b[data-jpy]').forEach(el=>{
-    const j = Number(el.getAttribute('data-jpy')||'0');
-    el.textContent = fmtCurrencyFromJPY(j, getCurrency());
-  });
-}
 
 function attachHandlers(){
   document.querySelectorAll('.card').forEach(card=>{
@@ -1423,7 +1417,6 @@ async function initCatalog(){
 /* === A: photos シートから全サロン画像を事前取得 === */
 const PHOTO_CACHE = new Map();  // salonId → [photoURL1, photoURL2,...]
 const API_BASE = 'https://script.google.com/macros/s/AKfycbwWRpfcZMsGxNqGJ5aNjRT1Y1PChDTqtQE3e0S7sUDAMei8s1wOr6lpKMnOaI1Z-6o/exec';
-const GAS_KEY = 'bl_gas_key_bR6ZXWwu6kM_nrK25geP97Cs5qCX3auxugX_IUGlg90';
 
 async function loadAllPhotos(){
   try{
@@ -1456,6 +1449,9 @@ async function hydratePhotos(items){
     }
   }
 }
+    
+// 最初にスケルトンを出す
+showSkeletons(6);
 
 /* === C: 初期化時に呼び出す === */
 (async()=>{

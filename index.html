@@ -1420,7 +1420,48 @@ async function initCatalog(){
     updateCardCurrencies();
   }
 }
+/* === A: photos シートから全サロン画像を事前取得 === */
+const PHOTO_CACHE = new Map();  // salonId → [photoURL1, photoURL2,...]
+const API_BASE = 'https://script.google.com/macros/s/AKfycbwWRpfcZMsGxNqGJ5aNjRT1Y1PChDTqtQE3e0S7sUDAMei8s1wOr6lpKMnOaI1Z-6o/exec';
+const GAS_KEY = 'bl_gas_key_bR6ZXWwu6kM_nrK25geP97Cs5qCX3auxugX_IUGlg90';
 
+async function loadAllPhotos(){
+  try{
+    const q = new URLSearchParams({ kind:'photos.listAll', key:GAS_KEY });
+    const j = await fetch(`${API_BASE}?${q}`).then(r=>r.json());
+    if(!j.ok) throw new Error(j.error||'failed');
+    (j.items||[]).forEach(p=>{
+      if(!p.salonId || !p.url) return;
+      if(!PHOTO_CACHE.has(p.salonId)) PHOTO_CACHE.set(p.salonId, []);
+      PHOTO_CACHE.get(p.salonId).push(p.url);
+    });
+    console.log('PHOTO_CACHE loaded', PHOTO_CACHE);
+  }catch(e){
+    console.warn('loadAllPhotos failed', e);
+  }
+}
+
+/* === B: カード描画を強化 === */
+async function hydratePhotos(items){
+  for(const s of items){
+    const el = document.querySelector(`.card[data-id="${s.id}"]`);
+    if(!el) continue;
+    const wrap = el.querySelector('.carousel');
+    if(!wrap) continue;
+    const cached = PHOTO_CACHE.get(s.id);
+    if(cached && cached.length){
+      wrap.innerHTML = cached.map((u,i)=>
+        `<img src="${u}" alt="${s.name} photo ${i+1}" loading="lazy">`
+      ).join('');
+    }
+  }
+}
+
+/* === C: 初期化時に呼び出す === */
+(async()=>{
+  await loadAllPhotos();  // 先に全画像キャッシュ
+  initCatalog();          // その後カード生成
+})();
 // ==== Fallback DATA ====
 const DATA_FALLBACK=[
   {id:"S1", name:"Silky Lashes Colombo", type:"マツエク", place:"コロンボ", lat:6.933, lng:79.85, price:4250, rating:4.6, tags:["マツエク","日本語対応"], points:"自然で長持ち。丁寧なカウンセリング。", photos:["/assets/img/lashes_a.webp","/assets/img/lashes_b.webp","/assets/img/lashes_c.webp"]},
@@ -1601,8 +1642,6 @@ function showSkeletons(n=6){
 
 // Init filters & initial UI then fetch data
 initFilters(DATA_FALLBACK);
-showSkeletons(6);
-initCatalog();
 
 // Back to top button
 (function(){

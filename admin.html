@@ -464,8 +464,9 @@ async function validateCouponAndApply(code){
   const prevDiscountId = S.sel.discountId;
   S.sel.discountId = '';
   const { base, add, man } = currentAmounts();
-  S.sel.discountId = prevDiscountId;
-  const subtotalJPY = base + add + man; // 内部は LKR 表示だが値は JPY 基準で持っている実装
+S.sel.discountId = prevDiscountId;
+// currentAmounts() は LKR なので、API には JPY で渡す
+const subtotalJPY = toJPY(base + add + man);
 
   try{
     const email = (new URLSearchParams(location.search)).get('customerEmail') || ''; // confirm側と同様にメールを添える
@@ -607,11 +608,21 @@ async function fetchCatalog(){
       name: (x.name_en || x.name_ja || (type==='percent'? `${val}% OFF` : `${val} OFF`))
     };
   });
+    // 3) Private coupon codes（confirm 用コード）取得
+const q3 = new URLSearchParams({ kind:'couponCodes.list', key:GAS_KEY, salonId:S.salonId, token:S.token });
+const codesRes = await fetch(`${API_BASE}?${q3}`).then(r=>r.json());
+const codes = (codesRes.ok ? (codesRes.items||[]) : []).map(x=>({
+  id: String(x.id || x.code || 'CODE'),
+  code: String(x.code||''),
+  type: (String(x.type||'').toLowerCase()==='percent') ? 'percent' : 'flat',
+  value: Number(x.value_lkr || x.value || 0)
+}));
 
     S.catalog = {
       menus,
       addons: [],                 // 使うなら別途
       discounts,
+      codes,
       taxRate: 10,                // 必要に応じて salons シート等から参照に変更可
       serviceRate: 0
     };
@@ -776,13 +787,14 @@ async function startApproval(){
         phone:      phone || '',
         couponCode: (S.coupon?.code || ''),
         discountJPY: (()=>{
-          const prev = S.sel.discountId;
-          S.sel.discountId = '';
-          const before = currentAmounts(); // base+add+man
-          S.sel.discountId = prev;
-          const after  = currentAmounts();
-          return Math.abs(after.disc||0); // disc は負値なので絶対値
-        })(),
+  const prev = S.sel.discountId;
+  S.sel.discountId = '';
+  const before = currentAmounts();
+  S.sel.discountId = prev;
+  const after  = currentAmounts();
+  // disc は LKR の負値 → JPY の正値で送る
+  return toJPY(Math.abs(after.disc||0));
+})(),
         ttlMin: 60
       }
     })
@@ -1353,6 +1365,15 @@ if (btnCpnAdd) btnCpnAdd.onclick = addCoupon;
 // ★ Profile: Upload button
 const btnPhotoUpload = document.getElementById('btnPhotoUpload');
 if (btnPhotoUpload) btnPhotoUpload.onclick = handlePhotoUpload;
+// Private coupon codes
+const btnCpnCodeAdd = document.getElementById('btnCpnCodeAdd');
+if (btnCpnCodeAdd) btnCpnCodeAdd.onclick = addCouponCode;
+
+// Profile: Salon Meta を先読み（タブ切替前に値が入ると安心）
+await loadSalonMeta().catch(()=>{});
+const btnMetaSave = document.getElementById('btnMetaSave');
+if (btnMetaSave) btnMetaSave.onclick = saveSalonMeta;
+
 // 初回レンダリング
 renderMenuList();
 renderCouponList();
@@ -1407,7 +1428,11 @@ function activateTab(name){
     el.hidden = (key !== name);
   });
   // タブ固有の初期化
-  if (name === 'profile') loadPhotos();        // ← ここで初ロード
+  if (name === 'profile') loadPhotos(); // ← ここで初ロード
+  await loadSalonMeta?.();                    // 追加：エリア/カテゴリの現在値を反映
+  const btn = document.getElementById('btnMetaSave');
+  if (btn && !btn._wired) { btn.onclick = saveSalonMeta; btn._wired = true; }
+}
   if (name === 'catalog') {                    // ← 既存カタログの再描画も安全に
     renderMenuList();
     renderCouponList();
@@ -1438,47 +1463,6 @@ if (btnCpnClear) {
   btnCpnClear.onclick = clearCoupon;
 }
 
-/* ====== Photos: list / upload / remove ====== */
-
-// 画像一覧
-async function loadPhotos(){
-  if (!S.salonId) return;
-  const q = new URLSearchParams({
-    kind: 'photos.list',
-    key:  GAS_KEY,
-    salonId: S.salonId,
-    token: (S.token || getToken() || '')
-  });
-  const j = await fetch(`${API_BASE}?${q}`).then(r=>r.json());
-  renderPhotoGrid((j.ok && j.items) ? j.items : []);
-}
-
-// 一覧の描画
-function renderPhotoGrid(items){
-  const box = document.getElementById('photoGrid');
-  if (!box) return;
-  if (!items.length){
-    box.innerHTML = '<div class="muted">No photos yet</div>';
-    return;
-  }
-  box.innerHTML = items.map(p => `
-    <div style="width:240px;border:1px solid #eadfca;border-radius:10px;overflow:hidden">
-      <div style="width:100%;height:180px;background:#f5f5f5">
-        <img src="${p.url}" alt="${p.filename||''}"
-             style="width:100%;height:100%;object-fit:cover;display:block">
-      </div>
-      <div style="padding:6px 8px;display:flex;justify-content:space-between;align-items:center">
-        <div class="muted" style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px">${p.filename||''}</div>
-        <button class="btn" data-id="${p.id}">Remove</button>
-      </div>
-    </div>
-  `).join('');
-
-  // 削除ボタン
-  box.querySelectorAll('button[data-id]').forEach(btn=>{
-    btn.onclick = async () => { await removePhoto(btn.dataset.id); };
-  });
-}
     // --- Salon Meta: load & save ---
 async function loadSalonMeta(){
   try{
@@ -1532,63 +1516,6 @@ async function saveSalonMeta(){
     msg.textContent = 'Save error';
   }
 }
-// --- Salon Meta: load & save ---
-async function loadSalonMeta(){
-  try{
-    const qs = new URLSearchParams({ kind:'salon.meta.get', key:GAS_KEY, salonId:S.salonId, token:S.token });
-    const resp = await fetch(`${API_BASE}?${qs}`).then(r=>r.json());
-    if(resp && resp.ok){
-      S.meta.area = resp.area || '';
-      S.meta.categories = Array.isArray(resp.categories)
-        ? resp.categories
-        : String(resp.categories||'').split(',').map(s=>s.trim()).filter(Boolean);
-    }
-    // UI 反映
-    const areaSel = document.getElementById('metaArea');
-    const catInp  = document.getElementById('metaCategories');
-    if(areaSel) areaSel.value = S.meta.area || '';
-    if(catInp)  catInp.value  = (S.meta.categories||[]).join(', ');
-  }catch(e){
-    console.warn('loadSalonMeta error', e);
-  }
-}
-
-async function saveSalonMeta(){
-  const areaSel = document.getElementById('metaArea');
-  const catInp  = document.getElementById('metaCategories');
-  const msg     = document.getElementById('metaMsg');
-
-  const area = String(areaSel?.value||'').trim();
-  const categories = String(catInp?.value||'')
-    .split(',').map(s=>s.trim()).filter(Boolean);
-
-  msg.textContent = 'Saving…';
-  try{
-    const resp = await fetch(API_BASE, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        key: GAS_KEY,
-        kind: 'salon.meta.save',
-        data: { salonId:S.salonId, token:S.token, area, categories }
-      })
-    }).then(r=>r.json());
-
-    if(resp && resp.ok){
-      S.meta.area = area;
-      S.meta.categories = categories;
-      msg.textContent = 'Saved ✔';
-    }else{
-      msg.textContent = 'Save failed';
-    }
-  }catch(e){
-    msg.textContent = 'Save error';
-  }
-}
 </script>
 </body>
 </html>
-
-
-
-

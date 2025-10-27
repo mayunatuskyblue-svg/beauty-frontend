@@ -989,6 +989,21 @@ try{ document.documentElement.setAttribute('lang','en'); }catch(e){}
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v4M17 3v4M3 9h18M5 7h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
       <input id="date" type="date" placeholder="">
     </label>
+    <!-- ▼▼▼ 既存の検索ピルの並びに追加 ▼▼▼ -->
+<label class="pill big" title="Area">
+  <select id="searchArea">
+    <option value="">Area</option>
+    <!-- JSで自動挿入 -->
+  </select>
+</label>
+
+<label class="pill big" title="Category">
+  <select id="searchCategory">
+    <option value="">Category</option>
+    <!-- JSで自動挿入 -->
+  </select>
+</label>
+<!-- ▲▲▲ 追加ここまで ▲▲▲ -->
 
     <label class="pill" aria-label="金額">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" fill="none"/><path d="M9 9h6m-6 3h6m-6 3h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -1913,6 +1928,49 @@ document.addEventListener('click', (e)=>{
     // 例: 再検索 or キャッシュされたレコードを使って再レンダ（あなたの関数名に置換）
     if (window.renderCatalog) renderCatalog();
   };
+  // --- 検索候補（Area / Category）を構築 ---
+async function buildSearchMeta(){
+  try{
+    const qs = new URLSearchParams({ kind:'salons.list', key: GAS_KEY });
+    const resp = await fetch(`${API_BASE}?${qs}`).then(r=>r.json());
+    if(!resp || !resp.ok) return;
+
+    const areas = new Set();
+    const cats  = new Set();
+
+    (resp.items||[]).forEach(s=>{
+      if(s.area) areas.add(String(s.area).trim());
+      const arr = Array.isArray(s.categories)
+        ? s.categories
+        : String(s.categories||'').split(',').map(v=>v.trim()).filter(Boolean);
+      arr.forEach(c=>cats.add(c));
+    });
+
+    const areaSel = document.getElementById('searchArea');
+    const catSel  = document.getElementById('searchCategory');
+
+    if(areaSel){
+      [...areas].sort().forEach(a=>{
+        const opt = document.createElement('option');
+        opt.value = opt.textContent = a;
+        areaSel.appendChild(opt);
+      });
+    }
+    if(catSel){
+      [...cats].sort().forEach(c=>{
+        const opt = document.createElement('option');
+        opt.value = opt.textContent = c;
+        catSel.appendChild(opt);
+      });
+    }
+  }catch(e){
+    console.warn('buildSearchMeta error', e);
+  }
+}
+
+// 初期化で一度だけ生成
+buildSearchMeta();
+
 </script>
 
 <footer>Build v2025-09-18i • Visual refresh add‑on v1</footer>

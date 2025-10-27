@@ -73,6 +73,19 @@
           <div style="flex:1">
             <label>Discount</label>
             <select id="discountSel"></select>
+           <!-- Discount の直後に追記 -->
+<div class="row" style="margin-top:6px">
+  <div style="flex:1">
+    <input id="couponCodeInput" placeholder="Enter coupon code"/>
+  </div>
+  <div>
+    <button id="btnCouponApply" class="btn">Apply</button>
+  </div>
+  <div>
+    <button id="btnCouponClear" class="btn" style="display:none">Clear</button>
+  </div>
+</div>
+<div id="couponMsg" class="muted" style="font-size:12px;margin-top:4px"></div> 
           </div>
           <div style="width:180px">
             <label>Manual adjust (±)</label>
@@ -283,6 +296,37 @@
       <div id="cpnList"></div>
     </div>
   </section>
+    <!-- ▼▼▼ Coupon Codes（管理者専用コード登録） ▼▼▼ -->
+  <section class="card" style="margin-top:20px">
+    <div class="hd">Private Coupon Codes (for confirmation screen)</div>
+    <div class="bd">
+      <div class="row">
+        <div style="flex:1">
+          <label>Coupon Code</label>
+          <input id="cpnCodeAdmin" placeholder="ex: WELCOME10"/>
+        </div>
+        <div style="flex:1">
+          <label>Discount Type</label>
+          <select id="cpnCodeType">
+            <option value="flat">Flat (LKR)</option>
+            <option value="percent">Percent (%)</option>
+          </select>
+        </div>
+        <div style="flex:1">
+          <label>Value</label>
+          <input id="cpnCodeValue" type="number" step="1" min="0" placeholder="e.g. 1000 or 10"/>
+        </div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button id="btnCpnCodeAdd" class="btn">Add Code</button>
+        <span id="cpnCodeMsg" class="muted"></span>
+      </div>
+      <div class="hr"></div>
+      <div class="muted" style="margin-bottom:6px">Existing Codes</div>
+      <div id="cpnCodeList"></div>
+    </div>
+  </section>
+  <!-- ▲▲▲ Coupon Codes 終了 ▲▲▲ -->
 </div>
 <!-- ▲▲▲ Catalog 終了 ▲▲▲ -->
         <!-- ▼▼▼ Profile（Salon Photos 管理） ▼▼▼ -->
@@ -326,7 +370,8 @@
       salonId: '', bookingId: '', customerId: '', scheduledPrice: 0, tenantName: '',
       catalog: { menus: [], addons: [], discounts: [], taxRate: 0, serviceRate: 0 },
       sel: { menuId: '', addonIds: new Set(), discountId: '', manual: 0, reason: '' },
-      approval: { id: '', ok: false }
+      approval: { id: '', ok: false },
+      coupon: { code: '', discountType: '', discountValue: 0 }
     };
   // ====== GLOBAL ERROR HANDLER ======
 window.addEventListener('unhandledrejection', e => {
@@ -374,6 +419,103 @@ function toLKR(jpy){ return Math.round((Number(jpy)||0) * FX_RATE); }
 function encodeMsg(s){ return encodeURIComponent(s).replace(/%20/g,'+'); }
 async function copyToClipboard(text){
   try{ await navigator.clipboard.writeText(text); return true; }catch(e){ return false; }
+}
+async function validateCouponAndApply(code){
+  const msgEl = document.getElementById('couponMsg');
+  msgEl.textContent = 'Validating…';
+
+  // 現在の（クーポン適用前）小計（＝base+add+manual を含むが discount は除外して使う）
+  // currentAmounts() は Discount を含むので、一旦 Discount を退避して計算します
+  const prevDiscountId = S.sel.discountId;
+  S.sel.discountId = '';
+  const { base, add, man } = currentAmounts();
+  S.sel.discountId = prevDiscountId;
+  const subtotalJPY = base + add + man; // 内部は LKR 表示だが値は JPY 基準で持っている実装
+
+  try{
+    const email = (new URLSearchParams(location.search)).get('customerEmail') || ''; // confirm側と同様にメールを添える
+    const resp = await fetch(API_BASE, {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({
+        key: GAS_KEY,
+        kind: 'coupons.validate',
+        data: {
+          salonId: S.salonId,
+          token:   S.token,
+          code:    String(code||'').trim(),
+          email,                 // first-time 等の制約チェック用（confirm側の思想と合わせる）
+          amountJPY: subtotalJPY // 現在の小計を渡してサーバで割引計算
+        }
+      })
+    }).then(r=>r.json());
+
+    if(!resp || !resp.ok){
+      msgEl.textContent = 'Coupon invalid or not applicable.';
+      return false;
+    }
+
+    // サーバ想定レスポンス例:
+    // { ok:true, type:'flat'|'percent', value: number, appliedJPY: number, offJPY: number, name: 'New Customer' }
+    const type = (resp.type === 'percent') ? 'percent' : 'flat';
+    const value = Number(resp.value||0);
+    const label = resp.name ? `${resp.name} (${code})` : `Coupon ${code}`;
+
+    // 既存の discount セレクタに“仮想”クーポンを注入して選択
+    const tempId = `COUPON:${code}`;
+    // すでに同名がいるなら更新、いなければ追加
+    const idx = (S.catalog.discounts||[]).findIndex(d=>d && d.id===tempId);
+    const item = { id: tempId, type, value, name: label };
+    if(idx >= 0) S.catalog.discounts[idx] = item; else S.catalog.discounts.push(item);
+    S.sel.discountId = tempId;
+
+    // 状態も保持
+    S.coupon.code = code;
+    S.coupon.discountType = type;
+    S.coupon.discountValue = value;
+
+    // UI反映
+    const dsel = document.getElementById('discountSel');
+    if (dsel) {
+      // 再レンダ（安全のため）
+      dsel.innerHTML = `<option value="">None</option>` + (S.catalog.discounts||[]).map(d=>{
+        const label = d.type==='percent' ? `${d.name} (-${d.value}%)` : `${d.name} (-${fmtLKR(d.value)})`;
+        return `<option value="${d.id}">${label}</option>`;
+      }).join('');
+      dsel.value = tempId;
+    }
+    document.getElementById('btnCouponClear').style.display = '';
+    msgEl.textContent = 'Applied ✔';
+    calc();
+    return true;
+  }catch(e){
+    msgEl.textContent = 'Validate failed: ' + (e.message||'');
+    return false;
+  }
+}
+
+function clearCoupon(){
+  const msgEl = document.getElementById('couponMsg');
+  // セレクタから仮想クーポンを消して、Discount選択も解除
+  if (S.coupon && S.coupon.code){
+    const tempId = `COUPON:${S.coupon.code}`;
+    S.catalog.discounts = (S.catalog.discounts||[]).filter(d => d.id !== tempId);
+  }
+  S.sel.discountId = '';
+  S.coupon = { code:'', discountType:'', discountValue:0 };
+
+  // UI 更新
+  const dsel = document.getElementById('discountSel');
+  if (dsel) {
+    dsel.innerHTML = `<option value="">None</option>` + (S.catalog.discounts||[]).map(d=>{
+      const label = d.type==='percent' ? `${d.name} (-${d.value}%)` : `${d.name} (-${fmtLKR(d.value)})`;
+      return `<option value="${d.id}">${label}</option>`;
+    }).join('');
+    dsel.value = '';
+  }
+  document.getElementById('btnCouponClear').style.display = 'none';
+  msgEl.textContent = 'Cleared';
+  calc();
 }
 
     function readCtx(){
@@ -588,6 +730,17 @@ async function startApproval(){
   salonId: S.salonId,
   token: S.token, // ← 追加
   items: { menuId: S.sel.menuId, addonIds: [...S.sel.addonIds], discountId: S.sel.discountId, manual: S.sel.manual||0, reason: S.sel.reason||'' },
+  couponCode: (S.coupon?.code || ''),
+discountJPY: (()=>{
+  // 「適用前の小計」からの値引き幅をJで置く（なくてもOK）
+  const prevDiscountId = S.sel.discountId;
+  S.sel.discountId = '';
+  const subBefore = currentAmounts(); // base+add+man
+  S.sel.discountId = prevDiscountId;
+  const subAfter  = currentAmounts();
+  // discount は負（-）値なので差分は subAfter.disc - 0
+  return Math.abs(subAfter.disc||0);
+})()
   amountLKR: grandLKR,
   ttlMin: 60
 }
@@ -934,6 +1087,65 @@ async function addCoupon(){
     await fetchCatalog(); renderCouponList();
   }
 }
+// ====== Coupon Codes（confirm 用コード） ======
+function renderCouponCodeList(){
+  const box = document.getElementById('cpnCodeList');
+  if (!box) return;
+  const items = S.catalog.codes || [];
+  if (!items.length){
+    box.innerHTML = '<div class="muted">No private codes</div>';
+    return;
+  }
+  box.innerHTML = items.map(c=>{
+    const label = c.type==='percent' ? `${c.value}% OFF` : `${fmtLKR(c.value)} OFF`;
+    return `
+      <div class="row" style="align-items:center;justify-content:space-between;border:1px solid var(--brd);border-radius:10px;padding:6px 10px">
+        <div><b>${c.code}</b> · ${label}</div>
+        <button class="btn" data-id="${c.id}">Remove</button>
+      </div>`;
+  }).join('');
+  box.querySelectorAll('button[data-id]').forEach(b=>{
+    b.onclick = ()=> removeCouponCode(b.getAttribute('data-id'));
+  });
+}
+
+async function addCouponCode(){
+  const code = document.getElementById('cpnCodeAdmin').value.trim();
+  const type = document.getElementById('cpnCodeType').value;
+  const value= Number(document.getElementById('cpnCodeValue').value||0);
+  const msg = document.getElementById('cpnCodeMsg');
+  if (!code || value<=0){ msg.textContent='Enter code and value'; return; }
+  msg.textContent = 'Saving…';
+  const j = await fetch(API_BASE, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      key: GAS_KEY,
+      kind: 'couponCodes.add', // confirm 側と連携する想定
+      data: { salonId:S.salonId, token:S.token, code, type, value_lkr:value }
+    })
+  }).then(r=>r.json());
+  msg.textContent = j.ok ? 'Added' : ('Error: '+(j.error||'failed'));
+  if (j.ok){
+    document.getElementById('cpnCodeAdmin').value='';
+    document.getElementById('cpnCodeValue').value='';
+    await fetchCatalog(); // ← 既存一覧に反映
+    renderCouponCodeList();
+  }
+}
+
+async function removeCouponCode(id){
+  if (!confirm('Remove this code?')) return;
+  const msg = document.getElementById('cpnCodeMsg');
+  msg.textContent='Removing…';
+  const j = await fetch(API_BASE, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ key:GAS_KEY, kind:'couponCodes.remove', data:{ salonId:S.salonId, token:S.token, id } })
+  }).then(r=>r.json());
+  msg.textContent = j.ok ? 'Removed' : ('Error: '+(j.error||'failed'));
+  if (j.ok){ await fetchCatalog(); renderCouponCodeList(); }
+}
 
 async function removeCoupon(id){
   if (!confirm('Remove this coupon?')) return;
@@ -1157,6 +1369,7 @@ function activateTab(name){
   if (name === 'catalog') {                    // ← 既存カタログの再描画も安全に
     renderMenuList();
     renderCouponList();
+    renderCouponCodeList();
   }
 }
 
@@ -1169,6 +1382,20 @@ tabsEl.addEventListener('click', (e)=>{
 // 初期表示
 activateTab('billing');
 })(); 
+// Coupon Apply / Clear
+const btnCpnApply = document.getElementById('btnCouponApply');
+const btnCpnClear = document.getElementById('btnCouponClear');
+if (btnCpnApply) {
+  btnCpnApply.onclick = async ()=>{
+    const code = (document.getElementById('couponCodeInput')?.value||'').trim();
+    if(!code){ document.getElementById('couponMsg').textContent = 'Enter code'; return; }
+    await validateCouponAndApply(code);
+  };
+}
+if (btnCpnClear) {
+  btnCpnClear.onclick = clearCoupon;
+}
+
 /* ====== Photos: list / upload / remove ====== */
 
 // 画像一覧
@@ -1213,6 +1440,3 @@ function renderPhotoGrid(items){
 </script>
 </body>
 </html>
-
-
-

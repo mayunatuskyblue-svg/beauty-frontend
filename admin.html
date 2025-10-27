@@ -336,9 +336,9 @@ window.addEventListener('error', e => {
   console.error(e);
   alert('Unexpected error: ' + (e.message || e.error));
 });
-    const FX_RATE = 2.15;
-    function toJPY(lkr){ return Math.round((Number(lkr)||0 / FX_RATE) }
-    function toLKR(jpy){ return Math.round((Number(jpy)||0) * FX_RATE); }
+const FX_RATE = 2.15;
+function toJPY(lkr){ return Math.round((Number(lkr)||0) / FX_RATE); }
+function toLKR(jpy){ return Math.round((Number(jpy)||0) * FX_RATE); }
     // ====== HELPERS ======
     const $ = (q) => document.querySelector(q);
     function fmtLKR(lkr){
@@ -382,7 +382,7 @@ async function copyToClipboard(text){
   S.bookingId = qs.get('bookingId')||'';
   S.customerId = qs.get('customerId')||'';
   S.scheduledJPY = Number(qs.get('scheduled')||0);
-+ S.scheduledLKR = toLKR(S.scheduledJPY);
+  S.scheduledLKR = toLKR(S.scheduledJPY);
   S.tenantName = qs.get('salonName')||'';
   $('#ctx').innerHTML = `Salon <b>${S.tenantName||S.salonId}</b> · Booking <b>${S.bookingId||'-'}</b>`;
   $('#bkId').textContent = S.bookingId||'-';
@@ -1213,5 +1213,6 @@ function renderPhotoGrid(items){
 </script>
 </body>
 </html>
+
 
 

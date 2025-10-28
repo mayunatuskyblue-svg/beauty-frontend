@@ -692,7 +692,17 @@ function renderComposer(){
 
   document.getElementById('app').hidden = false;
 }
-
+(function(){
+  const tabs = document.getElementById('tabs');
+  if(!tabs) return;
+  tabs.addEventListener('click', (e)=>{
+    const btn = e.target.closest('.tab');
+    if(!btn) return;
+    const to = btn.getAttribute('data-tab');
+    document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t===btn));
+    document.querySelectorAll('.tab-pane').forEach(p=> p.hidden = (p.id !== 'pane-'+to));
+  });
+})();
     function currentAmounts(){
       const menu = (S.catalog.menus||[]).find(m=>m.id===S.sel.menuId);
       const base = menu? Number(menu.price||0):0;
@@ -787,14 +797,14 @@ async function startApproval(){
         phone:      phone || '',
         couponCode: (S.coupon?.code || ''),
         discountJPY: (()=>{
-  const prev = S.sel.discountId;
-  S.sel.discountId = '';
-  const before = currentAmounts();
-  S.sel.discountId = prev;
-  const after  = currentAmounts();
-  // disc は LKR の負値 → JPY の正値で送る
-  return toJPY(Math.abs(after.disc||0));
-})(),
+        const prev = S.sel.discountId;
+        S.sel.discountId = '';
+        const before = currentAmounts();
+        S.sel.discountId = prev;
+        const after  = currentAmounts();
+        // disc は LKR の負値 → JPY の正値で送る
+        return toJPY(Math.abs(after.disc||0));
+      })(),
         ttlMin: 60
       }
     })
@@ -1527,5 +1537,6 @@ async function saveSalonMeta(){
 </script>
 </body>
 </html>
+
 
 

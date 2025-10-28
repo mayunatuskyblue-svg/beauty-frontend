@@ -48,7 +48,7 @@
     :root{ --base:#F7F1E1; --ink:#310E10; --stroke:#eadfca; --teal:#246A73; --danger:#74070E; --good:#0B7F5F; }
     *{box-sizing:border-box}
     body{margin:0;background:var(--base);color:#111;font-family:'Zen Kaku Gothic New', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, 'Noto Sans JP', sans-serif}
-    .wrap{max-width:1200px;margin:28px auto;padding:0 20px}
+    .wrap{max-width<script src="https://:1200px;margin:28px auto;padding:0 20px}
     .hrow{display:flex;align-items:center;gap:12px;margin-bottom:12px}
     .back{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;border:1px solid var(--stroke);background:#fff;color:#513;text-decoration:none}
     .h1{font-size:42px;font-family:'Shippori Mincho', serif;font-weight:700;color:#310E10;margin:0 0 8px;letter-spacing:.02em}
@@ -447,70 +447,76 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   };
 </script>
   <script src="https://js.stripe.com/v3"></script>
-  <script>
-  // ==== Smart Pay: Save Card via SetupIntent ====
-(async function(){
-  if(!window.Stripe || !window.BL_PAY || !BL_PAY.pk || !BL_PAY.base) return;
-
-  const stripe = Stripe(BL_PAY.pk);
-  const elements = stripe.elements();
-  const card = elements.create('card', { hidePostalCode:true });
-  card.mount('#bl-card-box');
-
-  const saveBtn = document.getElementById('btnSaveCard');
-  const nameEl  = document.getElementById('uf_name');
-  const mailEl  = document.getElementById('uf_email');
-  const telEl   = document.getElementById('uf_phone');
-
-  async function createSetupIntent(){
-    // ★サーバ側（pay-server）に用意してある「SetupIntent発行」エンドポイントを叩く
-    // 例: POST ${BL_PAY.base}/setup-intent { bookingId }
-    const qs = new URLSearchParams(location.search);
-    const bookingId = qs.get('bookingId') || localStorage.getItem('bl_current_booking_id') || '';
-    const res = await fetch(`${BL_PAY.base}/api/setup-intent`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ bookingId })
-    }).then(r=>r.json());
-    if(!res || !res.clientSecret) throw new Error('SetupIntent failed');
-　  return res.clientSecret;
+ <script>
+// ==== Smart Pay: Save Card via SetupIntent ====
+(function initStripeSmartPay(){
+  function ready(){
+    return !!(window.Stripe && window.BL_PAY && BL_PAY.pk && BL_PAY.base);
   }
+  async function start(){
+    const stripe = Stripe(BL_PAY.pk);
+    const elements = stripe.elements();
+    const card = elements.create('card', { hidePostalCode:true });
+    const mount = document.getElementById('bl-card-box');
+    if (mount) card.mount(mount);
 
-  async function saveCard(){
-    if(!saveBtn) return;
-    saveBtn.disabled = true;
-    try{
-      const clientSecret = await createSetupIntent();
+    const saveBtn = document.getElementById('btnSaveCard');
+    const nameEl  = document.getElementById('uf_name');
+    const mailEl  = document.getElementById('uf_email');
+    const telEl   = document.getElementById('uf_phone');
 
-      const {setupIntent, error} = await stripe.confirmCardSetup(clientSecret, {
-        payment_method: {
-          card,
-          billing_details: {
-            name:  nameEl?.value || '',
-            email: mailEl?.value || '',
-            phone: telEl?.value  || ''
-          }
-        }
-      });
-
-      if(error) throw error;
-      // 成功：PMとCustomerがサーバ側で紐付け済み想定。フロントは記念トークンを保存するだけ。
-      const saved = { customerId: setupIntent?.metadata?.customerId || '', pm: setupIntent?.payment_method };
-      localStorage.setItem('bl_saved_card', JSON.stringify(saved));
-
-      // 見た目のトースト（既存の showToast を利用）
-      if(typeof showToast === 'function') showToast('Card saved', true);
-      // ボタンの文言更新など
-      saveBtn.textContent = 'Saved ✔';
-    }catch(e){
-      if(typeof showToast === 'function') showToast(e?.message || 'Failed to save card', false);
-      saveBtn.disabled = false;
+    async function createSetupIntent(){
+      const qs = new URLSearchParams(location.search);
+      const bookingId = qs.get('bookingId') || localStorage.getItem('bl_current_booking_id') || '';
+      const res = await fetch(`${BL_PAY.base}/api/setup-intent`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ bookingId })
+      }).then(r => r.json());
+      if(!res || !res.clientSecret) throw new Error('SetupIntent failed');
+      return res.clientSecret;
     }
+
+    async function saveCard(){
+      if(!saveBtn) return;
+      saveBtn.disabled = true;
+      try{
+        const clientSecret = await createSetupIntent();
+        const {setupIntent, error} = await stripe.confirmCardSetup(clientSecret, {
+          payment_method: {
+            card,
+            billing_details: {
+              name:  nameEl?.value || '',
+              email: mailEl?.value || '',
+              phone: telEl?.value  || ''
+            }
+          }
+        });
+        if(error) throw error;
+        const saved = { customerId: setupIntent?.metadata?.customerId || '', pm: setupIntent?.payment_method };
+        localStorage.setItem('bl_saved_card', JSON.stringify(saved));
+        (window.showToast||console.log)('Card saved ✔', true);
+        saveBtn.textContent = 'Saved ✔';
+      }catch(e){
+        (window.showToast||console.warn)(e?.message || 'Failed to save card', false);
+        saveBtn.disabled = false;
+      }
+    }
+
+    saveBtn?.addEventListener('click', saveCard);
   }
 
-  if(saveBtn){ saveBtn.addEventListener('click', saveCard); }
+  // Stripeがまだ読み込まれていなければ待つ
+  if (ready()) start();
+  else {
+    const t = setInterval(() => {
+      if (ready()) { clearInterval(t); start(); }
+    }, 80);
+    setTimeout(() => clearInterval(t), 10000);
+  }
 })();
-  </script>
+</script>
+
   
 <!-- decorative background (purely visual) -->
 <div class="bg-radials"></div>

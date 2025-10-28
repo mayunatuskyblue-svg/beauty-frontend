@@ -1418,7 +1418,10 @@ renderCouponList();
     document.body.innerHTML = `<div style="padding:30px">Init failed: ${msg}</div>`;
     return; // ← ここで終了（下のタブ初期化を走らせない）
       }
+        })();   // ← init() の IIFE をちゃんと閉じる
+  </script>
    <!-- tabs 修正版 -->
+  <script>
 const tabsEl = document.getElementById('tabs');
 if (!tabsEl) return;
 
@@ -1564,6 +1567,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 </script>
 </body>
 </html>
+
 
 
 

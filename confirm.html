@@ -463,13 +463,13 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     // 例: POST ${BL_PAY.base}/setup-intent { bookingId }
     const qs = new URLSearchParams(location.search);
     const bookingId = qs.get('bookingId') || localStorage.getItem('bl_current_booking_id') || '';
-    const res = await fetch(`${BL_PAY.base}/setup-intent`, {
+    const res = await fetch(`${BL_PAY.base}/api/setup-intent`, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ bookingId })
     }).then(r=>r.json());
-    if(!res || !res.client_secret) throw new Error('SetupIntent failed');
-    return res.client_secret;
+    if(!res || !res.clientSecret) throw new Error('SetupIntent failed');
+　  return res.clientSecret;
   }
 
   async function saveCard(){
@@ -559,14 +559,6 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
 <!-- ここからは機能系スクリプト（入れ子にしない） -->
 <script>
-/* ====== 環境に応じて API ベースURLを決定 ====== */
-(function(){
-  var prodBase = 'https://beautylk.com';
-  var isFile = location.protocol === 'file:';
-  window.BL_PAY = window.BL_PAY || {};
-  window.BL_PAY.base = 'https://pay-server-uis7.onrender.com';
-})();
-
 // === GAS 接続情報（window -> meta -> URL -> localStorage の順で解決） ===
 const q = new URLSearchParams(location.search);
 
@@ -969,145 +961,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // カード保存成功時にも上書きしておく（下の 2) のイベントを受ける）
   document.addEventListener('bl:card-saved', updateBookingDebounced);
 });
-</script>
-  <script>
-(async function(){
-  const codeEl = document.getElementById('cp_code');
-  const btnEl  = document.getElementById('cp_apply');
-  const msgEl  = document.getElementById('cp_msg');
-  if(!codeEl || !btnEl || !msgEl) return;
-
-  function getSubtotalJPY(){
-    // confirm の小計は「Menu価格 + 既存割引なし」を前提に LKR→JPY 変換
-    // s_price に data-lkr / data-jpy を埋めているので優先して拾う
-    const el = document.getElementById('s_price');
-    const lkr = Number(el?.getAttribute('data-lkr')||0);
-    const jpy = Number(el?.getAttribute('data-jpy')||0);
-    // どちらかあれば使う。どちらもなければ 0
-    return jpy || Math.round(lkr / 2.15); // 管理画面に合わせたFX_RATE=2.15
-  }
-
-  async function apply(){
-    const code = String(codeEl.value||'').trim();
-    if(!code){ msgEl.textContent='Enter code'; return; }
-    msgEl.textContent = 'Validating…';
-
-    const qs = new URLSearchParams(location.search);
-    const email = (document.getElementById('uf_email')?.value||'').trim();
-
-    try{
-      const resp = await fetch(window.API_BASE, {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-          key: window.GAS_KEY,
-          kind: 'coupon.validate',
-          data: {
-            salonId: qs.get('salonId')||'',
-            token:   localStorage.getItem('bl_token')||'',
-            code,
-            email,
-            amountJPY: getSubtotalJPY()
-          }
-        })
-      }).then(r=>r.json());
-
-      if(!resp || !resp.ok){
-        msgEl.textContent = 'Coupon invalid or not applicable.';
-        return;
-      }
-      // ここでは表示だけ更新（最終金額は実請求時に再計算）
-      const offJPY = Number(resp.offJPY||0);
-      if(offJPY>0){
-        msgEl.textContent = `Applied: -¥${offJPY.toLocaleString('en-US')}`;
-      }else{
-        msgEl.textContent = 'Applied ✔';
-      }
-      // 保存（後工程で使いたければ）
-      localStorage.setItem('bl_coupon_code', code);
-    }catch(e){
-      msgEl.textContent = 'Validate failed.';
-    }
-  }
-  btnEl.addEventListener('click', apply);
-})();
-</script>
-
-<script>
-(function(){
-  if(!window.Stripe || !window.BL_PAY) return;
-  const stripe = Stripe(window.BL_PAY.pk);
-  const elements = stripe.elements();
-  const cardElement = elements.create('card');
-  const mountBox = document.getElementById('bl-card-box');
-  if(mountBox) cardElement.mount(mountBox);
-
-  async function fetchSetupIntentSecret(){
-    // ★あなたのサーバーのエンドポイント名に合わせて必要ならパスだけ変更してください
-    const u = new URLSearchParams(location.search);
-    const payload = {
-      bookingId: u.get('bookingId') || localStorage.getItem('bl_current_booking_id') || '',
-      salonId:   u.get('salonId')   || '',
-      customerEmail: (document.getElementById('uf_email')?.value||'').trim()
-    };
-    const res = await fetch(`${BL_PAY.base}/create-setup-intent`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(payload)
-    }).then(r=>r.json());
-    if(!res || !res.clientSecret) throw new Error('No clientSecret from server');
-    return res.clientSecret;
-  }
-
-  async function saveCard(){
-    // 入力バリデーション（名前/メール/電話）
-    const v = (function(){
-      const name  = (document.getElementById('uf_name')?.value||'').trim();
-      const email = (document.getElementById('uf_email')?.value||'').trim();
-      const phone = (document.getElementById('uf_phone')?.value||'').trim();
-      const miss  = [];
-      if(!name)  miss.push('Name');
-      if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) miss.push('Email');
-      if(!phone || String(phone).replace(/[^0-9+]/g,'').length < 6) miss.push('Phone');
-      return {ok: miss.length===0, miss};
-    })();
-    if(!v.ok){
-      (window.showToast||console.warn)(`Missing: ${v.miss.join(', ')}`, false);
-      return;
-    }
-
-    const msgEl = document.getElementById('cardSaveMsg');
-    try{
-      msgEl.textContent = 'Saving…';
-      const clientSecret = await fetchSetupIntentSecret();
-      const result = await stripe.confirmSetup({
-        elements,
-        confirmParams: {
-          // ここで billing_details を送ると後続請求でメタデータ補完に効く
-          payment_method_data: {
-            billing_details: {
-              name:  document.getElementById('uf_name').value.trim(),
-              email: document.getElementById('uf_email').value.trim(),
-              phone: document.getElementById('uf_phone').value.trim()
-            }
-          }
-        },
-        clientSecret
-      });
-      if(result.error){
-        msgEl.textContent = result.error.message || 'Save failed.';
-        (window.showToast||console.warn)(msgEl.textContent, false);
-        return;
-      }
-      msgEl.textContent = 'Card saved ✔';
-      (window.showToast||console.warn)('Card saved successfully.', true);
-    }catch(e){
-      msgEl.textContent = 'Save failed.';
-      (window.showToast||console.warn)((e&&e.message)||'Save failed', false);
-    }
-  }
-
-  document.getElementById('btnSaveCard')?.addEventListener('click', saveCard);
-})();
 </script>
 </body>
 </html>

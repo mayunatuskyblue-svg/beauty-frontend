@@ -19,7 +19,7 @@
                https://pay-server-uis7.onrender.com
                https://api.pay-server-uis7.onrender.com
                https://workers-playground-winter-field-18ec.mayunatu-skyblue.workers.dev;                       
-  frame-src  https://js.stripe.com https://hooks.stripe.com;
+  frame-src  https://js.stripe.com https://hooks.stripe.com https://hooks.stripe.com/three_d_secure;
   base-uri 'self';
   form-action 'self';
   upgrade-insecure-requests;
@@ -298,6 +298,7 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
       if(toastTimer) clearTimeout(toastTimer);
       toastTimer = setTimeout(()=> hideToast(), 3600);
     }
+    window.showToast = showToast;
     window.hideToast = function(){
       toast.classList.remove('show');
       setTimeout(()=>{ toast.style.display='none'; }, 200);
@@ -317,83 +318,6 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
     const { confirm } = BL_I18N.T[BL_I18N.getLang()];
     return confirm.toast_prompt.replace('{fields}', fields.join('・'));
   }
-})();
-// ==== Coupon Apply on Confirm ====
-(function(){
-  const priceEl = document.getElementById('s_price');     // 「Payment : Rs ...」
-  const cpInput = document.getElementById('cp_code');
-  const cpBtn   = document.getElementById('cp_apply');
-  const cpMsg   = document.getElementById('cp_msg');
-
-  // もともとの金額（JPY）をURLから読み取り（reservation → confirm で受け取る想定）
-  function readBaseJPY(){
-    const qs = new URLSearchParams(location.search);
-    return Number(qs.get('base_jpy') || qs.get('price_base_jpy') || qs.get('price_jpy') || 0) || 0;
-  }
-  // 表示を Rs に更新（バックエンドでも最終上書きされるのでフロントは見た目更新でOK）
-  function updatePriceDisplay(discountedJPY){
-    // ここは暫定レートでOK（最終はサーバ／管理画面で確定）
-    const FX = 2.15; // JPY→LKR の簡易係数（管理側と合わせる）
-    const rs = Math.round(discountedJPY * FX);
-    priceEl.textContent = `Payment : Rs ${rs.toLocaleString()}`;
-  }
-
-  async function validateCouponFront(code){
-    try{
-      // GAS の validate エンドポイント（GAS側で 'coupons.validate' を実装済み前提）
-      const qs = new URLSearchParams({ 
-        key: GAS_KEY, 
-        kind: 'coupons.validate', 
-        code: code 
-      });
-      const resp = await fetch(`${GAS_URL}?${qs}`).then(r=>r.json());
-      return resp && resp.ok ? resp : { ok:false, error:'Invalid coupon' };
-    }catch(e){
-      return { ok:false, error:'Network error' };
-    }
-  }
-
-  async function onApply(){
-    const code = (cpInput.value || '').trim();
-    if(!code){ cpMsg.textContent = 'Enter code'; cpMsg.className='warn'; return; }
-
-    cpMsg.textContent = 'Checking...';
-    const baseJPY = readBaseJPY();
-    const res = await validateCouponFront(code);
-
-    if(!res.ok){
-      cpMsg.textContent = 'Invalid or expired coupon.';
-      cpMsg.className = 'warn';
-      // URLパラメータからクーポン関連を除去（誤適用を防ぐ）
-      const u = new URL(location.href);
-      u.searchParams.delete('coupon');
-      u.searchParams.delete('price_jpy');
-      history.replaceState(null,'',u.toString());
-      return;
-    }
-
-    // 返却例の想定：{ ok:true, type:'percent'|'fixed', value:10|500, ... }
-    let discountedJPY = baseJPY;
-    if(res.type === 'percent'){
-      discountedJPY = Math.max(0, Math.round(baseJPY * (100 - Number(res.value||0)) / 100));
-    }else if(res.type === 'fixed'){
-      discountedJPY = Math.max(0, baseJPY - Number(res.value||0));
-    }
-
-    // 見た目更新
-    updatePriceDisplay(discountedJPY);
-
-    // URL に反映（後続ポスト/再読込でも引き継げるように）
-    const u = new URL(location.href);
-    u.searchParams.set('coupon', code);
-    u.searchParams.set('price_jpy', String(discountedJPY));
-    history.replaceState(null,'',u.toString());
-
-    cpMsg.textContent = `Applied: ${code}`;
-    cpMsg.className = 'ok';
-  }
-
-  if(cpBtn){ cpBtn.addEventListener('click', onApply); } // ← ボタン接続（いま未接続のため）
 })();
 </script>
     
@@ -427,38 +351,6 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
     </div>
   </div>
 </div>
-
-
-
-<script>
-// Footer modal (i18n content)
-(function(){
-  if(window.__ftModalInstalledInline) return; window.__ftModalInstalledInline = true;
-  const modal = document.getElementById('ftModal');
-  const body  = document.getElementById('ftBody');
-  const title = document.getElementById('ftTitle');
-  const closeBtn = document.getElementById('ftClose');
-  const backdrop = document.getElementById('ftBackdrop');
-
-  function open(kind){
-    // タイトル：footer.*、本文：legal.*_html から取得（HTML可）
-    const titleKey = `footer.${kind}`;
-    const htmlKey  = `legal.${kind}_html`;
-    title.textContent = L(titleKey);
-    body.innerHTML = L(htmlKey);
-    modal.style.display = 'flex';
-  }
-  function close(){ modal.style.display='none'; }
-
-  document.addEventListener('click', (e)=>{
-    const a = e.target.closest && e.target.closest('a.ft-link');
-    if(a){ e.preventDefault(); open(a.getAttribute('data-ft')); }
-  });
-  closeBtn && closeBtn.addEventListener('click', close);
-  backdrop && backdrop.addEventListener('click', close);
-})();
-</script>
-
 
 <script>
 document.addEventListener('DOMContentLoaded', async ()=>{
@@ -537,14 +429,22 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     // 以降の処理でも使えるよう、必要なら localStorage に保険保存
     try{
       if(dtIso)     localStorage.setItem('reserve_selected', dtIso);
-      if(priceLKR)  document.getElementById('s_price')?.setAttribute('data-lkr', String(priceLKR));
-      if(priceJPY)  document.getElementById('s_price')?.setAttribute('data-jpy', String(priceJPY));
+      const priceEl = document.getElementById('s_price');
+      if(priceLKR)  priceEl?.setAttribute('data-lkr', String(priceLKR));
+      if(priceJPY)  priceEl?.setAttribute('data-jpy', String(priceJPY));
+      // URLにも無く data-* も無い時は、テキストからRsを拾って暫定セット
+      if(priceEl && !priceEl.getAttribute('data-lkr') && !priceEl.getAttribute('data-jpy')){
+        const m = priceEl.textContent.match(/Rs\s*([\d,]+)/i);
+        if(m){ priceEl.setAttribute('data-lkr', m[1].replace(/,/g,'')); }
+      }
     }catch(_){}
   });
 })();
 </script>
 
-  <script src="https://js.stripe.com/v3">// ==== Smart Pay: Save Card via SetupIntent ====
+  <script src="https://js.stripe.com/v3"></script>
+  <script>
+  // ==== Smart Pay: Save Card via SetupIntent ====
 (async function(){
   if(!window.Stripe || !window.BL_PAY || !BL_PAY.pk || !BL_PAY.base) return;
 
@@ -605,7 +505,8 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   }
 
   if(saveBtn){ saveBtn.addEventListener('click', saveCard); }
-})();</script>
+})();
+  </script>
   <script>
   window.BL_PAY = {
     pk: 'pk_live_51S59dFHdBVQmE5fF7PDsSNxtL0mVlv4jOp6TBiC87kmpJEKSfCJZCYOXJzcM2BFiT2nXMLsiOJ3boivba2UNhVjl00gNGKgJS4',
@@ -726,7 +627,7 @@ const res = await fetch(GAS_URL, {
 
   const txt = await res.text();
   let j; try { j = JSON.parse(txt); } catch { j = { ok:false, error:'Invalid JSON from GAS' }; }
-  if (!j.ok) console.warn('GAS booking write failed:', j.error);
+  if (!j.ok) console.warn('GAS booking write failed:', j.error, payload);
   return !!j.ok;
 }
 
@@ -785,7 +686,7 @@ function readBookingFromPage() {
       <div class="notice" style="padding:10px;border:1px solid #eadfca;border-radius:10px">
         Your card has been securely saved. ✅<br>
         <small>（customerId: ${saved.customerId} / pm: ${saved.paymentMethodId}）</small><br>
-        <button id="bl-change" class="btn" style="margin-top:8px">Use a differnt card</button>
+        <button id="bl-change" class="btn" style="margin-top:8px">Use a different card</button>
       </div>`;
     document.getElementById('bl-change').onclick = mountForm;
   }else{
@@ -857,15 +758,13 @@ function readBookingFromPage() {
     if(pct>0) discounted = Math.round(discounted * (100 - pct) / 100);
     if(off>0) discounted = Math.max(0, discounted - off);
 
-    // UI表示更新（LKRは元の換算ロジック通りにしてOK）
-    elPrice.setAttribute('data-jpy', String(discounted));
-    // 表示テキストは “支払い : Rs ...” の形なので置換
-    const lkrNow = document.getElementById('s_price').getAttribute('data-lkr') || '';
-    // LKRの再計算はここでは省略（表示をJPYベースにしたい場合は計算式を持ってくる）
-    document.getElementById('s_price').textContent =
-      ( (document.getElementById('s_price').textContent.split(':')[0] || '支払い') + ' : ' +
-        'Rs ' + (document.getElementById('s_price').getAttribute('data-lkr') || '0') );
-
+    // 割引後金額を保持＆表示を更新
+  elPrice.setAttribute('data-jpy', String(discounted));
+  const FX = 2.15; // 管理側に合わせる
+  const lkr = Math.max(0, Math.round(discounted * FX));
+  elPrice.setAttribute('data-lkr', String(lkr));
+  const label = (elPrice.textContent.split(':')[0] || 'Payment');
+  elPrice.textContent = `${label} : Rs ${lkr.toLocaleString('en-US')}`;
     // URL にも `coupon` と `price_jpy` を反映（postBookingToSheet は URL から読むため）
     try{
       const u = new URL(location.href);
@@ -996,7 +895,7 @@ document.dispatchEvent(new CustomEvent('bl:card-saved', { detail: payload }));
         }
       }catch(e){
         console.error(e);
-        msg('Failed to save.：' + (e.message||e));
+        msg('Failed to save：' + (e.message||e));
       }
     });
   }
@@ -1102,7 +1001,7 @@ document.addEventListener('DOMContentLoaded', () => {
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify({
           key: window.GAS_KEY,
-          kind: 'coupons.validate',
+          kind: 'coupon.validate',
           data: {
             salonId: qs.get('salonId')||'',
             token:   localStorage.getItem('bl_token')||'',

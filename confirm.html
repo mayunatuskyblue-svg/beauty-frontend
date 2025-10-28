@@ -239,7 +239,7 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
 <!-- placeholders -->
 <input id="uf_name"  class="input" data-i18n-ph="ui.name"  placeholder="Name">
 <input id="uf_email" class="input" data-i18n-ph="ui.email" placeholder="Email">
-<input id="uf_phone" class="input" data-i18n-ph="ui.phone" placeholder="Phone">
+<input id="uf_phone" class="input" data-i18n-ph="ui.phone" placeholder="Phone (e.g., +94 7X XXX XXXX)" type="tel" required pattern="[\+0-9 ][0-9 \-]{6,}"/>
 <textarea id="uf_note" class="input" data-i18n-ph="ui.notes" placeholder="Notes (optional)"></textarea>
 
 <div class="sec-title">Coupon</div>
@@ -564,7 +564,7 @@ const payload = {
     whatsappToCustomer, whatsappToSalon,
     status,
     couponCode,            // ← 追加
-    discountJPY: discountedJPY          // ← 追加（サーバ側で再計算＆上書きもされる）
+    discountedJPY: discountedJPY          // ← 追加（サーバ側で再計算＆上書きもされる）
   }
 };
 
@@ -855,13 +855,22 @@ document.dispatchEvent(new CustomEvent('bl:card-saved', { detail: payload }));
   }
 })();
 
-// いまのURL/LSに加えて、直近のフォーム入力をマージして booking を作る
 function composeBooking(overrides = {}) {
   const b = readBookingFromPage();
-  const name  = (document.getElementById('uf_name')?.value  || '').trim();
+  const name  = (document.getElementById('uf_name') ?.value || '').trim();
   const email = (document.getElementById('uf_email')?.value || '').trim();
+  const phone = (document.getElementById('uf_phone')?.value || '').trim();
+
   if (name)  b.name  = name;
   if (email) b.email = email;
+  if (phone) b.phone = phone;
+
+  // WhatsApp先が未指定なら、電話を使って自動補完（先頭に+が無ければそのまま）
+  if (!b.whatsappToCustomer && phone) {
+    const p = phone.replace(/[^\d+]/g,''); // 数字と+だけ残す
+    b.whatsappToCustomer = p.startsWith('+') ? p.slice(1) : p; // Gas側では“81…”のような数字列でもOK
+  }
+
   Object.assign(b, overrides);
   return b;
 }

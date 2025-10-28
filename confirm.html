@@ -450,49 +450,99 @@ document.addEventListener('DOMContentLoaded', async ()=>{
  <script>
 // ==== Smart Pay: Save Card via SetupIntent ====
 (function initStripeSmartPay(){
-  function ready(){
-    return !!(window.Stripe && window.BL_PAY && BL_PAY.pk && BL_PAY.base);
+  function ready(){ return !!(window.Stripe && window.BL_PAY && BL_PAY.pk && BL_PAY.base); }
+
+  // 安全にシークレットをマスクしてログ出し
+  function mask(str){
+    try{
+      return String(str).replace(/("clientSecret"\s*:\s*")([^"]+)(")/g,(m,p1,p2,p3)=>{
+        return p1 + p2.replace(/.(?=.{6}$)/g,'*') + p3;
+      }).slice(0,600);
+    }catch(_){ return '***masked***'; }
   }
+
   async function start(){
     const stripe = Stripe(BL_PAY.pk);
     const elements = stripe.elements();
     const card = elements.create('card', { hidePostalCode:true });
     const mount = document.getElementById('bl-card-box');
-    if (mount) card.mount(mount);
+    if(mount) card.mount(mount);
 
     const saveBtn = document.getElementById('btnSaveCard');
     const nameEl  = document.getElementById('uf_name');
     const mailEl  = document.getElementById('uf_email');
     const telEl   = document.getElementById('uf_phone');
 
+    // --- サーバAPI呼び出し（/api/setup-intent → /setup-intent → /create-setup-intent の順に試す）
     async function createSetupIntent(){
       const qs = new URLSearchParams(location.search);
       const bookingId = qs.get('bookingId') || localStorage.getItem('bl_current_booking_id') || '';
-      const res = await fetch(`${BL_PAY.base}/api/setup-intent`, {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ bookingId })
-      }).then(r => r.json());
-      if(!res || !res.clientSecret) throw new Error('SetupIntent failed');
-      return res.clientSecret;
+      const salonId   = qs.get('salonId') || qs.get('salon') || '';
+      const email     = (mailEl?.value||'').trim();
+      const name      = (nameEl?.value||'').trim();
+
+      const base = (BL_PAY.base||'').replace(/\/$/,'');
+      const payload = { bookingId, salonId, email, name };
+
+      const endpoints = [
+        `${base}/api/setup-intent`,
+        `${base}/setup-intent`,
+        `${base}/create-setup-intent`
+      ];
+
+      let lastErr = 'No endpoint responded';
+      for(const url of endpoints){
+        try{
+          const res = await fetch(url, {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify(payload)
+          });
+          const raw = await res.text();
+          let j = null; try{ j = JSON.parse(raw); }catch(e){
+            console.error('setup-intent non-JSON from', url, mask(raw));
+            continue;
+          }
+          if(res.ok && (j.clientSecret || j.client_secret)){
+            return j.clientSecret || j.client_secret;
+          }
+          console.error('setup-intent bad response', url, mask(JSON.stringify(j)));
+          lastErr = j.error || `Bad response from ${url} (${res.status})`;
+        }catch(e){
+          console.error('setup-intent fetch error', url, e);
+          lastErr = e.message||String(e);
+        }
+      }
+      throw new Error(lastErr);
     }
 
     async function saveCard(){
       if(!saveBtn) return;
+
+      // 入力バリデーション（サーバがemail/name必須の想定）
+      const name  = (nameEl?.value||'').trim();
+      const email = (mailEl?.value||'').trim();
+      const phone = (telEl?.value ||'').trim();
+      const miss = [];
+      if(!name) miss.push('Name');
+      if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) miss.push('Email');
+      if(!phone || String(phone).replace(/[^0-9+]/g,'').length < 6) miss.push('Phone'); // 画面の仕様に合わせる
+      if(miss.length){
+        (window.showToast||alert)(`Missing: ${miss.join(', ')}`, false);
+        return;
+      }
+
       saveBtn.disabled = true;
       try{
         const clientSecret = await createSetupIntent();
         const {setupIntent, error} = await stripe.confirmCardSetup(clientSecret, {
           payment_method: {
             card,
-            billing_details: {
-              name:  nameEl?.value || '',
-              email: mailEl?.value || '',
-              phone: telEl?.value  || ''
-            }
+            billing_details: { name, email, phone }
           }
         });
         if(error) throw error;
+        // 保存（必要ならメタデータが入っている）
         const saved = { customerId: setupIntent?.metadata?.customerId || '', pm: setupIntent?.payment_method };
         localStorage.setItem('bl_saved_card', JSON.stringify(saved));
         (window.showToast||console.log)('Card saved ✔', true);
@@ -506,17 +556,14 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     saveBtn?.addEventListener('click', saveCard);
   }
 
-  // Stripeがまだ読み込まれていなければ待つ
-  if (ready()) start();
-  else {
-    const t = setInterval(() => {
-      if (ready()) { clearInterval(t); start(); }
-    }, 80);
-    setTimeout(() => clearInterval(t), 10000);
+  // Stripeのロード待ち（最大10秒）
+  if(ready()) start();
+  else{
+    const t = setInterval(()=>{ if(ready()){ clearInterval(t); start(); } }, 80);
+    setTimeout(()=> clearInterval(t), 10000);
   }
 })();
 </script>
-
   
 <!-- decorative background (purely visual) -->
 <div class="bg-radials"></div>

@@ -1422,122 +1422,53 @@ renderCouponList();
   </script>
    <!-- tabs 修正版 -->
   <script>
-const tabsEl = document.getElementById('tabs');
-if (!tabsEl) return;
+(() => {
+  const tabsEl = document.getElementById('tabs');
+  if (!tabsEl) return;  // ← IIFE の中なので合法
 
-const panes = {
-  billing:  document.getElementById('pane-billing'),
-  schedule: document.getElementById('pane-schedule'),
-  catalog:  document.getElementById('pane-catalog'),
-  profile:  document.getElementById('pane-profile'),
-};
-
-async function activateTab(name){
-  // 見た目
-  tabsEl.querySelectorAll('.tab').forEach(b=>{
-    b.classList.toggle('active', b.dataset.tab === name);
-  });
-  // パネル切替
-  Object.entries(panes).forEach(([key, el])=>{
-    el.hidden = (key !== name);
-  });
-
-  // タブ固有の初期化
-  if (name === 'profile') {
-    // 画像一覧の初回ロード
-    try { await loadPhotos(); } catch(_){}
-    // エリア/カテゴリの反映
-    if (typeof loadSalonMeta === 'function') {
-      try { await loadSalonMeta(); } catch(_){}
-    }
-    const btn = document.getElementById('btnMetaSave');
-    if (btn && !btn._wired) { btn.onclick = saveSalonMeta; btn._wired = true; }
-  }
-
-  if (name === 'catalog') {
-    renderMenuList();
-    renderCouponList();
-    renderCouponCodeList();
-  }
-}
-
-tabsEl.addEventListener('click', (e)=>{
-  const btn = e.target.closest('.tab');
-  if (!btn) return;
-  activateTab(btn.dataset.tab);
-});
-    
-// 初期表示
-activateTab('billing');
-})(); 
-// Coupon Apply / Clear
-const btnCpnApply = document.getElementById('btnCouponApply');
-const btnCpnClear = document.getElementById('btnCouponClear');
-if (btnCpnApply) {
-  btnCpnApply.onclick = async ()=>{
-    const code = (document.getElementById('couponCodeInput')?.value||'').trim();
-    if(!code){ document.getElementById('couponMsg').textContent = 'Enter code'; return; }
-    await validateCouponAndApply(code);
+  const panes = {
+    billing:  document.getElementById('pane-billing'),
+    schedule: document.getElementById('pane-schedule'),
+    catalog:  document.getElementById('pane-catalog'),
+    profile:  document.getElementById('pane-profile'),
   };
-}
-if (btnCpnClear) {
-  btnCpnClear.onclick = clearCoupon;
-}
 
-    // --- Salon Meta: load & save ---
-async function loadSalonMeta(){
-  try{
-    const q = new URLSearchParams({ kind:'salon.meta.get', key:GAS_KEY, salonId:S.salonId, token:S.token });
-    const resp = await fetch(`${API_BASE}?${q}`).then(r=>r.json());
-    if(resp && resp.ok){
-      S.meta.area = resp.area || '';
-      S.meta.categories = Array.isArray(resp.categories) ? resp.categories : String(resp.categories||'').split(',').map(s=>s.trim()).filter(Boolean);
+  async function activateTab(name){
+    // 見た目
+    tabsEl.querySelectorAll('.tab').forEach(b=>{
+      b.classList.toggle('active', b.dataset.tab === name);
+    });
+    // パネル切替
+    Object.entries(panes).forEach(([key, el])=>{
+      el.hidden = (key !== name);
+    });
+
+    if (name === 'profile') {
+      try { await loadPhotos(); } catch(_) {}
+      if (typeof loadSalonMeta === 'function') {
+        try { await loadSalonMeta(); } catch(_) {}
+      }
+      const btn = document.getElementById('btnMetaSave');
+      if (btn && !btn._wired) { btn.onclick = saveSalonMeta; btn._wired = true; }
     }
-    // UI 反映
-    const areaSel = document.getElementById('metaArea');
-    const catInp  = document.getElementById('metaCategories');
-    if(areaSel) areaSel.value = S.meta.area || '';
-    if(catInp)  catInp.value  = (S.meta.categories||[]).join(', ');
-  }catch(e){
-    console.warn('loadSalonMeta error', e);
-  }
-}
-
-async function saveSalonMeta(){
-  const areaSel = document.getElementById('metaArea');
-  const catInp  = document.getElementById('metaCategories');
-  const msg     = document.getElementById('metaMsg');
-
-  const area = String(areaSel?.value||'').trim();
-  const categories = String(catInp?.value||'')
-    .split(',')
-    .map(s=>s.trim())
-    .filter(Boolean);
-
-  msg.textContent = 'Saving…';
-  try{
-    const resp = await fetch(API_BASE, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        key: GAS_KEY,
-        kind: 'salon.meta.save',
-        data: { salonId: S.salonId, token:S.token, area, categories }
-      })
-    }).then(r=>r.json());
-
-    if(resp && resp.ok){
-      S.meta.area = area;
-      S.meta.categories = categories;
-      msg.textContent = 'Saved ✔';
-    }else{
-      msg.textContent = 'Save failed';
+    if (name === 'catalog') {
+      renderMenuList();
+      renderCouponList();
+      renderCouponCodeList && renderCouponCodeList();
     }
-  }catch(e){
-    msg.textContent = 'Save error';
   }
-}
-  </script>
+
+  tabsEl.addEventListener('click', (e)=>{
+    const btn = e.target.closest('.tab');
+    if (!btn) return;
+    activateTab(btn.dataset.tab || 'billing');
+  });
+
+  // 初期タブ（必要に応じて変更）
+  activateTab('billing');
+})();
+</script>
+
 <script>
 // ==== Wire coupon buttons & do initial loads ====
 document.addEventListener('DOMContentLoaded', async ()=>{
@@ -1568,6 +1499,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 </script>
 </body>
 </html>
+
 
 
 

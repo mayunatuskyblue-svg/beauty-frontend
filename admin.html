@@ -829,6 +829,7 @@ url += `&customerEmail=${encodeURIComponent(qs.get('customerEmail')||'')}`;
 url += `&customerName=${encodeURIComponent(qs.get('customerName')||'')}`;
 url += `&salonId=${encodeURIComponent(S.salonId||'')}`;
 url += `&bookingId=${encodeURIComponent(S.bookingId||'')}`;
+url += `&token=${encodeURIComponent(S.token||'')}`;
 
 // URL安全化
 const safeURL = encodeURI(url);
@@ -1571,6 +1572,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 </script>
 </body>
 </html>
+
 
 
 

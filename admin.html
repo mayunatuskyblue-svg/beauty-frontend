@@ -589,12 +589,18 @@ async function fetchCatalog(){
     // 1) メニュー取得
     const q1 = new URLSearchParams({ kind:'menus.list', key:GAS_KEY, salonId:S.salonId, token:S.token });
     const m = await fetch(`${API_BASE}?${q1}`).then(r=>r.json());
-    const menus = (m.ok ? (m.items||[]) : []).map(x => ({
-    // まず x.id を優先。なければ既存互換の候補にフォールバック
-    id: String(x.id || x.menu_id || x.name_en || x.name_ja || 'MENU'),
-    name: x.name_en || x.name_ja || x.desc || 'Menu',
-    price: toLKR(Number(x.price_jpy || x.price || 0)) 
-  }));
+    const menus = (m.ok ? (m.items||[]) : []).map(x => {
+  const id   = String(x.id || x.menu_id || x.name_en || x.name_ja || 'MENU');
+  const name = x.name_en || x.name_ja || x.desc || 'Menu';
+
+  // LKRとJPYどちらで保存されていても正しくLKRにする
+  const priceLKR = Number(x.price_lkr ?? 0);
+  const priceJPY = Number(x.price_jpy ?? x.price ?? 0);
+  const price    = priceLKR > 0 ? priceLKR : toLKR(priceJPY);
+
+  return { id, name, price };
+});
+
 
     // 2) クーポン（＝Discount）取得
     const q2 = new URLSearchParams({ kind:'coupons.list', key:GAS_KEY, salonId:S.salonId, token:S.token });
@@ -1563,6 +1569,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 </script>
 </body>
 </html>
+
 
 
 

@@ -441,7 +441,12 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   });
 })();
 </script>
-
+<script>
+  window.BL_PAY = {
+    pk: 'pk_live_51S59dFHdBVQmE5fF7PDsSNxtL0mVlv4jOp6TBiC87kmpJEKSfCJZCYOXJzcM2BFiT2nXMLsiOJ3boivba2UNhVjl00gNGKgJS4',
+    base: 'https://pay-server-uis7.onrender.com' // まだDNS未設定なら Render の onrender URL
+  };
+</script>
   <script src="https://js.stripe.com/v3"></script>
   <script>
   // ==== Smart Pay: Save Card via SetupIntent ====
@@ -507,12 +512,6 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   if(saveBtn){ saveBtn.addEventListener('click', saveCard); }
 })();
   </script>
-  <script>
-  window.BL_PAY = {
-    pk: 'pk_live_51S59dFHdBVQmE5fF7PDsSNxtL0mVlv4jOp6TBiC87kmpJEKSfCJZCYOXJzcM2BFiT2nXMLsiOJ3boivba2UNhVjl00gNGKgJS4',
-    base: 'https://pay-server-uis7.onrender.com' // まだDNS未設定なら Render の onrender URL
-  };
-</script>
   
 <!-- decorative background (purely visual) -->
 <div class="bg-radials"></div>

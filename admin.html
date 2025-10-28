@@ -1349,7 +1349,69 @@ async function removePhoto(id){
   msg.textContent = j.ok ? 'Removed' : ('Error: '+(j.error||'failed'));
   if (j.ok) await loadPhotos();
 }
+// ====== Salon Meta (Area & Categories) ======
+async function loadSalonMeta(){
+  try{
+    // 取得
+    const q = new URLSearchParams({
+      kind: 'salonMeta.get',   // ← GAS 側の実装に合わせて 'meta.get' 等へ変更可
+      key:  GAS_KEY,
+      salonId: S.salonId,
+      token: S.token
+    });
+    const j = await fetch(`${API_BASE}?${q}`).then(r=>r.json());
+    if (!j.ok) { (document.getElementById('metaMsg')||{}).textContent=''; return; }
 
+    // 状態とUIへ反映
+    const meta = j.meta || {};
+    S.meta.area = meta.area || '';
+    S.meta.categories = Array.isArray(meta.categories) ? meta.categories : [];
+
+    const areaEl = document.getElementById('metaArea');
+    const catsEl = document.getElementById('metaCategories');
+    if (areaEl) areaEl.value = S.meta.area || '';
+    if (catsEl) catsEl.value = (S.meta.categories||[]).join(', ');
+  }catch(e){
+    console.warn('loadSalonMeta failed', e);
+    (document.getElementById('metaMsg')||{}).textContent='';
+  }
+}
+
+async function saveSalonMeta(){
+  const msgEl = document.getElementById('metaMsg');
+  try{
+    const area = (document.getElementById('metaArea')||{}).value?.trim() || '';
+    const cats = (document.getElementById('metaCategories')||{}).value || '';
+    const categories = cats.split(/[,\s]+/).map(s=>s.trim()).filter(Boolean);
+
+    msgEl.textContent = 'Saving…';
+
+    const j = await fetch(API_BASE, {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({
+        key:  GAS_KEY,
+        kind: 'salonMeta.set',   // ← GAS 側の実装に合わせて 'meta.set' 等へ変更可
+        data: { salonId: S.salonId, token: S.token, area, categories }
+      })
+    }).then(r=>r.json());
+
+    if (j.ok){
+      S.meta.area = area;
+      S.meta.categories = categories;
+      msgEl.textContent = 'Saved';
+      msgEl.style.color = '#0b684e';
+      setTimeout(()=>{ msgEl.textContent=''; msgEl.style.color=''; }, 1800);
+    }else{
+      msgEl.textContent = 'Error: ' + (j.error||'failed');
+      msgEl.style.color = '#7a2e13';
+    }
+  }catch(e){
+    msgEl.textContent = 'Request failed';
+    msgEl.style.color = '#7a2e13';
+    console.error(e);
+  }
+}
         // ====== INIT ======
     (async function init(){
       try{
@@ -1501,6 +1563,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 </script>
 </body>
 </html>
+
 
 
 

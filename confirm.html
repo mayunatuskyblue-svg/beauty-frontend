@@ -318,6 +318,83 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
     return confirm.toast_prompt.replace('{fields}', fields.join('・'));
   }
 })();
+// ==== Coupon Apply on Confirm ====
+(function(){
+  const priceEl = document.getElementById('s_price');     // 「Payment : Rs ...」
+  const cpInput = document.getElementById('cp_code');
+  const cpBtn   = document.getElementById('cp_apply');
+  const cpMsg   = document.getElementById('cp_msg');
+
+  // もともとの金額（JPY）をURLから読み取り（reservation → confirm で受け取る想定）
+  function readBaseJPY(){
+    const qs = new URLSearchParams(location.search);
+    return Number(qs.get('base_jpy') || qs.get('price_base_jpy') || qs.get('price_jpy') || 0) || 0;
+  }
+  // 表示を Rs に更新（バックエンドでも最終上書きされるのでフロントは見た目更新でOK）
+  function updatePriceDisplay(discountedJPY){
+    // ここは暫定レートでOK（最終はサーバ／管理画面で確定）
+    const FX = 2.15; // JPY→LKR の簡易係数（管理側と合わせる）
+    const rs = Math.round(discountedJPY * FX);
+    priceEl.textContent = `Payment : Rs ${rs.toLocaleString()}`;
+  }
+
+  async function validateCouponFront(code){
+    try{
+      // GAS の validate エンドポイント（GAS側で 'coupons.validate' を実装済み前提）
+      const qs = new URLSearchParams({ 
+        key: GAS_KEY, 
+        kind: 'coupons.validate', 
+        code: code 
+      });
+      const resp = await fetch(`${GAS_URL}?${qs}`).then(r=>r.json());
+      return resp && resp.ok ? resp : { ok:false, error:'Invalid coupon' };
+    }catch(e){
+      return { ok:false, error:'Network error' };
+    }
+  }
+
+  async function onApply(){
+    const code = (cpInput.value || '').trim();
+    if(!code){ cpMsg.textContent = 'Enter code'; cpMsg.className='warn'; return; }
+
+    cpMsg.textContent = 'Checking...';
+    const baseJPY = readBaseJPY();
+    const res = await validateCouponFront(code);
+
+    if(!res.ok){
+      cpMsg.textContent = 'Invalid or expired coupon.';
+      cpMsg.className = 'warn';
+      // URLパラメータからクーポン関連を除去（誤適用を防ぐ）
+      const u = new URL(location.href);
+      u.searchParams.delete('coupon');
+      u.searchParams.delete('price_jpy');
+      history.replaceState(null,'',u.toString());
+      return;
+    }
+
+    // 返却例の想定：{ ok:true, type:'percent'|'fixed', value:10|500, ... }
+    let discountedJPY = baseJPY;
+    if(res.type === 'percent'){
+      discountedJPY = Math.max(0, Math.round(baseJPY * (100 - Number(res.value||0)) / 100));
+    }else if(res.type === 'fixed'){
+      discountedJPY = Math.max(0, baseJPY - Number(res.value||0));
+    }
+
+    // 見た目更新
+    updatePriceDisplay(discountedJPY);
+
+    // URL に反映（後続ポスト/再読込でも引き継げるように）
+    const u = new URL(location.href);
+    u.searchParams.set('coupon', code);
+    u.searchParams.set('price_jpy', String(discountedJPY));
+    history.replaceState(null,'',u.toString());
+
+    cpMsg.textContent = `Applied: ${code}`;
+    cpMsg.className = 'ok';
+  }
+
+  if(cpBtn){ cpBtn.addEventListener('click', onApply); } // ← ボタン接続（いま未接続のため）
+})();
 </script>
     
 <footer id="ft" style="margin:18px 0 40px;text-align:center;color:#6b5e55;font-size:12px">
@@ -467,7 +544,68 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 })();
 </script>
 
-  <script src="https://js.stripe.com/v3"></script>
+  <script src="https://js.stripe.com/v3">// ==== Smart Pay: Save Card via SetupIntent ====
+(async function(){
+  if(!window.Stripe || !window.BL_PAY || !BL_PAY.pk || !BL_PAY.base) return;
+
+  const stripe = Stripe(BL_PAY.pk);
+  const elements = stripe.elements();
+  const card = elements.create('card', { hidePostalCode:true });
+  card.mount('#bl-card-box');
+
+  const saveBtn = document.getElementById('btnSaveCard');
+  const nameEl  = document.getElementById('uf_name');
+  const mailEl  = document.getElementById('uf_email');
+  const telEl   = document.getElementById('uf_phone');
+
+  async function createSetupIntent(){
+    // ★サーバ側（pay-server）に用意してある「SetupIntent発行」エンドポイントを叩く
+    // 例: POST ${BL_PAY.base}/setup-intent { bookingId }
+    const qs = new URLSearchParams(location.search);
+    const bookingId = qs.get('bookingId') || localStorage.getItem('bl_current_booking_id') || '';
+    const res = await fetch(`${BL_PAY.base}/setup-intent`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ bookingId })
+    }).then(r=>r.json());
+    if(!res || !res.client_secret) throw new Error('SetupIntent failed');
+    return res.client_secret;
+  }
+
+  async function saveCard(){
+    if(!saveBtn) return;
+    saveBtn.disabled = true;
+    try{
+      const clientSecret = await createSetupIntent();
+
+      const {setupIntent, error} = await stripe.confirmCardSetup(clientSecret, {
+        payment_method: {
+          card,
+          billing_details: {
+            name:  nameEl?.value || '',
+            email: mailEl?.value || '',
+            phone: telEl?.value  || ''
+          }
+        }
+      });
+
+      if(error) throw error;
+      // 成功：PMとCustomerがサーバ側で紐付け済み想定。フロントは記念トークンを保存するだけ。
+      const saved = { customerId: setupIntent?.metadata?.customerId || '', pm: setupIntent?.payment_method };
+      localStorage.setItem('bl_saved_card', JSON.stringify(saved));
+
+      // 見た目のトースト（既存の showToast を利用）
+      if(typeof showToast === 'function') showToast('Card saved', true);
+      // ボタンの文言更新など
+      saveBtn.textContent = 'Saved ✔';
+    }catch(e){
+      if(typeof showToast === 'function') showToast(e?.message || 'Failed to save card', false);
+      saveBtn.disabled = false;
+    }
+  }
+
+  if(saveBtn){ saveBtn.addEventListener('click', saveCard); }
+})();</script>
   <script>
   window.BL_PAY = {
     pk: 'pk_live_51S59dFHdBVQmE5fF7PDsSNxtL0mVlv4jOp6TBiC87kmpJEKSfCJZCYOXJzcM2BFiT2nXMLsiOJ3boivba2UNhVjl00gNGKgJS4',

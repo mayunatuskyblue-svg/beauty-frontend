@@ -589,17 +589,19 @@ async function fetchCatalog(){
     // 1) メニュー取得
     const q1 = new URLSearchParams({ kind:'menus.list', key:GAS_KEY, salonId:S.salonId, token:S.token });
     const m = await fetch(`${API_BASE}?${q1}`).then(r=>r.json());
-    const menus = (m.ok ? (m.items||[]) : []).map(x => {
+    // 旧：price を toLKR(Number(x.price_jpy || x.price || 0)) としていた箇所を修正
+const menus = (m.ok ? (m.items||[]) : []).map(x => {
   const id   = String(x.id || x.menu_id || x.name_en || x.name_ja || 'MENU');
   const name = x.name_en || x.name_ja || x.desc || 'Menu';
 
-  // LKRとJPYどちらで保存されていても正しくLKRにする
+  // LKR で保存されていればそのまま、JPY なら LKR に変換
   const priceLKR = Number(x.price_lkr ?? 0);
   const priceJPY = Number(x.price_jpy ?? x.price ?? 0);
   const price    = priceLKR > 0 ? priceLKR : toLKR(priceJPY);
 
   return { id, name, price };
 });
+
 
 
     // 2) クーポン（＝Discount）取得
@@ -1569,6 +1571,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 </script>
 </body>
 </html>
+
 
 
 

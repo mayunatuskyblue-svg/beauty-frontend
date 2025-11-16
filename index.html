@@ -1371,9 +1371,22 @@ function normalizeForUI(raw, L){
   const points = (L==='en' ? pointsEn : pointsJa);
   const tags   = (L==='en' ? tagsEn   : tagsJa);
 
+  // ★ ここを追加：表示用の店名を決める
+  //   1. salons シート由来の salonId（または salon_name_xx）を優先
+  //   2. 無ければ従来どおり name_en / name_ja を使う
+  const displayNameFromSalon =
+    raw.salonId ||
+    (L==='en'
+      ? (raw.salon_name_en || raw.salon_name_ja)
+      : (raw.salon_name_ja || raw.salon_name_en));
+
+  const displayName =
+    displayNameFromSalon ||
+    (L==='en' ? (raw.name_en||raw.name_ja) : (raw.name_ja||raw.name_en));
+
   return {
     id: raw.id,
-    name: (L==='en' ? (raw.name_en||raw.name_ja) : (raw.name_ja||raw.name_en)),
+    name: displayName,                       // ★ ここだけ差し替え
     type: (L==='en' ? (raw.type_en||raw.type_ja) : (raw.type_ja||raw.type_en)),
     place:(L==='en' ? (raw.place_en||raw.place_ja): (raw.place_ja||raw.place_en)),
     typeJa:(raw.type_ja||raw.type_en||''),
@@ -1381,10 +1394,10 @@ function normalizeForUI(raw, L){
     lat: raw.lat, lng: raw.lng,
     price: raw.price_jpy,
     rating: raw.rating || 0,
-    tags,            // 画面用
-    tagsEn,          // 言語別を持たせておく
+    tags,
+    tagsEn,
     tagsJa,
-    points,          // 画面用
+    points,
     pointsEn,
     pointsJa,
     photos: Array.isArray(raw.photos) ? raw.photos : []
@@ -1592,10 +1605,24 @@ const AREA_MAP = {
   'コロンボ':'Colombo','ゴール':'Galle','キャンディ':'Kandy','ヌワラエリヤ':'Nuwara Eliya',
   'ジャフナ':'Jaffna','アルガンベイ':'Arugam Bay','ミリッサ':'Mirissa','ウナワトゥナ':'Unawatuna','トリンコマリー':'Trincomalee'
 };
-const CATS_JA = ['ヘア','ネイル','まつ毛','アーユルヴェーダ','マッサージ/スパ'];
-const CAT_MAP = {
-  'ヘア':'Hair','ネイル':'Nails','まつ毛':'Lashes','アーユルヴェーダ':'Ayurveda','マッサージ/スパ':'Massage/Spa','ヘナ':'henna','ブライダルメイク':'Bridal Makeup'
-};
+const CATS_JA = [
+  'ヘア',
+  'ネイル',
+  'まつ毛',
+  'アーユルヴェーダ',
+  'マッサージ/スパ',
+  'ブライダルメイク',   
+  'ヘナタトゥー'        
+];
+    const CAT_MAP = {
+  'ヘア':'Hair',
+  'ネイル':'Nails',
+  'まつ毛':'Lashes',
+  'アーユルヴェーダ':'Ayurveda',
+  'マッサージ/スパ':'Massage/Spa',
+  'ブライダルメイク':'Bridal Makeup',   
+  'ヘナタトゥー':'Henna Tattoo'         
+    };
 function fillSelect(sel, list, placeholderJa, placeholderEn){
   if(!sel) return;
   const L = getLang();

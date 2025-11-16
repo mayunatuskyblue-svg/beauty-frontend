@@ -1594,7 +1594,7 @@ const AREA_MAP = {
 };
 const CATS_JA = ['ヘア','ネイル','まつ毛','アーユルヴェーダ','マッサージ/スパ'];
 const CAT_MAP = {
-  'ヘア':'Hair','ネイル':'Nails','まつ毛':'Lashes','アーユルヴェーダ':'Ayurveda','マッサージ/スパ':'Massage/Spa'
+  'ヘア':'Hair','ネイル':'Nails','まつ毛':'Lashes','アーユルヴェーダ':'Ayurveda','マッサージ/スパ':'Massage/Spa','ヘナ':'henna','ブライダルメイク':'Bridal Makeup'
 };
 function fillSelect(sel, list, placeholderJa, placeholderEn){
   if(!sel) return;
@@ -1673,6 +1673,8 @@ function showSkeletons(n=6){
     'マッサージ/スパ':'Massage/Spa',
     'ヘア':'Hair',
     'まつ毛':'Lashes',
+    'ヘナタトゥー':'Henna',
+    'ブライダルメイク':'Bridal Makeup',
     'ネイル':'Nails'
   };
 
@@ -1729,7 +1731,8 @@ function showSkeletons(n=6){
   const LABEL_EN = {
     'アーユルヴェーダ':'Ayurveda',
     'マッサージ/スパ':'Massage/Spa',
-    'ヘア':'Hair','まつ毛':'Lashes','ネイル':'Nails'
+    'ヘア':'Hair','まつ毛':'Lashes','ヘナタトゥー':'Henna',
+    'ブライダルメイク':'Bridal Makeup','ネイル':'Nails'
   };
   const getLang = ()=> (localStorage.getItem('bl_lang')||'auto')==='ja' ? 'ja'
                           : ((navigator.language||'en').toLowerCase().startsWith('ja')?'ja':'en');

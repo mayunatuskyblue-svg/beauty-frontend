@@ -1093,9 +1093,9 @@ btn.onclick=async()=>{
   document.addEventListener('DOMContentLoaded', async ()=>{
     setupBack();
 
-      // 予約ボタン：
+        // 予約ボタン：
   // ・メニュー未選択ならアラート
-  // ・選択済みなら confirm.html へ遷移し、クエリにメニュー情報を付ける
+  // ・選択済みなら confirm.html へ遷移し、今あるクエリ + メニュー情報を全部渡す
   const btnBook = document.getElementById('btnBook');
   if (btnBook) {
     btnBook.addEventListener('click', (e) => {
@@ -1107,8 +1107,11 @@ btn.onclick=async()=>{
         return;
       }
 
-      // サロンIDは URL から拾う
-      const qs      = new URLSearchParams(location.search);
+      // 今のURL & クエリ
+      const currentUrl = new URL(location.href);
+      const qs = currentUrl.searchParams;
+
+      // サロンIDは id / salonId どちらでも受ける
       const salonId = qs.get('salonId') || qs.get('id') || '';
 
       // サロン名はタイトルから取得
@@ -1117,15 +1120,21 @@ btn.onclick=async()=>{
 
       // confirm.html のURLを組み立て
       const url = new URL('./confirm.html', location.href);
-      if (salonId)   url.searchParams.set('salonId', salonId);
+
+      // ① まず、いま details.html についているクエリを全部コピー
+      qs.forEach((value, key) => {
+        url.searchParams.set(key, value);
+      });
+
+      // ② サロン情報を整形して上書き
+      if (salonId)   url.searchParams.set('salonId', salonId); // id → salonId に統一
       if (salonName) url.searchParams.set('salonName', salonName);
 
-      // メニュー名 & 金額(LKR) を付与
+      // ③ メニュー名 & 金額(LKR) を付与
       url.searchParams.set('item',      selectedMenu.name);
       url.searchParams.set('price_lkr', String(selectedMenu.priceLKR));
 
-      // bookings 側の仕様に合わせて、日本円もざっくり付けておく
-      // ※ details.html 冒頭で定義されている JPY_TO_LKR を利用 :contentReference[oaicite:2]{index=2}
+      // ④ 日本円もざっくり付ける（JPY_TO_LKR は上で定義済み）
       const priceJPY = Math.round(
         Number(selectedMenu.priceLKR || 0) / JPY_TO_LKR
       );
@@ -1133,7 +1142,7 @@ btn.onclick=async()=>{
         url.searchParams.set('price_jpy', String(priceJPY));
       }
 
-      // confirm.html へ遷移
+      // ⑤ confirm.html へ遷移
       location.href = url.toString();
     });
   }

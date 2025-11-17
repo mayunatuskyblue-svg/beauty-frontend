@@ -569,7 +569,7 @@ function suggestCultureTags(ctx){
         <div>
           <a href="#" class="btn secondary" id="btnBack"
    data-i18n="details.back_to_list" data-i18n-fallback="一覧に戻る">一覧に戻る</a>
-<a href="./confirm.html" class="btn" id="btnBook"
+<a href="./reservation.html" class="btn" id="btnBook"
    data-i18n="details.go_reserve" data-i18n-fallback="予約へ進む">予約へ進む</a>
  </div>
 <div id="selectedMenuLabel" class="muted"></div>
@@ -1142,7 +1142,7 @@ btn.onclick=async()=>{
         url.searchParams.set('price_jpy', String(priceJPY));
       }
 
-      // ⑤ confirm.html へ遷移
+      // ⑤ reservation.html へ遷移
       location.href = url.toString();
     });
   }

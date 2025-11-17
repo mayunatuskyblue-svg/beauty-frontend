@@ -1067,7 +1067,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 (async function(){
   const qs = new URLSearchParams(location.search);
   const salonId = qs.get('salonId') || 'S1';
-
+  const API_BASE = 'https://workers-playground-winter-field-18ec.mayunatu-skyblue.workers.dev/api';
   const gMain   = document.getElementById('gMain');
   const gThumbs = document.getElementById('gThumbs');
 
@@ -1083,7 +1083,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
       key:  window.__GAS_KEY,
       salonId
     });
-    const j = await fetch(`${window.__GAS_URL}?${q}`, { cache:'no-store' }).then(r=>r.json());
+    const j = await fetch(`${API_BASE}?${q}`, { cache:'no-store' }).then(r=>r.json());
     const items = (j && j.ok && Array.isArray(j.items)) ? j.items : [];
     if (!items.length){ showEmpty(); return; }
 

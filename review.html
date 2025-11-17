@@ -44,7 +44,7 @@ button {
 <script>
 const params = new URLSearchParams(location.search);
 const bookingId = params.get("bookingId");
-
+const salonId = params.get("salonId");
 document.getElementById("btnSubmit").onclick = async () => {
   const rating = Number(document.getElementById("rev_rating").value);
   const text   = document.getElementById("rev_text").value.trim();
@@ -64,6 +64,7 @@ document.getElementById("btnSubmit").onclick = async () => {
     kind: "review",
     data: {
       bookingId,
+      salonId,
       rating,
       text,
       createdAt: new Date().toISOString(),

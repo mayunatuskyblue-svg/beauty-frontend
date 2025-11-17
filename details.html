@@ -851,7 +851,53 @@ function renderInfo(it){
   }
 
   // ====== Renderer: メニュー / クーポン ======
-  WW
+
+function renderMenus(list){
+  const menuList = $('#menuList');
+  const empty    = $('#menuEmpty');
+
+  menuList.innerHTML = '';
+
+  if (!list || !list.length){
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  const isJa = (document.documentElement.lang || 'en').startsWith('ja');
+
+  list.forEach(m => {
+    const item = document.createElement('div');
+    item.className = 'menu-item';
+
+    const title = document.createElement('div');
+    title.className = 'menu-item-title';
+    title.textContent =
+      (isJa && m.name_ja) ? m.name_ja :
+      (m.name_en || '');
+
+    const price = document.createElement('div');
+    price.className = 'menu-item-price';
+    if (m.price_lkr){
+      price.textContent = 'Rs ' + Number(m.price_lkr).toLocaleString('en-US');
+    }else if (m.price_jpy){
+      price.textContent = 'Rs ' + Number(m.price_jpy).toLocaleString('en-US');
+    }else{
+      price.textContent = '';
+    }
+
+    const desc = document.createElement('div');
+    desc.className = 'menu-item-desc';
+    const d = isJa ? (m.desc_ja || m.desc_en) : (m.desc_en || m.desc_ja);
+    desc.textContent = d || '';
+
+    item.appendChild(title);
+    item.appendChild(price);
+    if (d) item.appendChild(desc);
+
+    menuList.appendChild(item);
+  });
+}
 
   function renderCoupons(list){
     const box=$('#couponList'), empty=$('#couponEmpty');

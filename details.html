@@ -328,6 +328,58 @@ function suggestCultureTags(ctx){
   color:#fff !important;
 }
 </style>
+<style>
+/* メニュー2カラムのラッパー */
+.menu-cols{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+@media(max-width:600px){
+  .menu-cols{ grid-template-columns:1fr; }
+}
+
+/* クリックできるメニューカード */
+#menuList .menu-item{
+  display:block;
+  width:100%;
+  text-align:left;
+  border:1px solid var(--bd);
+  border-radius:12px;
+  padding:10px 12px;
+  background:#fff;
+  cursor:pointer;
+  transition:background .15s, box-shadow .15s, border-color .15s, transform .12s;
+}
+
+#menuList .menu-item:hover{
+  background:#faf6ef;
+  transform:translateY(-1px);
+}
+
+#menuList .menu-item.selected{
+  border-color:var(--brand);
+  background:#f3faf9;
+  box-shadow:0 0 0 1px var(--brand);
+}
+
+.menu-name{
+  font-weight:700;
+}
+
+.menu-price{
+  margin-top:2px;
+  font-size:14px;
+  color:var(--muted);
+}
+
+#selectedMenuLabel{
+  margin-top:6px;
+  font-size:13px;
+  color:var(--muted);
+}
+</style>
+
 <script>
 // ==== Verifiedレビューの「施術後のみ投稿可」ガード ====
 // 仕様：URLに rid & token がある場合のみ #verifiedBox を表示し、
@@ -523,6 +575,7 @@ function suggestCultureTags(ctx){
 <a href="#" class="btn" id="btnBook"
    data-i18n="details.go_reserve" data-i18n-fallback="予約へ進む">予約へ進む</a>
  </div>
+<div id="selectedMenuLabel" class="muted"></div>
 
         <div class="space"></div>
         <div id="points" class="muted"></div>
@@ -658,7 +711,7 @@ function suggestCultureTags(ctx){
   // ====== 設定 / ヘルパ ======
   const GAS = { url: window.__GAS_URL, key: window.__GAS_KEY };
   const $  = s => document.querySelector(s);
-
+　let selectedMenu = null;
   // i18n保険: BL_I18N が無い/読み込めない時でも落ちない
   window.BL_I18N = window.BL_I18N || { i18nApply(){/* no-op */} };
 
@@ -851,53 +904,92 @@ function renderInfo(it){
   }
 
   // ====== Renderer: メニュー / クーポン ======
+  function renderMenus(list){
+    const box   = document.getElementById('menuList');
+    const empty = document.getElementById('menuEmpty');
+    if (!box) return;
 
-function renderMenus(list){
-  const menuList = $('#menuList');
-  const empty    = $('#menuEmpty');
-
-  menuList.innerHTML = '';
-
-  if (!list || !list.length){
-    empty.style.display = 'block';
-    return;
-  }
-  empty.style.display = 'none';
-
-  const isJa = (document.documentElement.lang || 'en').startsWith('ja');
-
-  list.forEach(m => {
-    const item = document.createElement('div');
-    item.className = 'menu-item';
-
-    const title = document.createElement('div');
-    title.className = 'menu-item-title';
-    title.textContent =
-      (isJa && m.name_ja) ? m.name_ja :
-      (m.name_en || '');
-
-    const price = document.createElement('div');
-    price.className = 'menu-item-price';
-    if (m.price_lkr){
-      price.textContent = 'Rs ' + Number(m.price_lkr).toLocaleString('en-US');
-    }else if (m.price_jpy){
-      price.textContent = 'Rs ' + Number(m.price_jpy).toLocaleString('en-US');
-    }else{
-      price.textContent = '';
+    // メニューが無いとき
+    if (!Array.isArray(list) || !list.length){
+      box.innerHTML = '';
+      if (empty) empty.style.display = '';
+      return;
     }
 
-    const desc = document.createElement('div');
-    desc.className = 'menu-item-desc';
-    const d = isJa ? (m.desc_ja || m.desc_en) : (m.desc_en || m.desc_ja);
-    desc.textContent = d || '';
+    // メニューがあるときは「準備中」テキストを消す
+    if (empty) empty.style.display = 'none';
 
-    item.appendChild(title);
-    item.appendChild(price);
-    if (d) item.appendChild(desc);
+    const container = document.createElement('div');
+    container.className = 'menu-cols';
 
-    menuList.appendChild(item);
-  });
-}
+    const colL = document.createElement('div');
+    const colR = document.createElement('div');
+    container.appendChild(colL);
+    container.appendChild(colR);
+
+    list.forEach((m, idx) => {
+      // まず LKR を優先、無ければ JPY→LKR 変換
+      const priceLKR = (()=>{
+        const lkr = Number(m.price_lkr || m.price || 0);
+        if (lkr > 0) return lkr;
+        const jpy = Number(m.price_jpy || 0);
+        return jpy > 0 ? Math.round(jpy * JPY_TO_LKR) : 0;
+      })();
+
+      const name =
+        m.name_en || m.name_ja || m.title || 'Menu';
+      const id =
+        m.id || m.menu_id || String(idx);
+
+      // クリックできるボタンとして描画
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'menu-item';
+      item.dataset.menuId = id;
+
+      item.innerHTML = `
+        <div class="menu-name">${name}</div>
+        <div class="menu-price">Rs ${priceLKR.toLocaleString('en-US')}</div>
+      `;
+
+      item.addEventListener('click', () => {
+        // いったん全部の選択状態をリセット
+        document.querySelectorAll('#menuList .menu-item')
+          .forEach(el => el.classList.remove('selected'));
+
+        // 自分だけ selected に
+        item.classList.add('selected');
+
+        // 選択中メニューを保持
+        selectedMenu = { id, name, priceLKR };
+
+        // 次の画面用に sessionStorage にも保存
+        try {
+          const qs      = new URLSearchParams(location.search);
+          const salonId = qs.get('id') || qs.get('salonId') || '';
+          sessionStorage.setItem('bl_selected_menu', JSON.stringify({
+            salonId,
+            id,
+            name,
+            priceLKR
+          }));
+        } catch (e) {
+          console.warn('save selected menu failed', e);
+        }
+
+        // ボタンの下に「選択中メニュー」を表示
+        const label = document.getElementById('selectedMenuLabel');
+        if (label){
+          label.textContent = `Selected: ${name} (${fmtLKR(priceLKR)})`;
+        }
+      });
+
+      (idx % 2 === 0 ? colL : colR).appendChild(item);
+    });
+
+    box.innerHTML = '';
+    box.appendChild(container);
+  }
 
   function renderCoupons(list){
     const box=$('#couponList'), empty=$('#couponEmpty');
@@ -1031,6 +1123,16 @@ btn.onclick=async()=>{
   // ====== 起動 ======
   document.addEventListener('DOMContentLoaded', async ()=>{
     setupBack();
+    // 予約ボタン：メニュー未選択ならアラート
+    const btnBook = document.getElementById('btnBook');
+    if (btnBook) {
+      btnBook.addEventListener('click', (e) => {
+        // まだ何も選んでいないとき
+        if (!selectedMenu) {
+          e.preventDefault();
+          alert('Please select a menu first.');
+          return;
+        }
     try{
       const items=await getCatalog();
       if(!items.length){ $('#infoCard').insertAdjacentHTML('afterbegin','<div class="notice">カタログが空です</div>'); return; }

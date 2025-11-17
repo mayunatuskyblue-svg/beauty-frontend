@@ -569,7 +569,7 @@ function suggestCultureTags(ctx){
         <div>
           <a href="#" class="btn secondary" id="btnBack"
    data-i18n="details.back_to_list" data-i18n-fallback="一覧に戻る">一覧に戻る</a>
-<a href="#" class="btn" id="btnBook"
+<a href="./confirm.html" class="btn" id="btnBook"
    data-i18n="details.go_reserve" data-i18n-fallback="予約へ進む">予約へ進む</a>
  </div>
 <div id="selectedMenuLabel" class="muted"></div>
@@ -1093,17 +1093,50 @@ btn.onclick=async()=>{
   document.addEventListener('DOMContentLoaded', async ()=>{
     setupBack();
 
-    // 予約ボタン：メニュー未選択ならアラート
-    const btnBook = document.getElementById('btnBook');
-    if (btnBook) {
-      btnBook.addEventListener('click', (e) => {
-        // まだ何も選んでいないとき
-        if (!selectedMenu) {
-          e.preventDefault();
-          alert('Please select a menu first.');
-        }
-      });
-    }
+      // 予約ボタン：
+  // ・メニュー未選択ならアラート
+  // ・選択済みなら confirm.html へ遷移し、クエリにメニュー情報を付ける
+  const btnBook = document.getElementById('btnBook');
+  if (btnBook) {
+    btnBook.addEventListener('click', (e) => {
+      e.preventDefault();
+
+      // まだ何も選んでいないとき
+      if (!selectedMenu) {
+        alert('Please select a menu first.');
+        return;
+      }
+
+      // サロンIDは URL から拾う
+      const qs      = new URLSearchParams(location.search);
+      const salonId = qs.get('salonId') || qs.get('id') || '';
+
+      // サロン名はタイトルから取得
+      const salonName =
+        (document.getElementById('salonTitle')?.textContent || '').trim();
+
+      // confirm.html のURLを組み立て
+      const url = new URL('./confirm.html', location.href);
+      if (salonId)   url.searchParams.set('salonId', salonId);
+      if (salonName) url.searchParams.set('salonName', salonName);
+
+      // メニュー名 & 金額(LKR) を付与
+      url.searchParams.set('item',      selectedMenu.name);
+      url.searchParams.set('price_lkr', String(selectedMenu.priceLKR));
+
+      // bookings 側の仕様に合わせて、日本円もざっくり付けておく
+      // ※ details.html 冒頭で定義されている JPY_TO_LKR を利用 :contentReference[oaicite:2]{index=2}
+      const priceJPY = Math.round(
+        Number(selectedMenu.priceLKR || 0) / JPY_TO_LKR
+      );
+      if (priceJPY > 0) {
+        url.searchParams.set('price_jpy', String(priceJPY));
+      }
+
+      // confirm.html へ遷移
+      location.href = url.toString();
+    });
+  }
 
     try{
       const items = await getCatalog();

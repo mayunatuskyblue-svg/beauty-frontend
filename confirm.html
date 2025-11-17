@@ -634,7 +634,7 @@ if (!GAS_KEY) console.error('GAS_KEY missing');
 async function postBookingToSheet({
   bookingId, date, time, minutes,
   salonId, shopName, menu, menuName,
-  amountJPY, email, name,
+  amountJPY, email, name, phone,
   whatsappToCustomer, whatsappToSalon,
   status = 'reserved'
 }) {
@@ -653,7 +653,7 @@ const payload = {
     bookingId, date, time, minutes,
     salonId, shopName, menu, menuName,
     amountJPY,             // 元の基準価格（保持）
-    email, name, customerId,
+    email, name, customerId, phone,
     whatsappToCustomer, whatsappToSalon,
     status,
     couponCode,            // ← 追加

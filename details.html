@@ -329,11 +329,11 @@ function suggestCultureTags(ctx){
 }
 </style>
 <style>
-/* メニュー2カラムのラッパー */
-.menu-cols{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
+/* メニュー一覧を縦1列で並べる */
+#menuList{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
 }
 @media(max-width:600px){
   .menu-cols{ grid-template-columns:1fr; }
@@ -855,12 +855,17 @@ function renderInfo(it){
   v.appendChild(n);
 }
 
-  // ====== Renderer: ギャラリー ======
+    // ====== Renderer: ギャラリー ======
+  // ※ Photos は admin 側 API (photos.public) で描画するので、
+  //   ここでは「読み込み中」プレースホルダだけ出しておく。
   function renderGallery(it){
-    const main=$('#gMain'), thumbs=$('#gThumbs');
-    main.innerHTML=''; thumbs.innerHTML='';
-    const raw=parsePhotos(it.photos);
-    if(!raw.length){ main.innerHTML='<div class="notice">写真が未登録です（catalog の photos 列）</div>'; return; }
+    const main   = $('#gMain');
+    const thumbs = $('#gThumbs');
+    if (!main || !thumbs) return;
+
+    main.innerHTML   = '<div class="muted" style="padding:16px">Loading photos…</div>';
+    thumbs.innerHTML = '';
+  }
 
     // 2本1組でフォールバック
     const groups=[]; for(let i=0;i<raw.length;i+=2) groups.push([raw[i], raw[i+1]||raw[i]]);
@@ -903,7 +908,7 @@ function renderInfo(it){
     }
   }
 
-  // ====== Renderer: メニュー / クーポン ======
+    // ====== Renderer: メニュー / クーポン ======
   function renderMenus(list){
     const box   = document.getElementById('menuList');
     const empty = document.getElementById('menuEmpty');
@@ -919,13 +924,8 @@ function renderInfo(it){
     // メニューがあるときは「準備中」テキストを消す
     if (empty) empty.style.display = 'none';
 
-    const container = document.createElement('div');
-    container.className = 'menu-cols';
-
-    const colL = document.createElement('div');
-    const colR = document.createElement('div');
-    container.appendChild(colL);
-    container.appendChild(colR);
+    // 中身をリセットして、1行ずつ縦に積んでいく
+    box.innerHTML = '';
 
     list.forEach((m, idx) => {
       // まず LKR を優先、無ければ JPY→LKR 変換
@@ -984,11 +984,9 @@ function renderInfo(it){
         }
       });
 
-      (idx % 2 === 0 ? colL : colR).appendChild(item);
+      // 1行ずつ追加（縦並び）
+      box.appendChild(item);
     });
-
-    box.innerHTML = '';
-    box.appendChild(container);
   }
 
   function renderCoupons(list){

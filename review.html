@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>BeautyLK Review</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+body { font-family: sans-serif; padding: 20px; }
+.container { max-width: 480px; margin: auto; }
+label { display: block; margin-top: 16px; font-weight: bold; }
+textarea { width: 100%; height: 120px; }
+select, textarea, button { padding: 8px; font-size: 15px; width: 100%; }
+button {
+  margin-top: 24px;
+  background: #222;
+  color: white;
+  border-radius: 6px;
+  border: none;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Rate your experience</h2>
+  <p>Please tell us how it went!</p>
+
+  <label>Your Rating (1–5)</label>
+  <select id="rev_rating">
+    <option value="5">★★★★★ Excellent</option>
+    <option value="4">★★★★ Very good</option>
+    <option value="3">★★★ Good</option>
+    <option value="2">★★ Fair</option>
+    <option value="1">★ Poor</option>
+  </select>
+
+  <label>Your Review</label>
+  <textarea id="rev_text"
+  placeholder="Tell us about the service..."></textarea>
+
+  <button id="btnSubmit">Submit Review</button>
+</div>
+
+<script>
+const params = new URLSearchParams(location.search);
+const bookingId = params.get("bookingId");
+
+document.getElementById("btnSubmit").onclick = async () => {
+  const rating = Number(document.getElementById("rev_rating").value);
+  const text   = document.getElementById("rev_text").value.trim();
+
+  if (!bookingId) {
+    alert("Booking ID missing. Invalid link.");
+    return;
+  }
+
+  if (!text) {
+    alert("Please write a review.");
+    return;
+  }
+
+  const payload = {
+    key: "<YOUR_GAS_KEY>",
+    kind: "review",
+    data: {
+      bookingId,
+      rating,
+      text,
+      createdAt: new Date().toISOString(),
+    }
+  };
+
+  const res = await fetch("<YOUR_GAS_WEBAPP_URL>", {
+    method: "POST",
+    body: JSON.stringify(payload),
+    headers: { "Content-Type": "application/json" }
+  });
+
+  if (res.ok) {
+    alert("Thank you! Your review has been submitted.");
+    location.href = "https://beautylk.com/thanks.html";
+  } else {
+    alert("Failed to submit review. Try again later.");
+  }
+};
+</script>
+
+</body>
+</html>

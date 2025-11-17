@@ -711,7 +711,7 @@ function suggestCultureTags(ctx){
   // ====== 設定 / ヘルパ ======
   const GAS = { url: window.__GAS_URL, key: window.__GAS_KEY };
   const $  = s => document.querySelector(s);
-　let selectedMenu = null;
+  let selectedMenu = null;
   // i18n保険: BL_I18N が無い/読み込めない時でも落ちない
   window.BL_I18N = window.BL_I18N || { i18nApply(){/* no-op */} };
 
@@ -1120,9 +1120,10 @@ btn.onclick=async()=>{
     });
   });
 
-  // ====== 起動 ======
+    // ====== 起動 ======
   document.addEventListener('DOMContentLoaded', async ()=>{
     setupBack();
+
     // 予約ボタン：メニュー未選択ならアラート
     const btnBook = document.getElementById('btnBook');
     if (btnBook) {
@@ -1131,21 +1132,46 @@ btn.onclick=async()=>{
         if (!selectedMenu) {
           e.preventDefault();
           alert('Please select a menu first.');
-          return;
         }
+      });
+    }
+
     try{
-      const items=await getCatalog();
-      if(!items.length){ $('#infoCard').insertAdjacentHTML('afterbegin','<div class="notice">カタログが空です</div>'); return; }
-      const it=pickItem(items);
+      const items = await getCatalog();
+      if (!items.length){
+        $('#infoCard').insertAdjacentHTML(
+          'afterbegin',
+          '<div class="notice">カタログが空です</div>'
+        );
+        return;
+      }
+
+      const it = pickItem(items);
       window.__currentSalon = it;
+
       renderInfo(it);
       renderGallery(it);
       renderMap(it);
-      Promise.all([getMenus(it.id), getCoupons(it.id)]).then(([ms,cs])=>{ renderMenus(ms); renderCoupons(cs); }).catch(()=>{});
-      getReviews(it.id).then(res=>renderReviews(it,res)).catch(()=>{ $('#reviewsSummary').textContent='（読み込みに失敗しました）'; });
-    }catch(e){
+
+      Promise.all([getMenus(it.id), getCoupons(it.id)])
+        .then(([ms,cs]) => {
+          renderMenus(ms);
+          renderCoupons(cs);
+        })
+        .catch(()=>{});
+
+      getReviews(it.id)
+        .then(res => renderReviews(it,res))
+        .catch(()=>{
+          $('#reviewsSummary').textContent = '（読み込みに失敗しました）';
+        });
+
+    } catch(e){
       console.error(e);
-      $('#infoCard').insertAdjacentHTML('afterbegin','<div class="notice">読み込みに失敗しました</div>');
+      $('#infoCard').insertAdjacentHTML(
+        'afterbegin',
+        '<div class="notice">読み込みに失敗しました</div>'
+      );
     }
   });
 })();

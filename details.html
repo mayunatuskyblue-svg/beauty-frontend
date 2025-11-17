@@ -1119,7 +1119,7 @@ btn.onclick=async()=>{
         (document.getElementById('salonTitle')?.textContent || '').trim();
 
       // confirm.html のURLを組み立て
-      const url = new URL('./confirm.html', location.href);
+      const url = new URL('./reservation.html', location.href);
 
       // ① まず、いま details.html についているクエリを全部コピー
       qs.forEach((value, key) => {

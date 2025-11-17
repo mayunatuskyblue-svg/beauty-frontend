@@ -766,9 +766,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // 入力が進むたびに上書き
   const ufMail = document.getElementById('uf_email');
   const ufName = document.getElementById('uf_name');
+  const ufPhone = document.getElementById('uf_phone');
   ['input','change','blur'].forEach(ev => {
     ufMail?.addEventListener(ev, updateBookingDebounced);
     ufName?.addEventListener(ev, updateBookingDebounced);
+    ufPhone?.addEventListener(ev, updateBookingDebounced);
   });
 
   // Stripeの簡易フォームと双方向に同期（あれば）

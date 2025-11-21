@@ -1541,46 +1541,5 @@ return;
   activateTab('billing');
 })();
 </script>
-
-<script>
-// ==== Wire coupon buttons & do initial loads ====
-document.addEventListener('DOMContentLoaded', async ()=>{
-  try{
-    // 画面文脈・カタログ等の初期ロード（既に定義済みの関数を呼ぶだけ）
-    if(typeof readCtx === 'function') await readCtx();
-    if(typeof fetchCatalog === 'function') await fetchCatalog();
-  }catch(e){ console.warn('init loads failed', e); }
-
-  const applyBtn = document.getElementById('btnCouponApply');
-  const clearBtn = document.getElementById('btnCouponClear');
-  const input    = document.getElementById('couponCodeInput');
-  const msg      = document.getElementById('couponMsg');
-
-  if(applyBtn){
-    applyBtn.addEventListener('click', async ()=>{
-      const code = (input?.value||'').trim();
-      if(!code){ if(msg) msg.textContent = 'Enter code'; return; }
-      try{ await validateCouponAndApply(code); }catch(e){ if(msg) msg.textContent = 'Apply failed'; }
-    });
-  }
-  if(clearBtn){
-    clearBtn.addEventListener('click', ()=>{
-      try{ clearCoupon(); }catch(e){ if(msg) msg.textContent = 'Clear failed'; }
-    });
-  }
-});
-</script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-

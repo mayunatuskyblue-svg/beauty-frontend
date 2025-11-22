@@ -256,10 +256,6 @@ table.zebra th, table.zebra td{border-bottom:1px solid var(--stroke)}
 <input id="cp_code" class="input" placeholder="Enter coupon code"/>
 <button id="cp_apply" type="button" class="btn btn-outline">Apply</button>
 
-<!-- toast -->
-<span id="toastMsgInline" data-i18n="confirm.toast_missing">Some required fields are missing.</span>
-<button class="close" aria-label="Close" data-i18n="confirm.close">×</button>
-
 </div>
 <p id="cp_msg" style="margin:6px 0 0; color:#6f5a54; font-size:14px"></p>
 
@@ -789,5 +785,129 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('bl:card-saved', updateBookingDebounced);
 });
 </script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const btn  = document.getElementById('cp_apply');
+  const input= document.getElementById('cp_code');
+  const msg  = document.getElementById('cp_msg');
+  const priceEl = document.getElementById('s_price');
+  if (!btn || !input || !priceEl) return;
+
+  // ベース価格（割引前）を data-* に退避しておく
+  if (!priceEl.dataset.baseLkr) {
+    const baseLkr = priceEl.getAttribute('data-lkr') || '0';
+    const baseJpy = priceEl.getAttribute('data-jpy') || '0';
+    priceEl.dataset.baseLkr = baseLkr;
+    priceEl.dataset.baseJpy = baseJpy;
+  }
+
+  function fmtLKR(n){
+    return 'Rs ' + Number(n || 0).toLocaleString('en-US');
+  }
+
+  function updateUrlAndSheet(code, discountedJPY, discountedLKR){
+    const u = new URL(location.href);
+
+    if (code) {
+      u.searchParams.set('coupon', code);
+      u.searchParams.set('price_jpy', String(discountedJPY));
+      u.searchParams.set('price_lkr', String(discountedLKR));
+    } else {
+      // クリア時
+      u.searchParams.delete('coupon');
+      u.searchParams.delete('price_jpy');
+      u.searchParams.delete('price_lkr');
+    }
+    history.replaceState(null, '', u.toString());
+
+    // GAS への upsert を今のURLで実行（既存の関数を再利用）
+    if (typeof updateBookingDebounced === 'function') {
+      updateBookingDebounced();
+    }
+  }
+
+  async function applyCoupon(){
+    const code = input.value.trim();
+    const qs   = new URLSearchParams(location.search);
+    const salonId = qs.get('salonId') || qs.get('salon') || '';
+    const email   = (document.getElementById('uf_email')?.value || '').trim();
+
+    // コード未入力なら「クーポン解除」として元に戻す
+    if (!code) {
+      const baseLkr = Number(priceEl.dataset.baseLkr || 0);
+      const baseJpy = Number(priceEl.dataset.baseJpy || 0);
+      priceEl.setAttribute('data-lkr', String(baseLkr));
+      priceEl.setAttribute('data-jpy', String(baseJpy));
+      priceEl.textContent = (priceEl.textContent.split(':')[0] || 'Payment') + ' : ' + fmtLKR(baseLkr);
+      msg.textContent = 'Coupon cleared';
+      updateUrlAndSheet('', baseJpy, baseLkr);
+      return;
+    }
+
+    if (!salonId) {
+      msg.textContent = 'Salon info missing.';
+      return;
+    }
+
+    const baseJPY = Number(priceEl.dataset.baseJpy || 0);
+    if (!baseJPY) {
+      msg.textContent = 'Base price not found.';
+      return;
+    }
+
+    msg.textContent = 'Checking coupon…';
+
+    try{
+      const res = await fetch(window.API_BASE, {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json' },
+        body: JSON.stringify({
+          key: window.GAS_KEY,
+          kind: 'coupons.validate',     // ← admin と同じエンドポイントを想定
+          data: {
+            salonId,
+            token:   '',                // 公開画面なので空文字。サーバ側で無視 or 許可する実装にしておく
+            code,
+            email,
+            amountJPY: baseJPY          // 割引計算の元になる金額（JPY）
+          }
+        })
+      }).then(r => r.json());
+
+      if(!res || !res.ok){
+        msg.textContent = 'Coupon invalid or not applicable.';
+        return;
+      }
+
+      // サーバ側のレスポンス想定：
+      // { ok:true, type:'flat'|'percent', value:number, appliedJPY:number, offJPY:number, name:'...' }
+      const offJPY = Number(res.offJPY ?? 0);
+      const appliedJPY = Number(res.appliedJPY ?? (baseJPY - offJPY));
+      const labelName  = res.name ? String(res.name) : `Coupon ${code}`;
+
+      // LKR換算（本当に厳密にやるならサーバ側から discountedLKR を返してもらうのがベスト）
+      const FX = 2.15; // admin.html と同じレートを使う
+      const appliedLKR = Math.round(appliedJPY * FX);
+
+      // 画面反映
+      priceEl.setAttribute('data-lkr', String(appliedLKR));
+      priceEl.setAttribute('data-jpy', String(appliedJPY));
+      priceEl.textContent = (priceEl.textContent.split(':')[0] || 'Payment') + ' : ' + fmtLKR(appliedLKR);
+
+      msg.textContent = `${labelName} applied ✔`;
+
+      // URL & GAS も更新
+      updateUrlAndSheet(code, appliedJPY, appliedLKR);
+
+    }catch(e){
+      console.error(e);
+      msg.textContent = 'Failed to apply coupon.';
+    }
+  }
+
+  btn.addEventListener('click', applyCoupon);
+});
+</script>
+
 </body>
 </html>
